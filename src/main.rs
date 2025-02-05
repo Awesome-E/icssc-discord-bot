@@ -1,6 +1,7 @@
 mod commands;
 mod handler;
 mod model;
+mod schema;
 mod util;
 
 use crate::commands::meta;
