@@ -6,7 +6,10 @@ mod util;
 
 use crate::commands::meta;
 use clap::ValueHint;
-use diesel::{Connection, PgConnection};
+use diesel::Connection;
+use diesel_async::pooled_connection::deadpool::Pool;
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use diesel_async::{AsyncConnection, AsyncPgConnection};
 use itertools::Itertools;
 use pluralizer::pluralize;
 use poise::{Command, FrameworkOptions, PrefixFrameworkOptions};
@@ -17,13 +20,7 @@ use std::ops::BitAnd;
 use std::path::PathBuf;
 
 struct BotVars {
-    db_url: Box<str>,
-}
-
-impl BotVars {
-    pub fn db_conn(&self) -> Result<PgConnection, BotError> {
-        Ok(PgConnection::establish(&self.db_url)?)
-    }
+    db_pool: Pool<AsyncPgConnection>,
 }
 
 #[tokio::main]
@@ -60,7 +57,7 @@ async fn main() {
 
     let framework = poise::Framework::<BotVars, BotError>::builder()
         .options(FrameworkOptions {
-            commands: vec![meta::ping()],
+            commands: vec![meta::ping(), commands::snipe::snipe()],
             prefix_options: PrefixFrameworkOptions {
                 mention_as_prefix: true,
                 ..Default::default()
@@ -97,9 +94,10 @@ async fn main() {
                     );
                 }
 
-                Ok(BotVars {
-                    db_url: db_url.into(),
-                })
+                let config = AsyncDieselConnectionManager::<AsyncPgConnection>::new(db_url);
+                let db_pool = Pool::builder(config).build()?;
+
+                Ok(BotVars { db_pool })
             })
         })
         .build();

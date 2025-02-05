@@ -6,7 +6,7 @@ use diesel::Connection;
 pub(crate) async fn ping(ctx: Context<'_>) -> Result<(), BotError> {
     let ping_num = ctx.ping().await.as_millis();
 
-    let conn = ctx.data().db_conn();
+    let conn = ctx.data().db_pool.get().await?;
 
     ctx.say(format!(
         "{}\n\n{}",
