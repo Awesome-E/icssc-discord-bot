@@ -4,13 +4,13 @@ CREATE TABLE message
     guild_id   BIGINT NOT NULL,
     channel_id BIGINT NOT NULL,
     message_id BIGINT PRIMARY KEY,
-    author_id     BIGINT NOT NULL
+    author_id  BIGINT NOT NULL
 );
 
 CREATE TABLE snipe
 (
     message_id BIGINT NOT NULL,
-    victim_id     BIGINT NOT NULL,
+    victim_id  BIGINT NOT NULL,
     FOREIGN KEY (message_id) REFERENCES message (message_id),
     PRIMARY KEY (message_id, victim_id)
 );
