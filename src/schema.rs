@@ -1,7 +1,7 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    messages (message_id) {
+    message (message_id) {
         guild_id -> Int8,
         channel_id -> Int8,
         message_id -> Int8,
@@ -10,15 +10,15 @@ diesel::table! {
 }
 
 diesel::table! {
-    snipes (message_id, victim) {
+    snipe (message_id, victim_id) {
         message_id -> Int8,
-        victim -> Int8,
+        victim_id -> Int8,
     }
 }
 
-diesel::joinable!(snipes -> messages (message_id));
+diesel::joinable!(snipe -> message (message_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    messages,
-    snipes,
+    message,
+    snipe,
 );
