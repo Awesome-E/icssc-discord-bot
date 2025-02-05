@@ -1,6 +1,7 @@
 mod commands;
 mod handler;
 mod util;
+mod model;
 
 use crate::commands::meta;
 use clap::ValueHint;

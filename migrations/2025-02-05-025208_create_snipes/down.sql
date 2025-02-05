@@ -1,0 +1,3 @@
+-- This file should undo anything in `up.sql`
+DROP TABLE IF EXISTS snipes;
+DROP TABLE IF EXISTS messages;
