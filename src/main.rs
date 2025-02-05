@@ -1,10 +1,11 @@
 mod commands;
 mod handler;
-mod util;
 mod model;
+mod util;
 
 use crate::commands::meta;
 use clap::ValueHint;
+use diesel::{Connection, PgConnection};
 use itertools::Itertools;
 use pluralizer::pluralize;
 use poise::{Command, FrameworkOptions, PrefixFrameworkOptions};
@@ -14,7 +15,15 @@ use std::env;
 use std::ops::BitAnd;
 use std::path::PathBuf;
 
-struct BotVars {}
+struct BotVars {
+    db_url: Box<str>,
+}
+
+impl BotVars {
+    pub fn db_conn(&self) -> Result<PgConnection, BotError> {
+        Ok(PgConnection::establish(&self.db_url)?)
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -45,6 +54,8 @@ async fn main() {
         .filter(|s| !s.is_empty())
         .map(|id| GuildId::from(id.parse::<u64>().expect("guild id not valid snowflake")))
         .collect_vec();
+
+    let db_url = env::var("DATABASE_URL").expect("need postgres URL!");
 
     let framework = poise::Framework::<BotVars, BotError>::builder()
         .options(FrameworkOptions {
@@ -85,7 +96,9 @@ async fn main() {
                     );
                 }
 
-                Ok(BotVars {})
+                Ok(BotVars {
+                    db_url: db_url.into(),
+                })
             })
         })
         .build();
