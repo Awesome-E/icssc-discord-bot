@@ -15,5 +15,5 @@ pub struct Message {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Snipe {
     pub message_id: i64,
-    pub victim: i64,
+    pub victim_id: i64,
 }
