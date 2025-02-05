@@ -3,7 +3,6 @@ use crate::schema::message::dsl::message as message_t;
 use crate::schema::snipe;
 use crate::{BotError, Context};
 use diesel::associations::HasTable;
-use diesel::Insertable;
 use diesel_async::scoped_futures::ScopedFutureExt;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use itertools::Itertools;
