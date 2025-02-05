@@ -47,7 +47,7 @@ pub(crate) async fn post(
     let Some(guild_id) = message.guild_id.clone() else {
         ctx.reply("message must be in a guild; someone has to see it!")
             .await?;
-        Ok(())
+        return Ok(())
     };
 
     let message_sql = Message {
