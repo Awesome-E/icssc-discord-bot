@@ -5,7 +5,7 @@ diesel::table! {
         guild_id -> Int8,
         channel_id -> Int8,
         message_id -> Int8,
-        author -> Int8,
+        author_id -> Int8,
     }
 }
 
