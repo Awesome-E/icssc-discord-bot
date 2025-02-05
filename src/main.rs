@@ -6,10 +6,9 @@ mod util;
 
 use crate::commands::meta;
 use clap::ValueHint;
-use diesel::Connection;
 use diesel_async::pooled_connection::deadpool::Pool;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
-use diesel_async::{AsyncConnection, AsyncPgConnection};
+use diesel_async::AsyncPgConnection;
 use itertools::Itertools;
 use pluralizer::pluralize;
 use poise::{Command, FrameworkOptions, PrefixFrameworkOptions};
