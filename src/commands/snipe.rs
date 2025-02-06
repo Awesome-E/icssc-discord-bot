@@ -61,7 +61,8 @@ pub(crate) async fn post(
         .map(|victim| Snipe {
             message_id: message.id.into(),
             victim_id: victim.id.into(),
-            location: None,
+            latitude: None,
+            longitude: None,
             notes: None,
         })
         .collect_vec();

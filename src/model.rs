@@ -16,18 +16,7 @@ pub struct Message {
 pub struct Snipe {
     pub message_id: i64,
     pub victim_id: i64,
-    pub location: Option<(f64, f64)>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
     pub notes: Option<String>,
-}
-
-impl Snipe {
-    #[inline]
-    fn lat(&self) -> Option<f64> {
-        self.location.map(|(long, lat)| lat)
-    }
-
-    #[inline]
-    fn long(&self) -> Option<f64> {
-        self.location.map(|(long, lat)| long)
-    }
 }
