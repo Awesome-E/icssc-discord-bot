@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::model::{Message, Snipe};
 use crate::schema::message::dsl::message as message_t;
 use crate::schema::snipe;
@@ -41,7 +42,7 @@ pub(crate) async fn post(
     ]
     .into_iter()
     .filter_map(identity)
-    .collect_vec();
+    .collect::<HashSet<_>>();
 
     if victims.iter().any(|v| v.id == ctx.author().id) {
         ctx.reply("sanity check: you can't snipe yourself!").await?;
