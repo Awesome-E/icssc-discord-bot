@@ -11,6 +11,7 @@ pub struct Message {
 }
 
 #[derive(Queryable, Selectable, Insertable)]
+#[diesel(belongs_to(Message))]
 #[diesel(table_name = crate::schema::snipe)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Snipe {
