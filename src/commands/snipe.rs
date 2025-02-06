@@ -1,14 +1,17 @@
 use crate::model::{Message, Snipe};
 use crate::schema::message::dsl::message as message_t;
 use crate::schema::snipe;
+use crate::util::base_embed;
 use crate::{BotError, Context};
 use diesel::associations::HasTable;
 use diesel_async::scoped_futures::ScopedFutureExt;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use itertools::Itertools;
-use serenity::all::User;
+use poise::CreateReply;
+use serenity::all::{CreateActionRow, CreateButton, CreateInteractionResponse, ReactionType, User};
 use std::collections::HashSet;
 use std::convert::identity;
+use std::time::Duration;
 
 #[poise::command(prefix_command, slash_command, subcommands("post"))]
 pub(crate) async fn snipe(ctx: Context<'_>) -> Result<(), BotError> {
@@ -72,6 +75,47 @@ pub(crate) async fn post(
         ctx.reply("no images in your linked message!").await?;
         return Ok(());
     }
+
+    let handle = ctx
+        .send(
+            CreateReply::default()
+                .embed(base_embed(ctx).description(format!(
+                    "**you are claiming a snipe of**:\n{}\n\nclick to confirm! (times out in 15 seconds)",
+                    victims.iter().join("")
+                )))
+                .components(vec![CreateActionRow::Buttons(vec![CreateButton::new(
+                    "snipe_post_confirm",
+                )
+                .emoji(ReactionType::Unicode(String::from("😎")))])])
+                .reply(true)
+                .ephemeral(true),
+        )
+        .await?;
+
+    match handle
+        .message()
+        .await?
+        .await_component_interaction(&ctx.serenity_context().shard)
+        .author_id(ctx.author().id)
+        .custom_ids(vec![String::from("snipe_post_confirm")])
+        .timeout(Duration::from_secs(15))
+        .await
+    {
+        None => {
+            ctx.send(
+                CreateReply::default()
+                    .content("ok, nevermind then")
+                    .reply(true)
+                    .ephemeral(true),
+            )
+            .await?;
+            return Ok(());
+        }
+        Some(ixn) => {
+            ixn.create_response(ctx.http(), CreateInteractionResponse::Acknowledge)
+                .await?
+        }
+    };
 
     let message_sql = Message {
         // command is guild_only
