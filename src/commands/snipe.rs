@@ -167,7 +167,7 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
     let mut conn = ctx.data().db_pool.get().await?;
 
     let mut hm = HashMap::new();
-    let bins = message::table
+    message::table
         .inner_join(snipe::table)
         .select((Message::as_select(), Snipe::as_select()))
         .order(message::message_id.desc())
