@@ -166,6 +166,7 @@ pub(crate) async fn post(
 pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
     let mut conn = ctx.data().db_pool.get().await?;
 
+    let mut hm = HashMap::new();
     let bins = message::table
         .inner_join(snipe::table)
         .select((Message::as_select(), Snipe::as_select()))
@@ -173,12 +174,9 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
         .load::<(Message, Snipe)>(&mut conn)
         .await?
         .into_iter()
-        .fold(HashMap::new(), |mut hm, (msg, snipe)| {
-            hm.entry(msg).or_insert(Vec::with_capacity(1)).push(snipe);
-            hm
-        });
+        .for_each(|(msg, snipe)| hm.entry(msg).or_insert(Vec::with_capacity(1)).push(snipe));
 
-    dbg!(bins);
+    dbg!(hm);
 
     Ok(())
 }
