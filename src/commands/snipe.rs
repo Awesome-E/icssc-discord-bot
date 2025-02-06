@@ -16,7 +16,7 @@ pub(crate) async fn snipe(ctx: Context<'_>) -> Result<(), BotError> {
 }
 
 /// Log a snipe
-#[poise::command(prefix_command, slash_command)]
+#[poise::command(prefix_command, slash_command, guild_only)]
 pub(crate) async fn post(
     ctx: Context<'_>,
     #[description = "Link to message with proof"] message: serenity::all::Message,
