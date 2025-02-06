@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use crate::model::{Message, Snipe};
 use crate::schema::message::dsl::message as message_t;
 use crate::schema::snipe;
@@ -8,6 +7,7 @@ use diesel_async::scoped_futures::ScopedFutureExt;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use itertools::Itertools;
 use serenity::all::User;
+use std::collections::HashSet;
 use std::convert::identity;
 
 #[poise::command(prefix_command, slash_command, subcommands("post"))]
@@ -26,9 +26,9 @@ pub(crate) async fn post(
     #[description = "Another victim, if applicable"] victim3: Option<User>,
     #[description = "Another victim, if applicable"] victim4: Option<User>,
     #[description = "Another victim, if applicable"] victim5: Option<User>,
-    // #[description = "Another victim, if applicable"] victim6: Option<User>,
-    // #[description = "Another victim, if applicable"] victim7: Option<User>,
-    // #[description = "Another victim, if applicable"] victim8: Option<User>,
+    #[description = "Another victim, if applicable"] victim6: Option<User>,
+    #[description = "Another victim, if applicable"] victim7: Option<User>,
+    #[description = "Another victim, if applicable"] victim8: Option<User>,
     // #[description = "Another victim, if applicable"] victim9: Option<User>,
     // #[description = "Another victim, if applicable"] victim10: Option<User>,
 ) -> Result<(), BotError> {
@@ -38,7 +38,11 @@ pub(crate) async fn post(
         victim3,
         victim4,
         victim5,
-        // victim6, victim7, victim8, victim9, victim10,
+        victim6,
+        victim7,
+        victim8,
+        // victim9,
+        // victim10,
     ]
     .into_iter()
     .filter_map(identity)
@@ -46,17 +50,18 @@ pub(crate) async fn post(
 
     if victims.iter().any(|v| v.id == ctx.author().id) {
         ctx.reply("sanity check: you can't snipe yourself!").await?;
-        return Ok(())
+        return Ok(());
     }
 
     if victims.iter().any(|v| v.bot) {
-        ctx.reply("sanity check: bots don't have physical forms to snipe!").await?;
-        return Ok(())
+        ctx.reply("sanity check: bots don't have physical forms to snipe!")
+            .await?;
+        return Ok(());
     }
 
     if message.channel_id != ctx.channel_id() {
         ctx.reply("that message isn't in this channel...").await?;
-        return Ok(())
+        return Ok(());
     }
 
     if message
