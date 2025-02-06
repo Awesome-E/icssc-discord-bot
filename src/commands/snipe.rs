@@ -49,6 +49,15 @@ pub(crate) async fn post(
         return Ok(());
     };
 
+    if message
+        .attachments
+        .iter()
+        .all(|attachment| attachment.height.is_none())
+    {
+        ctx.reply("no images in your linked message!").await?;
+        return Ok(());
+    }
+
     let message_sql = Message {
         guild_id: guild_id.into(),
         channel_id: message.channel_id.into(),
