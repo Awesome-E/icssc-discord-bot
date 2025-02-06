@@ -43,6 +43,16 @@ pub(crate) async fn post(
     .filter_map(identity)
     .collect_vec();
 
+    if victims.iter().any(|v| v.id == ctx.author().id) {
+        ctx.reply("sanity check: you can't snipe yourself!").await?;
+        return Ok(())
+    }
+
+    if victims.iter().any(|v| v.bot) {
+        ctx.reply("sanity check: bots don't have physical forms to snipe!").await?;
+        return Ok(())
+    }
+
     if message.channel_id != ctx.channel_id() {
         ctx.reply("that message isn't in this channel...").await?;
         return Ok(())
