@@ -140,7 +140,7 @@ pub(crate) async fn post(
 
     conn.transaction::<_, diesel::result::Error, _>(|conn| {
         async move {
-            diesel::insert_into(message_t::table())
+            diesel::insert_into(message::table)
                 .values(message_sql)
                 .execute(conn)
                 .await?;
