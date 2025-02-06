@@ -46,9 +46,9 @@ pub(crate) async fn post(
         // victim9,
         // victim10,
     ]
-        .into_iter()
-        .filter_map(identity)
-        .collect::<HashSet<_>>();
+    .into_iter()
+    .filter_map(identity)
+    .collect::<HashSet<_>>();
 
     if victims.iter().any(|v| v.id == ctx.author().id) {
         ctx.reply("sanity check: you can't snipe yourself!").await?;
@@ -107,7 +107,7 @@ pub(crate) async fn post(
                     .reply(true)
                     .ephemeral(true),
             )
-                .await?;
+            .await?;
             return Ok(());
         }
         Some(ixn) => {
@@ -153,9 +153,9 @@ pub(crate) async fn post(
 
             Ok(())
         }
-            .scope_boxed()
+        .scope_boxed()
     })
-        .await?;
+    .await?;
 
     ctx.reply("ok, logged").await?;
     Ok(())
