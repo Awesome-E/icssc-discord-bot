@@ -43,12 +43,6 @@ pub(crate) async fn post(
     .filter_map(identity)
     .collect_vec();
 
-    let Some(guild_id) = message.guild_id.clone() else {
-        ctx.reply("message must be in a guild; someone has to see it!")
-            .await?;
-        return Ok(());
-    };
-
     if message
         .attachments
         .iter()
@@ -59,7 +53,8 @@ pub(crate) async fn post(
     }
 
     let message_sql = Message {
-        guild_id: guild_id.into(),
+        // command is guild_only
+        guild_id: ctx.guild_id().unwrap().into(),
         channel_id: message.channel_id.into(),
         message_id: message.id.into(),
         author_id: message.author.id.into(),
