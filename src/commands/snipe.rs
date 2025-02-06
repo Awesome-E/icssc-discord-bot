@@ -1,19 +1,18 @@
 use crate::model::{Message, Snipe};
-use crate::schema::message::dsl::message as message_t;
-use crate::schema::snipe;
+use crate::schema::{message, snipe};
 use crate::util::base_embed;
 use crate::{BotError, Context};
-use diesel::associations::HasTable;
+use diesel::{ExpressionMethods, QueryDsl, SelectableHelper};
 use diesel_async::scoped_futures::ScopedFutureExt;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use itertools::Itertools;
 use poise::CreateReply;
 use serenity::all::{CreateActionRow, CreateButton, CreateInteractionResponse, ReactionType, User};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::identity;
 use std::time::Duration;
 
-#[poise::command(prefix_command, slash_command, subcommands("post"))]
+#[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
 pub(crate) async fn snipe(ctx: Context<'_>) -> Result<(), BotError> {
     ctx.reply("base command is a noop").await?;
     Ok(())
@@ -47,9 +46,9 @@ pub(crate) async fn post(
         // victim9,
         // victim10,
     ]
-    .into_iter()
-    .filter_map(identity)
-    .collect::<HashSet<_>>();
+        .into_iter()
+        .filter_map(identity)
+        .collect::<HashSet<_>>();
 
     if victims.iter().any(|v| v.id == ctx.author().id) {
         ctx.reply("sanity check: you can't snipe yourself!").await?;
@@ -86,7 +85,7 @@ pub(crate) async fn post(
                 .components(vec![CreateActionRow::Buttons(vec![CreateButton::new(
                     "snipe_post_confirm",
                 )
-                .emoji(ReactionType::Unicode(String::from("😎")))])])
+                    .emoji(ReactionType::Unicode(String::from("😎")))])])
                 .reply(true)
                 .ephemeral(true),
         )
@@ -108,7 +107,7 @@ pub(crate) async fn post(
                     .reply(true)
                     .ephemeral(true),
             )
-            .await?;
+                .await?;
             return Ok(());
         }
         Some(ixn) => {
@@ -154,10 +153,32 @@ pub(crate) async fn post(
 
             Ok(())
         }
-        .scope_boxed()
+            .scope_boxed()
     })
-    .await?;
+        .await?;
 
     ctx.reply("ok, logged").await?;
+    Ok(())
+}
+
+/// Log past snipes
+#[poise::command(prefix_command, slash_command, guild_only)]
+pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
+    let mut conn = ctx.data().db_pool.get().await?;
+
+    let bins = message::table
+        .inner_join(snipe::table)
+        .select((Message::as_select(), Snipe::as_select()))
+        .order(message::message_id.desc())
+        .load::<(Message, Snipe)>(&mut conn)
+        .await?
+        .into_iter()
+        .fold(HashMap::new(), |mut hm, (msg, snipe)| {
+            hm.entry(msg).or_insert(Vec::with_capacity(1)).push(snipe);
+            hm
+        });
+
+    dbg!(bins);
+
     Ok(())
 }
