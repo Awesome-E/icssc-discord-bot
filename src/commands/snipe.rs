@@ -43,6 +43,11 @@ pub(crate) async fn post(
     .filter_map(identity)
     .collect_vec();
 
+    if message.channel_id != ctx.channel_id() {
+        ctx.reply("that message isn't in this channel...").await?;
+        return Ok(())
+    }
+
     if message
         .attachments
         .iter()
