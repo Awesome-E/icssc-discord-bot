@@ -1,5 +1,6 @@
 use diesel::internal::derives::multiconnection::chrono::NaiveDateTime;
 use diesel::prelude::*;
+use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
 #[derive(Queryable, Selectable, Eq, PartialEq, Hash, Debug)]
@@ -13,16 +14,6 @@ pub struct Message {
     pub time_posted: NaiveDateTime,
 }
 
-#[derive(Insertable)]
-#[diesel(table_name = crate::schema::message)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct InsertMessage {
-    pub guild_id: i64,
-    pub channel_id: i64,
-    pub message_id: i64,
-    pub author_id: i64,
-}
-
 impl std::fmt::Display for Message {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -31,6 +22,28 @@ impl std::fmt::Display for Message {
             self.guild_id, self.channel_id, self.message_id
         )
     }
+}
+
+impl PartialOrd for Message {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.message_id.partial_cmp(&other.message_id)
+    }
+}
+
+impl Ord for Message {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.message_id.cmp(&other.message_id)
+    }
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::message)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct InsertMessage {
+    pub guild_id: i64,
+    pub channel_id: i64,
+    pub message_id: i64,
+    pub author_id: i64,
 }
 
 #[derive(Queryable, Selectable, Insertable, Debug)]

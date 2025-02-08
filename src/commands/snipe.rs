@@ -1,15 +1,19 @@
-use crate::model::{Message, InsertMessage, Snipe};
+use crate::model::{InsertMessage, Message, Snipe};
 use crate::schema::{message, snipe};
 use crate::util::base_embed;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
+use crate::util::text::comma_join;
 use crate::{BotError, Context};
 use diesel::{ExpressionMethods, QueryDsl, SelectableHelper};
 use diesel_async::scoped_futures::ScopedFutureExt;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use itertools::Itertools;
 use poise::CreateReply;
-use serenity::all::{CreateActionRow, CreateButton, CreateInteractionResponse, Mentionable, ReactionType, User, UserId};
-use std::collections::{HashMap, HashSet};
+use serenity::all::{
+    CreateActionRow, CreateButton, CreateInteractionResponse, Mentionable, ReactionType, User,
+    UserId,
+};
+use std::collections::{BTreeMap, HashSet};
 use std::convert::identity;
 use std::num::NonZeroUsize;
 use std::time::Duration;
@@ -168,7 +172,7 @@ pub(crate) async fn post(
 pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
     let mut conn = ctx.data().db_pool.get().await?;
 
-    let mut hm = HashMap::new();
+    let mut map = BTreeMap::new();
     message::table
         .inner_join(snipe::table)
         .select((Message::as_select(), snipe::victim_id))
@@ -177,24 +181,32 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
         .await?
         .into_iter()
         .for_each(|(msg, victim_id)| {
-            hm.entry(msg)
+            map.entry(msg)
                 .or_insert(Vec::with_capacity(1))
                 .push(victim_id)
         });
 
     let paginator = EmbedLinePaginator::new(
-        hm.iter()
+        map.iter()
+            .rev()
             .map(|(msg, victim_ids)| {
                 format!(
-                    "{}, in {}: {}",
+                    "<t:{}:f>: {} sniped {} ([msg]({}))",
+                    msg.time_posted.and_utc().timestamp(),
                     UserId::from(msg.author_id as u64).mention(),
+                    comma_join(
+                        victim_ids
+                            .iter()
+                            .map(|id| UserId::from(*id as u64).mention())
+                    ),
                     msg,
-                    victim_ids.iter().map(|id| UserId::from(*id as u64).mention()).join(", ")
                 )
                 .into_boxed_str()
             })
             .collect_vec(),
-        PaginatorOptions::default().sep("\n\n").max_lines(NonZeroUsize::new(10).unwrap()),
+        PaginatorOptions::default()
+            .sep("\n\n")
+            .max_lines(NonZeroUsize::new(10).unwrap()),
     );
 
     paginator.run(ctx).await?;
