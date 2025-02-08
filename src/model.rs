@@ -11,6 +11,16 @@ pub struct Message {
     pub author_id: i64,
 }
 
+impl std::fmt::Display for Message {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "https://discord.com/channels/{}/{}/{}",
+            self.guild_id, self.channel_id, self.message_id
+        )
+    }
+}
+
 #[derive(Queryable, Selectable, Insertable, Debug)]
 #[diesel(belongs_to(Message))]
 #[diesel(table_name = crate::schema::snipe)]

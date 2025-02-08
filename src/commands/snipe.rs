@@ -1,13 +1,14 @@
 use crate::model::{Message, Snipe};
 use crate::schema::{message, snipe};
 use crate::util::base_embed;
+use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::{BotError, Context};
 use diesel::{ExpressionMethods, QueryDsl, SelectableHelper};
 use diesel_async::scoped_futures::ScopedFutureExt;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use itertools::Itertools;
 use poise::CreateReply;
-use serenity::all::{CreateActionRow, CreateButton, CreateInteractionResponse, ReactionType, User};
+use serenity::all::{CreateActionRow, CreateButton, CreateInteractionResponse, Mentionable, ReactionType, User, UserId};
 use std::collections::{HashMap, HashSet};
 use std::convert::identity;
 use std::time::Duration;
@@ -169,14 +170,33 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
     let mut hm = HashMap::new();
     message::table
         .inner_join(snipe::table)
-        .select((Message::as_select(), Snipe::as_select()))
+        .select((Message::as_select(), snipe::victim_id))
         .order(message::message_id.desc())
-        .load::<(Message, Snipe)>(&mut conn)
+        .load::<(Message, i64)>(&mut conn)
         .await?
         .into_iter()
-        .for_each(|(msg, snipe)| hm.entry(msg).or_insert(Vec::with_capacity(1)).push(snipe));
+        .for_each(|(msg, victim_id)| {
+            hm.entry(msg)
+                .or_insert(Vec::with_capacity(1))
+                .push(victim_id)
+        });
 
-    dbg!(hm);
+    let paginator = EmbedLinePaginator::new(
+        hm.iter()
+            .map(|(msg, victim_ids)| {
+                format!(
+                    "{}, in {}: {}",
+                    UserId::from(msg.author_id as u64).mention(),
+                    msg,
+                    victim_ids.iter().map(|id| UserId::from(*id as u64).mention()).join(", ")
+                )
+                .into_boxed_str()
+            })
+            .collect_vec(),
+        PaginatorOptions::default(),
+    );
+
+    paginator.run(ctx).await?;
 
     Ok(())
 }
