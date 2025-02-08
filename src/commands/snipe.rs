@@ -11,6 +11,7 @@ use poise::CreateReply;
 use serenity::all::{CreateActionRow, CreateButton, CreateInteractionResponse, Mentionable, ReactionType, User, UserId};
 use std::collections::{HashMap, HashSet};
 use std::convert::identity;
+use std::num::NonZeroUsize;
 use std::time::Duration;
 
 #[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
@@ -193,7 +194,7 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
                 .into_boxed_str()
             })
             .collect_vec(),
-        PaginatorOptions::default(),
+        PaginatorOptions::default().sep("\n\n").max_lines(NonZeroUsize::new(10).unwrap()),
     );
 
     paginator.run(ctx).await?;
