@@ -4,6 +4,8 @@ use crate::util::base_embed;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
 use crate::{BotError, Context};
+use diesel::pg::sql_types;
+use diesel::sql_types::BigInt;
 use diesel::{ExpressionMethods, QueryDsl, SelectableHelper};
 use diesel_async::scoped_futures::ScopedFutureExt;
 use diesel_async::{AsyncConnection, RunQueryDsl};
@@ -13,7 +15,7 @@ use serenity::all::{
     CreateActionRow, CreateButton, CreateInteractionResponse, Mentionable, ReactionType, User,
     UserId,
 };
-use std::collections::{BTreeMap, HashSet};
+use std::collections::HashSet;
 use std::convert::identity;
 use std::num::NonZeroUsize;
 use std::time::Duration;
@@ -172,26 +174,22 @@ pub(crate) async fn post(
 pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
     let mut conn = ctx.data().db_pool.get().await?;
 
-    let mut map = BTreeMap::new();
-    message::table
+    let got = message::table
         .inner_join(snipe::table)
-        .select((Message::as_select(), snipe::victim_id))
+        .select((
+            Message::as_select(),
+            diesel::dsl::sql::<sql_types::Array<BigInt>>("array_agg(snipe.victim_id)"),
+        ))
+        .group_by(message::message_id)
         .order(message::message_id.desc())
-        .load::<(Message, i64)>(&mut conn)
-        .await?
-        .into_iter()
-        .for_each(|(msg, victim_id)| {
-            map.entry(msg)
-                .or_insert(Vec::with_capacity(1))
-                .push(victim_id)
-        });
+        .load::<(Message, Vec<i64>)>(&mut conn)
+        .await?;
 
     let paginator = EmbedLinePaginator::new(
-        map.iter()
-            .rev()
+        got.iter()
             .map(|(msg, victim_ids)| {
                 format!(
-                    "<t:{}:f>: {} sniped {} ([msg]({}))",
+                    "<t:{}:f>: **{}** sniped {} ([msg]({}))",
                     msg.time_posted.and_utc().timestamp(),
                     UserId::from(msg.author_id as u64).mention(),
                     comma_join(
