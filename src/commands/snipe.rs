@@ -1,4 +1,4 @@
-use crate::model::{Message, Snipe};
+use crate::model::{Message, InsertMessage, Snipe};
 use crate::schema::{message, snipe};
 use crate::util::base_embed;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
@@ -118,7 +118,7 @@ pub(crate) async fn post(
         }
     };
 
-    let message_sql = Message {
+    let message_sql = InsertMessage {
         // command is guild_only
         guild_id: ctx.guild_id().unwrap().into(),
         channel_id: message.channel_id.into(),

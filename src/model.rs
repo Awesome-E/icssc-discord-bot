@@ -1,10 +1,22 @@
+use diesel::internal::derives::multiconnection::chrono::NaiveDateTime;
 use diesel::prelude::*;
 use std::hash::{Hash, Hasher};
 
-#[derive(Queryable, Selectable, Insertable, Eq, PartialEq, Hash, Debug)]
+#[derive(Queryable, Selectable, Eq, PartialEq, Hash, Debug)]
 #[diesel(table_name = crate::schema::message)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Message {
+    pub guild_id: i64,
+    pub channel_id: i64,
+    pub message_id: i64,
+    pub author_id: i64,
+    pub time_posted: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::message)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct InsertMessage {
     pub guild_id: i64,
     pub channel_id: i64,
     pub message_id: i64,

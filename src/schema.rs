@@ -6,6 +6,7 @@ diesel::table! {
         channel_id -> Int8,
         message_id -> Int8,
         author_id -> Int8,
+        time_posted -> Timestamp,
     }
 }
 
