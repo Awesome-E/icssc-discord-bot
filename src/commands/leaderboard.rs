@@ -23,7 +23,7 @@ enum LeaderboardBy {
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub(crate) async fn leaderboard(
     ctx: Context<'_>,
-    by: Option<LeaderboardBy>,
+    #[description = "Leaderboard type; default is \"Total snipes\'"] by: Option<LeaderboardBy>,
 ) -> Result<(), BotError> {
     let base_statement = message::table.inner_join(snipe::table);
     let mut conn = ctx.data().db_pool.get().await?;
