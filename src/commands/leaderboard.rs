@@ -64,7 +64,12 @@ pub(crate) async fn leaderboard(
         LeaderboardBy::SnipeVictimRatio => String::from("todo lol"),
     };
 
-    ctx.send(CreateReply::default().embed(base_embed(ctx).description(desc)))
-        .await?;
+    ctx.send(
+        CreateReply::default()
+            .embed(base_embed(ctx).description(desc))
+            .reply(true)
+            .ephemeral(true),
+    )
+    .await?;
     Ok(())
 }

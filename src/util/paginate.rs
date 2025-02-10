@@ -1,4 +1,3 @@
-use std::cmp::min;
 use crate::util::base_embed;
 use crate::{BotError, Context};
 use poise::CreateReply;
@@ -7,6 +6,7 @@ use serenity::all::{
     CreateInteractionResponseMessage, ReactionType,
 };
 use serenity::builder::CreateInteractionResponse;
+use std::cmp::min;
 use std::num::NonZeroUsize;
 use std::time::Duration;
 
@@ -15,6 +15,8 @@ pub(crate) struct PaginatorOptions {
     max_lines: Option<usize>,
     // paginator will default to and cap at 4096
     char_limit: usize,
+    reply: bool,
+    ephemeral: bool,
 }
 
 impl Default for PaginatorOptions {
@@ -23,32 +25,45 @@ impl Default for PaginatorOptions {
             sep: Box::from("\n"),
             max_lines: None,
             char_limit: 4096,
+            ephemeral: false,
+            reply: true,
         }
     }
 }
 
 impl PaginatorOptions {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self::default()
     }
 
-    pub(crate) fn sep(mut self, sep: impl Into<Box<str>>) -> Self {
+    pub fn sep(mut self, sep: impl Into<Box<str>>) -> Self {
         self.sep = sep.into();
         self
     }
 
-    pub(crate) fn max_lines(mut self, max_lines: impl Into<NonZeroUsize>) -> Self {
+    pub fn max_lines(mut self, max_lines: impl Into<NonZeroUsize>) -> Self {
         self.max_lines = Some(max_lines.into().get());
         self
     }
 
-    pub(crate) fn char_limit(mut self, char_limit: impl Into<NonZeroUsize>) -> Self {
+    pub fn char_limit(mut self, char_limit: impl Into<NonZeroUsize>) -> Self {
         self.char_limit = min(char_limit.into().get(), 4096);
+        self
+    }
+
+    pub fn reply(mut self, reply: bool) -> Self {
+        self.reply = reply;
+        self
+    }
+
+    pub fn ephemeral(mut self, ephemeral: bool) -> Self {
+        self.ephemeral = ephemeral;
         self
     }
 }
 
 pub(crate) struct EmbedLinePaginator {
+    options: PaginatorOptions,
     pages: Vec<String>,
     current_page: u8,
 }
@@ -78,6 +93,7 @@ impl EmbedLinePaginator {
         }
 
         Self {
+            options,
             pages: chunks,
             current_page: 1,
         }
@@ -114,7 +130,8 @@ impl EmbedLinePaginator {
             .send(
                 CreateReply::default()
                     .embed(self.embed_for(ctx, self.current_page))
-                    .reply(true)
+                    .reply(self.options.reply)
+                    .ephemeral(self.options.ephemeral)
                     .components(components),
             )
             .await?;
