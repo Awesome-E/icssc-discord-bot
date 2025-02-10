@@ -1,8 +1,8 @@
 use crate::model::{InsertMessage, Message, Snipe};
 use crate::schema::{message, snipe};
-use crate::util::base_embed;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
+use crate::util::{base_embed, ContextExtras};
 use crate::{BotError, Context};
 use diesel::pg::sql_types;
 use diesel::sql_types::BigInt;
@@ -11,7 +11,10 @@ use diesel_async::scoped_futures::ScopedFutureExt;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use itertools::Itertools;
 use poise::CreateReply;
-use serenity::all::{CreateActionRow, CreateButton, CreateInteractionResponse, Mentionable, ReactionType, User, UserId};
+use serenity::all::{
+    CreateActionRow, CreateButton, CreateInteractionResponse, Mentionable, ReactionType, User,
+    UserId,
+};
 use std::collections::HashSet;
 use std::convert::identity;
 use std::num::NonZeroUsize;
@@ -56,27 +59,29 @@ pub(crate) async fn post(
     .collect::<HashSet<_>>();
 
     if victims.iter().any(|v| v.id == ctx.author().id) {
-        ctx.reply("sanity check: you can't snipe yourself!").await?;
-        return Ok(());
-    }
-
-    if victims.iter().any(|v| v.bot) {
-        ctx.reply("sanity check: bots don't have physical forms to snipe!")
+        ctx.reply_ephemeral("sanity check: you can't snipe yourself!")
             .await?;
         return Ok(());
     }
 
-    if message.channel_id != ctx.channel_id() {
-        ctx.reply("that message isn't in this channel...").await?;
+    if victims.iter().any(|v| v.bot) {
+        ctx.reply_ephemeral("sanity check: bots don't have physical forms to snipe!")
+            .await?;
         return Ok(());
     }
+
+    // if message.guild_id != ctx.guild_id() {
+    //     ctx.reply("that message isn't in this guild...").await?;
+    //     return Ok(());
+    // }
 
     if message
         .attachments
         .iter()
         .all(|attachment| attachment.height.is_none())
     {
-        ctx.reply("no images in your linked message!").await?;
+        ctx.reply_ephemeral("no images in your linked message!")
+            .await?;
         return Ok(());
     }
 
@@ -106,13 +111,7 @@ pub(crate) async fn post(
         .await
     {
         None => {
-            ctx.send(
-                CreateReply::default()
-                    .content("ok, nevermind then")
-                    .reply(true)
-                    .ephemeral(true),
-            )
-            .await?;
+            ctx.reply_ephemeral("ok, nevermind then").await?;
             return Ok(());
         }
         Some(ixn) => {
@@ -162,7 +161,7 @@ pub(crate) async fn post(
     })
     .await?;
 
-    ctx.reply("ok, logged").await?;
+    ctx.reply_ephemeral("ok, logged").await?;
     Ok(())
 }
 
