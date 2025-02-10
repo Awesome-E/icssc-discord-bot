@@ -11,10 +11,7 @@ use diesel_async::scoped_futures::ScopedFutureExt;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use itertools::Itertools;
 use poise::CreateReply;
-use serenity::all::{
-    CreateActionRow, CreateButton, CreateInteractionResponse, Mentionable, ReactionType, User,
-    UserId,
-};
+use serenity::all::{CreateActionRow, CreateButton, CreateInteractionResponse, Mentionable, ReactionType, User, UserId};
 use std::collections::HashSet;
 use std::convert::identity;
 use std::num::NonZeroUsize;
