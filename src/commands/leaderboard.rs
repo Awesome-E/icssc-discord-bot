@@ -61,7 +61,8 @@ pub(crate) async fn leaderboard(
                 })
                 .join("\n")
         }
-        LeaderboardBy::SnipeVictimRatio => todo!(),
+        // TODO
+        LeaderboardBy::SnipeVictimRatio => String::from("todo lol"),
     };
 
     ctx.send(CreateReply::default().embed(base_embed(ctx).description(desc)))
