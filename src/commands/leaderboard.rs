@@ -72,7 +72,6 @@ pub(crate) async fn leaderboard(
         PaginatorOptions::default()
             .sep("\n")
             .max_lines(NonZeroUsize::new(10).unwrap())
-            .reply(true)
             .ephemeral(true),
     );
 
