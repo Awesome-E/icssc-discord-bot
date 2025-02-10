@@ -12,8 +12,8 @@ use diesel_async::{AsyncConnection, RunQueryDsl};
 use itertools::Itertools;
 use poise::CreateReply;
 use serenity::all::{
-    CreateActionRow, CreateButton, CreateInteractionResponse, Mentionable, ReactionType, User,
-    UserId,
+    CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage,
+    Mentionable, ReactionType, User, UserId,
 };
 use std::collections::HashSet;
 use std::convert::identity;
@@ -85,23 +85,24 @@ pub(crate) async fn post(
         return Ok(());
     }
 
+    let emb = base_embed(ctx).description(format!(
+        "**you are claiming a snipe of**:\n{}\n\nclick to confirm! (times out in 15 seconds)",
+        victims.iter().join("")
+    ));
     let handle = ctx
         .send(
             CreateReply::default()
-                .embed(base_embed(ctx).description(format!(
-                    "**you are claiming a snipe of**:\n{}\n\nclick to confirm! (times out in 15 seconds)",
-                    victims.iter().join("")
-                )))
+                .embed(emb.clone())
                 .components(vec![CreateActionRow::Buttons(vec![CreateButton::new(
                     "snipe_post_confirm",
                 )
-                    .emoji(ReactionType::Unicode(String::from("😎")))])])
+                .emoji(ReactionType::Unicode(String::from("😎")))])])
                 .reply(true)
                 .ephemeral(true),
         )
         .await?;
 
-    match handle
+    let waited = match handle
         .message()
         .await?
         .await_component_interaction(&ctx.serenity_context().shard)
@@ -115,8 +116,8 @@ pub(crate) async fn post(
             return Ok(());
         }
         Some(ixn) => {
-            ixn.create_response(ctx.http(), CreateInteractionResponse::Acknowledge)
-                .await?
+            // defer here?
+            ixn
         }
     };
 
@@ -160,6 +161,18 @@ pub(crate) async fn post(
         .scope_boxed()
     })
     .await?;
+
+    // remove "please react below..." and button
+    waited
+        .create_response(
+            ctx.http(),
+            CreateInteractionResponse::UpdateMessage(
+                CreateInteractionResponseMessage::new()
+                    .embed(emb.clone())
+                    .components(vec![]),
+            ),
+        )
+        .await?;
 
     ctx.reply_ephemeral("ok, logged").await?;
     Ok(())
