@@ -1,8 +1,6 @@
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
-use serenity::all::{
-    ActivityData, ActivityType, Context, EventHandler, OnlineStatus, Permissions, Ready,
-};
+use serenity::all::{ActivityData, ActivityType, Context, EventHandler, OnlineStatus, Permissions, Ready};
 use serenity::async_trait;
 use std::time::Duration;
 use tokio::time;

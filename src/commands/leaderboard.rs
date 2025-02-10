@@ -1,7 +1,6 @@
 use crate::schema::{message, snipe};
 use crate::util::base_embed;
 use crate::{BotError, Context};
-use diesel::dsl::count;
 use diesel::{dsl, ExpressionMethods, QueryDsl};
 use diesel_async::RunQueryDsl;
 use itertools::Itertools;
