@@ -1,11 +1,12 @@
 use crate::schema::{message, snipe};
-use crate::util::base_embed;
+use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::{BotError, Context};
 use diesel::{dsl, ExpressionMethods, QueryDsl};
 use diesel_async::RunQueryDsl;
 use itertools::Itertools;
-use poise::{ChoiceParameter, CreateReply};
+use poise::ChoiceParameter;
 use serenity::all::{Mentionable, UserId};
+use std::num::NonZeroUsize;
 
 #[derive(ChoiceParameter, PartialEq, Eq, Copy, Clone, Debug, Hash, Default)]
 enum LeaderboardBy {
@@ -29,7 +30,7 @@ pub(crate) async fn leaderboard(
 
     let by = by.unwrap_or_default();
 
-    let desc = match by {
+    let lines = match by {
         LeaderboardBy::SnipeCount => {
             let count_expr = dsl::count_star();
             base_statement
@@ -42,8 +43,9 @@ pub(crate) async fn leaderboard(
                 .enumerate()
                 .map(|(i, (u_id, n))| {
                     format!("{}. {}: {}", i + 1, UserId::from(u_id as u64).mention(), n)
+                        .into_boxed_str()
                 })
-                .join("\n")
+                .collect_vec()
         }
         LeaderboardBy::VictimCount => {
             let count_expr = dsl::count_star();
@@ -57,19 +59,23 @@ pub(crate) async fn leaderboard(
                 .enumerate()
                 .map(|(i, (u_id, n))| {
                     format!("{}. {}: {}", i + 1, UserId::from(u_id as u64).mention(), n)
+                        .into_boxed_str()
                 })
-                .join("\n")
+                .collect_vec()
         }
         // TODO
-        LeaderboardBy::SnipeVictimRatio => String::from("todo lol"),
+        LeaderboardBy::SnipeVictimRatio => vec![Box::from("todo lol")],
     };
 
-    ctx.send(
-        CreateReply::default()
-            .embed(base_embed(ctx).description(desc))
+    let paginator = EmbedLinePaginator::new(
+        lines,
+        PaginatorOptions::default()
+            .sep("\n")
+            .max_lines(NonZeroUsize::new(10).unwrap())
             .reply(true)
             .ephemeral(true),
-    )
-    .await?;
+    );
+
+    paginator.run(ctx).await?;
     Ok(())
 }
