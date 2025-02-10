@@ -213,7 +213,8 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
             .collect_vec(),
         PaginatorOptions::default()
             .sep("\n\n")
-            .max_lines(NonZeroUsize::new(10).unwrap()),
+            .max_lines(NonZeroUsize::new(10).unwrap())
+            .ephemeral(true),
     );
 
     paginator.run(ctx).await?;
