@@ -4,7 +4,7 @@ mod model;
 mod schema;
 mod util;
 
-use crate::commands::{leaderboard, meta, snipe};
+use crate::commands::{leaderboard, meta, privacy, snipe};
 use clap::ValueHint;
 use diesel_async::pooled_connection::deadpool::Pool;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
@@ -56,7 +56,12 @@ async fn main() {
 
     let framework = poise::Framework::<BotVars, BotError>::builder()
         .options(FrameworkOptions {
-            commands: vec![meta::ping(), snipe::snipe(), leaderboard::leaderboard()],
+            commands: vec![
+                meta::ping(),
+                snipe::snipe(),
+                leaderboard::leaderboard(),
+                privacy::opt_in(),
+            ],
             prefix_options: PrefixFrameworkOptions {
                 mention_as_prefix: true,
                 ..Default::default()

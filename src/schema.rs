@@ -11,6 +11,12 @@ diesel::table! {
 }
 
 diesel::table! {
+    opt_out (id) {
+        id -> Int8,
+    }
+}
+
+diesel::table! {
     snipe (message_id, victim_id) {
         message_id -> Int8,
         victim_id -> Int8,
@@ -24,5 +30,6 @@ diesel::joinable!(snipe -> message (message_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     message,
+    opt_out,
     snipe,
 );

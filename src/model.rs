@@ -72,3 +72,10 @@ impl Hash for Snipe {
         self.victim_id.hash(state);
     }
 }
+
+#[derive(Queryable, Selectable, Insertable, Debug)]
+#[diesel(table_name = crate::schema::opt_out)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct OptedOutUser {
+    pub id: i64,
+}
