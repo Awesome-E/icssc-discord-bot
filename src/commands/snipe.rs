@@ -86,7 +86,8 @@ pub(crate) async fn post(
     }
 
     let emb = base_embed(ctx).description(format!(
-        "**you are claiming a snipe of**:\n{}\n\nclick to confirm! (times out in 15 seconds)",
+        "**you are claiming that {} sniped**:\n{}\n\nclick to confirm! (times out in 15 seconds)",
+        message.author.mention(),
         victims.iter().join("")
     ));
     let handle = ctx
