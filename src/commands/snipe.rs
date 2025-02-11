@@ -143,25 +143,31 @@ pub(crate) async fn post(
 
     let mut conn = ctx.data().db_pool.get().await?;
 
-    conn.transaction::<_, diesel::result::Error, _>(|conn| {
-        async move {
-            diesel::insert_into(message::table)
-                .values(message_sql)
-                .execute(conn)
-                .await?;
-
-            for snipe in snipes_sql {
-                diesel::insert_into(snipe::table)
-                    .values(snipe)
+    let Ok(_) = conn
+        .transaction::<_, diesel::result::Error, _>(|conn| {
+            async move {
+                diesel::insert_into(message::table)
+                    .values(message_sql)
                     .execute(conn)
                     .await?;
-            }
 
-            Ok(())
-        }
-        .scope_boxed()
-    })
-    .await?;
+                for snipe in snipes_sql {
+                    diesel::insert_into(snipe::table)
+                        .values(snipe)
+                        .execute(conn)
+                        .await?;
+                }
+
+                Ok(())
+            }
+            .scope_boxed()
+        })
+        .await
+    else {
+        ctx.reply_ephemeral("couldn't insert; has this message been logged before?")
+            .await?;
+        return Ok(());
+    };
 
     // remove "please react below..." and button
     waited
