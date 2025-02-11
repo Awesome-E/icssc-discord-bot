@@ -19,6 +19,7 @@ use std::collections::HashSet;
 use std::convert::identity;
 use std::num::NonZeroUsize;
 use std::time::Duration;
+use diesel::dsl::sql;
 
 #[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
 pub(crate) async fn snipe(ctx: Context<'_>) -> Result<(), BotError> {
@@ -194,7 +195,7 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
         .inner_join(snipe::table)
         .select((
             Message::as_select(),
-            diesel::dsl::sql::<sql_types::Array<BigInt>>("array_agg(snipe.victim_id)"),
+            sql::<sql_types::Array<BigInt>>("array_agg(snipe.victim_id)"),
         ))
         .group_by(message::message_id)
         .order(message::message_id.desc())
