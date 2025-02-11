@@ -1,5 +1,6 @@
 use diesel::internal::derives::multiconnection::chrono::NaiveDateTime;
 use diesel::prelude::*;
+use serenity::all::UserId;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
@@ -78,4 +79,22 @@ impl Hash for Snipe {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct OptedOutUser {
     pub id: i64,
+}
+
+impl Into<i64> for OptedOutUser {
+    fn into(self) -> i64 {
+        self.id
+    }
+}
+
+impl Into<u64> for OptedOutUser {
+    fn into(self) -> u64 {
+        self.id as u64
+    }
+}
+
+impl Into<UserId> for OptedOutUser {
+    fn into(self) -> UserId {
+        UserId::new(self.into())
+    }
 }

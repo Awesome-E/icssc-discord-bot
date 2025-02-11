@@ -1,9 +1,10 @@
-use crate::model::{InsertMessage, Message, Snipe};
-use crate::schema::{message, snipe};
+use crate::model::{InsertMessage, Message, OptedOutUser, Snipe};
+use crate::schema::{message, opt_out, snipe};
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
 use crate::util::{base_embed, ContextExtras};
 use crate::{BotError, Context};
+use diesel::dsl::sql;
 use diesel::pg::sql_types;
 use diesel::sql_types::BigInt;
 use diesel::{ExpressionMethods, QueryDsl, SelectableHelper};
@@ -19,7 +20,6 @@ use std::collections::HashSet;
 use std::convert::identity;
 use std::num::NonZeroUsize;
 use std::time::Duration;
-use diesel::dsl::sql;
 
 #[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
 pub(crate) async fn snipe(ctx: Context<'_>) -> Result<(), BotError> {
@@ -86,6 +86,22 @@ pub(crate) async fn post(
         return Ok(());
     }
 
+    let mut conn = ctx.data().db_pool.get().await?;
+
+    let got = opt_out::table
+        .select(OptedOutUser::as_select())
+        .filter(opt_out::id.eq_any(victims.iter().map(|v| v.id.get() as i64).collect_vec()))
+        .load::<OptedOutUser>(&mut conn)
+        .await?;
+
+    if !got.is_empty() {
+        ctx.send(CreateReply::default().embed(base_embed(ctx).description(format!(
+            "**the following people in that post are opted out of sniping!**\n{}\n\nthis means they do not consent to being photographed!",
+            got.into_iter().map(|opted_out| <OptedOutUser as Into<UserId>>::into(opted_out).mention()).join("\n"),
+        ))).reply(true).ephemeral(true)).await?;
+        return Ok(());
+    }
+
     let emb = base_embed(ctx).description(format!(
         "**you are claiming that {} sniped**:\n{}\n\nclick to confirm! (times out in 15 seconds)",
         message.author.mention(),
@@ -141,8 +157,6 @@ pub(crate) async fn post(
             notes: None,
         })
         .collect_vec();
-
-    let mut conn = ctx.data().db_pool.get().await?;
 
     let Ok(_) = conn
         .transaction::<_, diesel::result::Error, _>(|conn| {
