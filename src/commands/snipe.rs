@@ -59,12 +59,6 @@ pub(crate) async fn post(
     .filter_map(identity)
     .collect::<HashSet<_>>();
 
-    if victims.iter().any(|v| v.id == ctx.author().id) {
-        ctx.reply_ephemeral("sanity check: you can't snipe yourself!")
-            .await?;
-        return Ok(());
-    }
-
     if victims.iter().any(|v| v.bot) {
         ctx.reply_ephemeral("sanity check: bots don't have physical forms to snipe!")
             .await?;
