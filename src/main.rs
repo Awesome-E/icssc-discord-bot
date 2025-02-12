@@ -13,7 +13,7 @@ use itertools::Itertools;
 use pluralizer::pluralize;
 use poise::{Command, FrameworkOptions, PrefixFrameworkOptions};
 use serenity::all::{GatewayIntents, GuildId};
-use serenity::Client;
+use serenity::{Client, FutureExt};
 use std::env;
 use std::ops::BitAnd;
 use std::path::PathBuf;
@@ -66,6 +66,9 @@ async fn main() {
                 mention_as_prefix: true,
                 ..Default::default()
             },
+            command_check: Some(|ctx| async move {
+                Ok(ctx.guild_id() != Some(GuildId::from(760915616793755669)) && ctx.channel_id() == 1338632123929591970)
+            }.boxed()),
             ..Default::default()
         })
         .setup(move |ctx, _ready, framework| {
