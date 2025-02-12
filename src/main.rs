@@ -67,7 +67,7 @@ async fn main() {
                 ..Default::default()
             },
             command_check: Some(|ctx| async move {
-                Ok(ctx.guild_id() != Some(GuildId::from(760915616793755669)) && ctx.channel_id() == 1338632123929591970)
+                Ok(ctx.guild_id() != Some(GuildId::from(760915616793755669)) || ctx.channel_id() == 1338632123929591970)
             }.boxed()),
             ..Default::default()
         })
