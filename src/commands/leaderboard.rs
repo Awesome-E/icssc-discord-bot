@@ -1,7 +1,7 @@
 use crate::schema::user_stat;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::{BotError, Context};
-use diesel::{ExpressionMethods, QueryDsl};
+use diesel::{ExpressionMethods, PgSortExpressionMethods, QueryDsl};
 use diesel_async::RunQueryDsl;
 use itertools::Itertools;
 use poise::ChoiceParameter;
@@ -56,7 +56,7 @@ pub(crate) async fn leaderboard(
             .collect_vec(),
         LeaderboardBy::SnipeRate => user_stat::table
             .select((user_stat::id, user_stat::snipe_rate))
-            .order_by(user_stat::snipe_rate.desc())
+            .order((user_stat::snipe_rate.desc().nulls_last(), user_stat::snipe.desc()))
             .load::<(i64, Option<f64>)>(&mut conn)
             .await?
             .into_iter()
