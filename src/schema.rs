@@ -31,7 +31,7 @@ diesel::table! {
         id -> Int8,
         snipe -> Int8,
         sniped -> Int8,
-        snipe_rate -> Float8,
+        snipe_rate -> Nullable<Float8>,
     }
 }
 

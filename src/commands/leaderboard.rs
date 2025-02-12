@@ -30,48 +30,47 @@ pub(crate) async fn leaderboard(
     let by = by.unwrap_or_default();
 
     let lines = match by {
-        LeaderboardBy::SnipeCount => {
-            user_stat::table
-                .select((user_stat::id, user_stat::snipe))
-                .order_by(user_stat::snipe.desc())
-                .load::<(i64, i64)>(&mut conn)
-                .await?
-                .into_iter()
-                .enumerate()
-                .map(|(i, (u_id, n))| {
-                    format!("{}. {}: {}", i + 1, UserId::from(u_id as u64).mention(), n)
-                        .into_boxed_str()
-                })
-                .collect_vec()
-        }
-        LeaderboardBy::VictimCount => {
-            user_stat::table
-                .select((user_stat::id, user_stat::sniped))
-                .order_by(user_stat::sniped.desc())
-                .load::<(i64, i64)>(&mut conn)
-                .await?
-                .into_iter()
-                .enumerate()
-                .map(|(i, (u_id, n))| {
-                    format!("{}. {}: {}", i + 1, UserId::from(u_id as u64).mention(), n)
-                        .into_boxed_str()
-                })
-                .collect_vec()
-        }
-        LeaderboardBy::SnipeRate => {
-            user_stat::table
-                .select((user_stat::id, user_stat::snipe_rate))
-                .order_by(user_stat::snipe_rate.desc())
-                .load::<(i64, f64)>(&mut conn)
-                .await?
-                .into_iter()
-                .enumerate()
-                .map(|(i, (u_id, n))| {
-                    format!("{}. {}: {}", i + 1, UserId::from(u_id as u64).mention(), n)
-                        .into_boxed_str()
-                })
-                .collect_vec()
-        }
+        LeaderboardBy::SnipeCount => user_stat::table
+            .select((user_stat::id, user_stat::snipe))
+            .order_by(user_stat::snipe.desc())
+            .load::<(i64, i64)>(&mut conn)
+            .await?
+            .into_iter()
+            .enumerate()
+            .map(|(i, (u_id, n))| {
+                format!("{}. {}: {}", i + 1, UserId::from(u_id as u64).mention(), n)
+                    .into_boxed_str()
+            })
+            .collect_vec(),
+        LeaderboardBy::VictimCount => user_stat::table
+            .select((user_stat::id, user_stat::sniped))
+            .order_by(user_stat::sniped.desc())
+            .load::<(i64, i64)>(&mut conn)
+            .await?
+            .into_iter()
+            .enumerate()
+            .map(|(i, (u_id, n))| {
+                format!("{}. {}: {}", i + 1, UserId::from(u_id as u64).mention(), n)
+                    .into_boxed_str()
+            })
+            .collect_vec(),
+        LeaderboardBy::SnipeRate => user_stat::table
+            .select((user_stat::id, user_stat::snipe_rate))
+            .order_by(user_stat::snipe_rate.desc())
+            .load::<(i64, Option<f64>)>(&mut conn)
+            .await?
+            .into_iter()
+            .enumerate()
+            .map(|(i, (u_id, n))| {
+                format!(
+                    "{}. {}: {}",
+                    i + 1,
+                    UserId::from(u_id as u64).mention(),
+                    n.map(|n| n.to_string()).unwrap_or(String::from("N/A"))
+                )
+                .into_boxed_str()
+            })
+            .collect_vec(),
     };
 
     let paginator = EmbedLinePaginator::new(
