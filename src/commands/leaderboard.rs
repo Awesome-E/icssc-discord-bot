@@ -1,7 +1,7 @@
-use crate::schema::{message, snipe};
+use crate::schema::user_stat;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::{BotError, Context};
-use diesel::{dsl, ExpressionMethods, QueryDsl};
+use diesel::{ExpressionMethods, QueryDsl};
 use diesel_async::RunQueryDsl;
 use itertools::Itertools;
 use poise::ChoiceParameter;
@@ -16,7 +16,7 @@ enum LeaderboardBy {
     #[name = "Times sniped"]
     VictimCount,
     #[name = "Ratio of total snipes to times sniped"]
-    SnipeVictimRatio,
+    SnipeRate,
 }
 
 /// Show leaderboards by various sniping statistics
@@ -25,18 +25,15 @@ pub(crate) async fn leaderboard(
     ctx: Context<'_>,
     #[description = "Leaderboard type; default is \"Total snipes\'"] by: Option<LeaderboardBy>,
 ) -> Result<(), BotError> {
-    let base_statement = message::table.inner_join(snipe::table);
     let mut conn = ctx.data().db_pool.get().await?;
 
     let by = by.unwrap_or_default();
 
     let lines = match by {
         LeaderboardBy::SnipeCount => {
-            let count_expr = dsl::count_star();
-            base_statement
-                .group_by(message::author_id)
-                .select((message::author_id, count_expr))
-                .order_by(count_expr.desc())
+            user_stat::table
+                .select((user_stat::id, user_stat::snipe))
+                .order_by(user_stat::snipe.desc())
                 .load::<(i64, i64)>(&mut conn)
                 .await?
                 .into_iter()
@@ -48,11 +45,9 @@ pub(crate) async fn leaderboard(
                 .collect_vec()
         }
         LeaderboardBy::VictimCount => {
-            let count_expr = dsl::count_star();
-            base_statement
-                .group_by(snipe::victim_id)
-                .select((snipe::victim_id, count_expr))
-                .order_by(count_expr.desc())
+            user_stat::table
+                .select((user_stat::id, user_stat::sniped))
+                .order_by(user_stat::sniped.desc())
                 .load::<(i64, i64)>(&mut conn)
                 .await?
                 .into_iter()
@@ -63,8 +58,20 @@ pub(crate) async fn leaderboard(
                 })
                 .collect_vec()
         }
-        // TODO
-        LeaderboardBy::SnipeVictimRatio => vec![Box::from("todo lol")],
+        LeaderboardBy::SnipeRate => {
+            user_stat::table
+                .select((user_stat::id, user_stat::snipe_rate))
+                .order_by(user_stat::snipe_rate.desc())
+                .load::<(i64, f64)>(&mut conn)
+                .await?
+                .into_iter()
+                .enumerate()
+                .map(|(i, (u_id, n))| {
+                    format!("{}. {}: {}", i + 1, UserId::from(u_id as u64).mention(), n)
+                        .into_boxed_str()
+                })
+                .collect_vec()
+        }
     };
 
     let paginator = EmbedLinePaginator::new(
