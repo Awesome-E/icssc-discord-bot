@@ -26,10 +26,20 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    user_stat (id) {
+        id -> Int8,
+        snipe -> Int8,
+        sniped -> Int8,
+        snipe_rate -> Float8,
+    }
+}
+
 diesel::joinable!(snipe -> message (message_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     message,
     opt_out,
     snipe,
+    user_stat,
 );
