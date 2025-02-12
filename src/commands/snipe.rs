@@ -167,6 +167,10 @@ pub(crate) async fn post(
                         .await?;
                 }
 
+                diesel::sql_query("REFRESH MATERIALIZED VIEW user_stat")
+                    .execute(conn)
+                    .await?;
+
                 Ok(())
             }
             .scope_boxed()
