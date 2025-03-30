@@ -22,6 +22,9 @@ struct BotVars {
     db_pool: Pool<AsyncPgConnection>,
 }
 
+const ICSSC_SERVER: u64 = 760915616793755669;
+const ALLOWED_CHANNELS: &[u64] = &[1328907402321592391, 1338632123929591970];
+
 #[tokio::main]
 async fn main() {
     let cmd = clap::command!("ics-spottings-council")
@@ -67,7 +70,7 @@ async fn main() {
                 ..Default::default()
             },
             command_check: Some(|ctx| async move {
-                Ok(ctx.guild_id() != Some(GuildId::from(760915616793755669)) || ctx.channel_id() == 1338632123929591970)
+                Ok(ctx.guild_id() != Some(GuildId::from(ICSSC_SERVER)) || ALLOWED_CHANNELS.contains(&ctx.channel_id().into()))
             }.boxed()),
             ..Default::default()
         })
