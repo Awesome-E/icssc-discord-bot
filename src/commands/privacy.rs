@@ -7,7 +7,7 @@ use diesel::{ExpressionMethods, QueryDsl};
 use diesel_async::RunQueryDsl;
 
 #[poise::command(prefix_command, slash_command, subcommands("status", "set"))]
-pub(crate) async fn opt_in(ctx: Context<'_>) -> Result<(), BotError> {
+pub(crate) async fn opt_out(ctx: Context<'_>) -> Result<(), BotError> {
     ctx.reply("base command is a noop").await?;
     Ok(())
 }

@@ -63,7 +63,7 @@ async fn main() {
                 meta::ping(),
                 snipe::snipe(),
                 leaderboard::leaderboard(),
-                privacy::opt_in(),
+                privacy::opt_out(),
             ],
             prefix_options: PrefixFrameworkOptions {
                 mention_as_prefix: true,
