@@ -5,6 +5,7 @@ use crate::{BotError, Context};
 use diesel::dsl::count_star;
 use diesel::{ExpressionMethods, QueryDsl};
 use diesel_async::RunQueryDsl;
+use poise::ChoiceParameter;
 
 #[poise::command(prefix_command, slash_command, subcommands("status", "set"))]
 pub(crate) async fn opt_out(ctx: Context<'_>) -> Result<(), BotError> {
@@ -35,16 +36,24 @@ pub(crate) async fn status(ctx: Context<'_>) -> Result<(), BotError> {
     Ok(())
 }
 
+#[derive(ChoiceParameter, PartialEq, Eq, Copy, Clone, Debug, Hash)]
+enum OptInStatus {
+    #[name = "Opt in"]
+    OptIn,
+    #[name = "Opt out"]
+    OptOut,
+}
+
 /// Opt in or out of being sniped
 #[poise::command(prefix_command, slash_command)]
 pub(crate) async fn set(
     ctx: Context<'_>,
-    #[description = "New value; true to be opted in"] target: bool,
+    #[description = "New value you want to set"] target: OptInStatus,
 ) -> Result<(), BotError> {
     let mut conn = ctx.data().db_pool.get().await?;
 
     match target {
-        true => {
+        OptInStatus::OptIn => {
             diesel::delete(opt_out::table::filter(
                 opt_out::table,
                 opt_out::id.eq(ctx.author().id.get() as i64),
@@ -54,7 +63,7 @@ pub(crate) async fn set(
             ctx.reply_ephemeral("ok, you are now opted in; snipes including you can be logged!")
                 .await?;
         }
-        false => {
+        OptInStatus::OptOut => {
             diesel::insert_into(opt_out::table)
                 .values(OptedOutUser {
                     id: ctx.author().id.get() as i64,
