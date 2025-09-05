@@ -27,10 +27,9 @@ async fn main() {
     let cmd = clap::command!("ics-spottings-council")
         .about("Did you know that ICSSC also stands for ICS Spottings Council?")
         .arg(
-            clap::arg!(<"config"> ".env file path")
+            clap::arg!(["config"] ".env file path")
                 .value_parser(clap::value_parser!(PathBuf))
                 .value_hint(ValueHint::FilePath)
-                .required(false)
                 .default_value(".env"),
         );
 
