@@ -3,10 +3,11 @@ mod handler;
 mod util;
 
 use crate::commands::{leaderboard, meta, privacy, snipe};
+use crate::util::ContextExtras;
 use clap::ValueHint;
 use itertools::Itertools;
 use pluralizer::pluralize;
-use poise::{Command, FrameworkOptions, PrefixFrameworkOptions};
+use poise::{Command, FrameworkError, FrameworkOptions, PrefixFrameworkOptions};
 use serenity::all::{GatewayIntents, GuildId};
 use serenity::{Client, FutureExt};
 use std::env;
@@ -54,6 +55,13 @@ async fn main() {
 
     let framework = poise::Framework::<BotVars, BotError>::builder()
         .options(FrameworkOptions {
+            on_error: |error| {
+                Box::pin(async move {
+                    if let FrameworkError::Command { error, ctx, .. } = error {
+                        let _ = ctx.reply_ephemeral(format!("{}", error)).await;
+                    }
+                })
+            },
             commands: vec![
                 meta::ping(),
                 snipe::snipe(),
@@ -64,9 +72,13 @@ async fn main() {
                 mention_as_prefix: true,
                 ..Default::default()
             },
-            command_check: Some(|ctx| async move {
-                Ok(ctx.guild_id() != Some(GuildId::from(ICSSC_SERVER)) || ALLOWED_CHANNELS.contains(&ctx.channel_id().into()))
-            }.boxed()),
+            command_check: Some(|ctx| {
+                async move {
+                    Ok(ctx.guild_id() != Some(GuildId::from(ICSSC_SERVER))
+                        || ALLOWED_CHANNELS.contains(&ctx.channel_id().into()))
+                }
+                .boxed()
+            }),
             ..Default::default()
         })
         .setup(move |ctx, _ready, framework| {
@@ -100,9 +112,7 @@ async fn main() {
                 }
 
                 //  TODO: anyhow
-                let db = sea_orm::Database::connect(&db_url)
-                    .await
-                    .unwrap();
+                let db = sea_orm::Database::connect(&db_url).await.unwrap();
 
                 Ok(BotVars { db })
             })
