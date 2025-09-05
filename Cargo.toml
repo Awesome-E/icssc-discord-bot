@@ -3,6 +3,9 @@ name = "icssc-discord-bot"
 version = "1.0.0"
 edition = "2024"
 
+[workspace]
+members = [".", "entity", "migration"]
+
 [dependencies]
 anyhow = "1.0.91"
 chrono = "0.4.38"
@@ -18,5 +21,11 @@ poise = "0.6.1"
 rand = "0.9.0"
 rand_chacha = "0.9.0"
 regex = "1.11.0"
+sea-orm = { version = "1.1.0", features = ["sqlx-postgres", "runtime-tokio", "macros", "with-chrono"] }
 serenity = { version = "0.12.4", features = ["full"] }
 tokio = { version = "1.42.0", features = ["rt", "rt-multi-thread", "macros"] }
+entity = { path = "entity" }
+migration = { path = "migration" }
+
+[profile.release]
+lto = "fat"
