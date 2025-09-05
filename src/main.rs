@@ -26,7 +26,7 @@ async fn main() {
                 .value_hint(ValueHint::FilePath)
                 .default_value(".env"),
         );
-    
+
     let args = cmd.get_matches();
 
     setup::load_env(args);
