@@ -18,6 +18,7 @@ use std::collections::HashSet;
 use std::convert::identity;
 use std::num::NonZeroUsize;
 use std::time::Duration;
+use anyhow::Context as _;
 
 #[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
 pub(crate) async fn snipe(ctx: Context<'_>) -> Result<(), BotError> {
@@ -83,7 +84,8 @@ pub(crate) async fn post(
     let got = opt_out::Entity::find()
         .filter(opt_out::Column::Id.is_in(victims.iter().map(|v| v.id.get() as i64).collect_vec()))
         .all(conn)
-        .await?;
+        .await
+        .context("log snipe get opt out user id")?;
 
     if !got.is_empty() {
         ctx.send(CreateReply::default().embed(base_embed(ctx).description(format!(
@@ -210,7 +212,8 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
         .order_by_desc(message::Column::MessageId)
         // .into_model::<ImplodedSnipes>()
         .all(conn)
-        .await?;
+        .await
+        .context("log get recent snipes")?;
 
     let paginator = EmbedLinePaginator::new(
         got.iter()
@@ -237,7 +240,7 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
             .ephemeral(true),
     );
 
-    paginator.run(ctx).await?;
+    paginator.run(ctx).await.context("log paginate")?;
 
     Ok(())
 }

@@ -1,3 +1,4 @@
+use anyhow::Context as _;
 use crate::util::ContextExtras;
 use crate::{BotError, Context};
 use entity::opt_out;
@@ -16,7 +17,7 @@ pub(crate) async fn opt_out(ctx: Context<'_>) -> Result<(), BotError> {
 pub(crate) async fn status(ctx: Context<'_>) -> Result<(), BotError> {
     let got = opt_out::Entity::find_by_id(ctx.author().id.get() as i64)
         .one(&ctx.data().db)
-        .await?;
+        .await.context("get opt out user id")?;
 
     ctx.reply_ephemeral(format!(
         "you are opted **{}** snipes",
@@ -49,7 +50,8 @@ pub(crate) async fn set(
         OptInStatus::OptIn => {
             opt_out::Entity::delete_by_id(ctx.author().id.get() as i64)
                 .exec(conn)
-                .await?;
+                .await
+                .context("Opt out delete user id")?;
 
             ctx.reply_ephemeral("ok, you are now opted in; snipes including you can be logged!")
                 .await?;
@@ -64,7 +66,8 @@ pub(crate) async fn set(
                 .exec(conn)
                 .await?;
             ctx.reply_ephemeral("ok, you are now opted out; nobody can log a snipe including you")
-                .await?;
+                .await
+                .context("opt out insert user id")?;
         }
     }
 

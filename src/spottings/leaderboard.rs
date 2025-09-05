@@ -4,6 +4,7 @@ use itertools::Itertools;
 use poise::ChoiceParameter;
 use serenity::all::{Mentionable, UserId};
 use std::num::NonZeroUsize;
+use anyhow::Context as _;
 use sea_orm::{EntityTrait, Order, QueryOrder};
 use entity::user_stat;
 use migration::NullOrdering;
@@ -31,7 +32,7 @@ pub(crate) async fn leaderboard(
         LeaderboardBy::SnipeCount => user_stat::Entity::find()
             .order_by_desc(user_stat::Column::Snipe)
             .all(&ctx.data().db)
-            .await?
+            .await.context("fetch leaderboard from db")?
             .into_iter()
             .enumerate()
             .map(|(i, mdl)| {
@@ -42,7 +43,7 @@ pub(crate) async fn leaderboard(
         LeaderboardBy::VictimCount => user_stat::Entity::find()
             .order_by_desc(user_stat::Column::Sniped)
             .all(&ctx.data().db)
-            .await?
+            .await.context("fetch leaderboard from db")?
             .into_iter()
             .enumerate()
             .map(|(i, mdl)| {
@@ -54,7 +55,7 @@ pub(crate) async fn leaderboard(
             .order_by_with_nulls(user_stat::Column::SnipeRate, Order::Desc, NullOrdering::Last)
             .order_by_desc(user_stat::Column::Snipe)
             .all(&ctx.data().db)
-            .await?
+            .await.context("fetch leaderboard from db")?
             .into_iter()
             .enumerate()
             .map(|(i, mdl)| {
@@ -77,6 +78,6 @@ pub(crate) async fn leaderboard(
             .ephemeral(true),
     );
 
-    paginator.run(ctx).await?;
+    paginator.run(ctx).await.context("start paginator")?;
     Ok(())
 }

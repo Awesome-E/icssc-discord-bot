@@ -127,7 +127,6 @@ async fn main() {
                     );
                 }
 
-                //  TODO: anyhow
                 let db = sea_orm::Database::connect(&db_url).await.unwrap();
 
                 Ok(BotVars { db })
