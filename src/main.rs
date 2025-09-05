@@ -2,18 +2,15 @@ mod handler;
 mod matchy;
 mod spottings;
 mod util;
+mod setup;
 
-use crate::spottings::{leaderboard, meta, privacy, snipe};
+use crate::setup::framework_setup;
 use crate::util::ContextExtras;
-use clap::ValueHint;
-use itertools::Itertools;
-use pluralizer::pluralize;
-use poise::{Command, FrameworkError, FrameworkOptions};
+use poise::{FrameworkError, FrameworkOptions};
 use serenity::all::{GatewayIntents, GuildId};
 use serenity::{Client, FutureExt};
 use std::env;
 use std::ops::BitAnd;
-use std::path::PathBuf;
 
 struct BotVars {
     db: sea_orm::DatabaseConnection,
@@ -24,33 +21,7 @@ const ALLOWED_CHANNELS: &[u64] = &[1328907402321592391, 1338632123929591970];
 
 #[tokio::main]
 async fn main() {
-    let cmd = clap::command!("ics-spottings-council")
-        .about("Did you know that ICSSC also stands for ICS Spottings Council?")
-        .arg(
-            clap::arg!(["config"] ".env file path")
-                .value_parser(clap::value_parser!(PathBuf))
-                .value_hint(ValueHint::FilePath)
-                .default_value(".env"),
-        );
-
-    let args = cmd.get_matches();
-    dotenv::from_filename(
-        args.get_one::<PathBuf>("config")
-            .expect("config file is bad path?"),
-    )
-    .ok();
-
-    let register_globally = env::var("ICSSC_REGISTER_GLOBAL").is_ok();
-    let register_locally = env::var("ICSSC_REGISTER_LOCAL").is_ok();
-    let guilds_to_register_in = env::var("ICSSC_GUILDS")
-        .unwrap_or(String::from(""))
-        .split(",")
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-        .map(|id| GuildId::from(id.parse::<u64>().expect("guild id not valid snowflake")))
-        .collect_vec();
-
-    let db_url = env::var("DATABASE_URL").expect("need postgres URL!");
+    setup::load_env();
 
     let framework = poise::Framework::<BotVars, BotError>::builder()
         .options(FrameworkOptions {
@@ -83,10 +54,10 @@ async fn main() {
             commands: vec![
                 matchy::create_pairing::create_pairing(),
                 matchy::send_pairing::send_pairing(),
-                meta::ping(),
-                snipe::snipe(),
-                leaderboard::leaderboard(),
-                privacy::opt_out(),
+                spottings::meta::ping(),
+                spottings::snipe::snipe(),
+                spottings::leaderboard::leaderboard(),
+                spottings::privacy::opt_out(),
             ],
             command_check: Some(|ctx| {
                 async move {
@@ -97,41 +68,7 @@ async fn main() {
             }),
             ..Default::default()
         })
-        .setup(move |ctx, _ready, framework| {
-            Box::pin(async move {
-                let no_commands = &[] as &[Command<(), BotError>];
-
-                let commands_count =
-                    pluralize("command", framework.options().commands.len() as isize, true);
-
-                if register_globally {
-                    poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                    for id in guilds_to_register_in.iter() {
-                        poise::builtins::register_in_guild(ctx, no_commands, *id).await?;
-                    }
-                    println!("registered {commands_count} globally");
-                } else {
-                    println!("not registering {commands_count} globally");
-                }
-
-                if register_locally {
-                    poise::builtins::register_globally(ctx, no_commands).await?;
-
-                    for id in guilds_to_register_in.iter() {
-                        poise::builtins::register_in_guild(ctx, &framework.options().commands, *id)
-                            .await?;
-                    }
-                    println!(
-                        "registered {commands_count} locally in {}",
-                        pluralize("guild", guilds_to_register_in.len() as isize, true)
-                    );
-                }
-
-                let db = sea_orm::Database::connect(&db_url).await.unwrap();
-
-                Ok(BotVars { db })
-            })
-        })
+        .setup(framework_setup)
         .build();
 
     let token = env::var("ICSSC_DISCORD_TOKEN").expect("no discord token set");
