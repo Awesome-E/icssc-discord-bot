@@ -1,4 +1,4 @@
-use clap::ValueHint;
+use clap::{ArgMatches};
 use itertools::Itertools;
 use poise::{BoxFuture,Command,Framework,FrameworkError, FrameworkOptions};
 use pluralizer::pluralize;
@@ -11,20 +11,9 @@ use crate::spottings;
 use serenity::{FutureExt};
 use crate::{BotError, BotVars};
 
-pub(crate) fn load_env() -> () {
-    let cmd = clap::command!("icssc-discord-bot")
-        .about("The somewhat official Discord bot for ICS Student Council")
-        .arg(
-            clap::arg!(["config"] ".env file path")
-                .value_parser(clap::value_parser!(PathBuf))
-                .value_hint(ValueHint::FilePath)
-                .default_value(".env"),
-        );
-
-    let args = cmd.get_matches();
+pub(crate) fn load_env(args: ArgMatches) -> () {
     dotenv::from_filename(
-        args.get_one::<PathBuf>("config")
-            .expect("config file is bad path?"),
+        args.get_one::<PathBuf>("config").expect("config file is bad path?")
     ).ok();
 }
 
