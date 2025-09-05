@@ -88,14 +88,14 @@ fn check_command_invocation(ctx: poise::Context<BotVars, anyhow::Error>) -> BoxF
 }
 
 fn get_bot_commands() -> Vec<Command<BotVars, anyhow::Error>> {
-    return vec![
+    vec![
         matchy::create_pairing::create_pairing(),
         matchy::send_pairing::send_pairing(),
         spottings::meta::ping(),
         spottings::snipe::snipe(),
         spottings::leaderboard::leaderboard(),
         spottings::privacy::opt_out(),
-    ];
+    ]
 }
 
 pub(crate) fn create_bot_framework_options() -> FrameworkOptions<BotVars, anyhow::Error> {
