@@ -17,7 +17,7 @@ pub(crate) fn load_env(args: ArgMatches) -> () {
     ).ok();
 }
 
-async fn register_commands (ctx: &Context, framework: &Framework<BotVars, anyhow::Error>) -> Result<(), BotError> {
+async fn register_commands(ctx: &Context, framework: &Framework<BotVars, anyhow::Error>) -> Result<(), BotError> {
     let is_global = env::var("ICSSC_REGISTER_GLOBAL").is_ok();
     let no_commands = &[] as &[Command<BotVars, BotError>];
     let commands = &framework.options().commands;
