@@ -8,7 +8,7 @@ use crate::util::ContextExtras;
 use clap::ValueHint;
 use itertools::Itertools;
 use pluralizer::pluralize;
-use poise::{Command, FrameworkError, FrameworkOptions, PrefixFrameworkOptions};
+use poise::{Command, FrameworkError, FrameworkOptions};
 use serenity::all::{GatewayIntents, GuildId};
 use serenity::{Client, FutureExt};
 use std::env;
