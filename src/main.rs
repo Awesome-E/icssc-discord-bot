@@ -46,8 +46,7 @@ async fn main() {
     let guilds_to_register_in = env::var("ICSSC_GUILDS")
         .unwrap_or(String::from(""))
         .split(",")
-        .map(String::from)
-        .map(|s| String::from(s.trim()))
+        .map(|s| s.trim())
         .filter(|s| !s.is_empty())
         .map(|id| GuildId::from(id.parse::<u64>().expect("guild id not valid snowflake")))
         .collect_vec();
