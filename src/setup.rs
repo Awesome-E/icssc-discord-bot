@@ -76,7 +76,7 @@ fn handle_framework_error(error: FrameworkError<BotVars, anyhow::Error>) -> BoxF
     }.boxed()
 }
 
-fn check_command_invocation<'a>(ctx: poise::Context<'a, BotVars, anyhow::Error>) -> BoxFuture<'a, Result<bool, anyhow::Error>> {
+fn check_command_invocation(ctx: poise::Context<BotVars, anyhow::Error>) -> BoxFuture<Result<bool, anyhow::Error>> {
     const ICSSC_SERVER: u64 = 760915616793755669;
     const ALLOWED_CHANNELS: &[u64] = &[1328907402321592391, 1338632123929591970];
 
