@@ -1,4 +1,5 @@
 use crate::{BotError, Context};
+use crate::util::ContextExtras;
 
 async fn check_db_ok(ctx: &Context<'_>) -> Result<(), BotError> {
     ctx.data().db.ping().await?;
@@ -10,7 +11,7 @@ async fn check_db_ok(ctx: &Context<'_>) -> Result<(), BotError> {
 pub(crate) async fn ping(ctx: Context<'_>) -> Result<(), BotError> {
     let ping_num = ctx.ping().await.as_millis();
 
-    ctx.say(format!(
+    ctx.reply_ephemeral(format!(
         "{}\n\n{}",
         match ping_num {
             0 => String::from("ok, waiting for more data to report ping"),
