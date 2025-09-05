@@ -1,17 +1,15 @@
-use crate::model::{InsertMessage, Message, OptedOutUser, Snipe};
-use crate::schema::{message, opt_out, snipe};
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
 use crate::util::{base_embed, ContextExtras};
 use crate::{BotError, Context};
-use diesel::dsl::sql;
-use diesel::pg::sql_types;
-use diesel::sql_types::BigInt;
-use diesel::{ExpressionMethods, QueryDsl, SelectableHelper};
-use diesel_async::scoped_futures::ScopedFutureExt;
-use diesel_async::{AsyncConnection, RunQueryDsl};
+use entity::{message, opt_out, snipe};
 use itertools::Itertools;
 use poise::CreateReply;
+use sea_orm::{
+    ActiveValue, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryOrder,
+    TransactionTrait,
+};
+use sea_orm::{QueryFilter, QuerySelect};
 use serenity::all::{
     CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage,
     Mentionable, ReactionType, User, UserId,
@@ -80,18 +78,17 @@ pub(crate) async fn post(
         return Ok(());
     }
 
-    let mut conn = ctx.data().db_pool.get().await?;
+    let conn = &ctx.data().db;
 
-    let got = opt_out::table
-        .select(OptedOutUser::as_select())
-        .filter(opt_out::id.eq_any(victims.iter().map(|v| v.id.get() as i64).collect_vec()))
-        .load::<OptedOutUser>(&mut conn)
+    let got = opt_out::Entity::find()
+        .filter(opt_out::Column::Id.is_in(victims.iter().map(|v| v.id.get() as i64).collect_vec()))
+        .all(conn)
         .await?;
 
     if !got.is_empty() {
         ctx.send(CreateReply::default().embed(base_embed(ctx).description(format!(
             "**the following people in that post are opted out of sniping!**\n{}\n\nthis means they do not consent to being photographed!",
-            got.into_iter().map(|opted_out| <OptedOutUser as Into<UserId>>::into(opted_out).mention()).join("\n"),
+            got.into_iter().map(|opted_out| UserId::new(opted_out.id as u64).mention()).join("\n"),
         ))).reply(true).ephemeral(true)).await?;
         return Ok(());
     }
@@ -133,47 +130,38 @@ pub(crate) async fn post(
         }
     };
 
-    let message_sql = InsertMessage {
+    let message_sql = message::ActiveModel {
         // command is guild_only
-        guild_id: ctx.guild_id().unwrap().into(),
-        channel_id: message.channel_id.into(),
-        message_id: message.id.into(),
-        author_id: message.author.id.into(),
+        guild_id: ActiveValue::Set(ctx.guild_id().unwrap().into()),
+        channel_id: ActiveValue::Set(message.channel_id.into()),
+        message_id: ActiveValue::Set(message.id.into()),
+        author_id: ActiveValue::Set(message.author.id.into()),
+        time_posted: ActiveValue::NotSet,
     };
 
     let snipes_sql = victims
         .into_iter()
-        .map(|victim| Snipe {
-            message_id: message.id.into(),
-            victim_id: victim.id.into(),
-            latitude: None,
-            longitude: None,
-            notes: None,
+        .map(|victim| snipe::ActiveModel {
+            message_id: ActiveValue::Set(message.id.into()),
+            victim_id: ActiveValue::Set(victim.id.into()),
+            latitude: ActiveValue::Set(None),
+            longitude: ActiveValue::Set(None),
+            notes: ActiveValue::Set(None),
         })
         .collect_vec();
 
     let Ok(_) = conn
-        .transaction::<_, diesel::result::Error, _>(|conn| {
-            async move {
-                diesel::insert_into(message::table)
-                    .values(message_sql)
-                    .execute(conn)
-                    .await?;
+        .transaction::<_, (), DbErr>(move |txn| {
+            Box::pin(async move {
+                message::Entity::insert(message_sql).exec(txn).await?;
 
-                for snipe in snipes_sql {
-                    diesel::insert_into(snipe::table)
-                        .values(snipe)
-                        .execute(conn)
-                        .await?;
-                }
+                snipe::Entity::insert_many(snipes_sql).exec(txn).await?;
 
-                diesel::sql_query("REFRESH MATERIALIZED VIEW user_stat")
-                    .execute(conn)
+                txn.execute_unprepared("REFRESH MATERIALIZED VIEW user_stat")
                     .await?;
 
                 Ok(())
-            }
-            .scope_boxed()
+            })
         })
         .await
     else {
@@ -198,35 +186,47 @@ pub(crate) async fn post(
     Ok(())
 }
 
+// #[derive(FromQueryResult)]
+// struct ImplodedSnipes {
+//     guild_id: i64,
+//     channel_id: i64,
+//     message_id: i64,
+//     author_id: i64,
+//     time_posted: DateTime,
+//     first_name: String,
+//     last_name: String,
+//     victims: Vec<i64>,
+// }
+
 /// Log past snipes
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
-    let mut conn = ctx.data().db_pool.get().await?;
+    let conn = &ctx.data().db;
 
-    let got = message::table
-        .inner_join(snipe::table)
-        .select((
-            Message::as_select(),
-            sql::<sql_types::Array<BigInt>>("array_agg(snipe.victim_id)"),
-        ))
-        .group_by(message::message_id)
-        .order(message::message_id.desc())
-        .load::<(Message, Vec<i64>)>(&mut conn)
+    let got = message::Entity::find()
+        // .column_as(Expr::cust("array_agg(snipe.victim_id)"), "victims")
+        .find_with_related(snipe::Entity)
+        .group_by(message::Column::MessageId)
+        .order_by_desc(message::Column::MessageId)
+        // .into_model::<ImplodedSnipes>()
+        .all(conn)
         .await?;
 
     let paginator = EmbedLinePaginator::new(
         got.iter()
-            .map(|(msg, victim_ids)| {
+            .map(|(msg, victims)| {
                 format!(
-                    "<t:{}:f>: **{}** sniped {} ([msg]({}))",
+                    "<t:{}:f>: **{}** sniped {} ([msg](https://discord.com/channels/{}/{}/{}))",
                     msg.time_posted.and_utc().timestamp(),
                     UserId::from(msg.author_id as u64).mention(),
                     comma_join(
-                        victim_ids
+                        victims
                             .iter()
-                            .map(|id| UserId::from(*id as u64).mention())
+                            .map(|victim| UserId::from(victim.victim_id as u64).mention())
                     ),
-                    msg,
+                    msg.guild_id,
+                    msg.channel_id,
+                    msg.message_id,
                 )
                 .into_boxed_str()
             })

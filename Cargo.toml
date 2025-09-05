@@ -1,3 +1,6 @@
+[workspace]
+members = [".", "entity", "migration"]
+
 [package]
 name = "ics-spottings-council"
 version = "0.1.0"
@@ -13,5 +16,9 @@ dotenv = "0.15.0"
 pluralizer = "0.5.0"
 itertools = "0.14.0"
 rand = "0.9.0"
-diesel = { version = "2.2.7", features = ["postgres", "chrono"] }
-diesel-async = { version = "0.5.2", features = ["postgres", "deadpool"] }
+sea-orm = { version = "1.1.0", features = ["sqlx-postgres", "runtime-tokio", "macros", "with-chrono"] }
+entity = { path = "entity" }
+migration = { path = "migration" }
+
+[profile.release]
+lto = "fat"

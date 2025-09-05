@@ -1,12 +1,12 @@
-use crate::schema::user_stat;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::{BotError, Context};
-use diesel::{ExpressionMethods, PgSortExpressionMethods, QueryDsl};
-use diesel_async::RunQueryDsl;
 use itertools::Itertools;
 use poise::ChoiceParameter;
 use serenity::all::{Mentionable, UserId};
 use std::num::NonZeroUsize;
+use sea_orm::{EntityTrait, Order, QueryOrder};
+use entity::user_stat;
+use migration::NullOrdering;
 
 #[derive(ChoiceParameter, PartialEq, Eq, Copy, Clone, Debug, Hash, Default)]
 enum LeaderboardBy {
@@ -25,48 +25,44 @@ pub(crate) async fn leaderboard(
     ctx: Context<'_>,
     #[description = "Leaderboard type; default is \"Total snipes\'"] by: Option<LeaderboardBy>,
 ) -> Result<(), BotError> {
-    let mut conn = ctx.data().db_pool.get().await?;
-
     let by = by.unwrap_or_default();
 
     let lines = match by {
-        LeaderboardBy::SnipeCount => user_stat::table
-            .select((user_stat::id, user_stat::snipe))
-            .order_by(user_stat::snipe.desc())
-            .load::<(i64, i64)>(&mut conn)
+        LeaderboardBy::SnipeCount => user_stat::Entity::find()
+            .order_by_desc(user_stat::Column::Snipe)
+            .all(&ctx.data().db)
             .await?
             .into_iter()
             .enumerate()
-            .map(|(i, (u_id, n))| {
-                format!("{}. {}: {}", i + 1, UserId::from(u_id as u64).mention(), n)
+            .map(|(i, mdl)| {
+                format!("{}. {}: {}", i + 1, UserId::from(mdl.id as u64).mention(), mdl.snipe)
                     .into_boxed_str()
             })
             .collect_vec(),
-        LeaderboardBy::VictimCount => user_stat::table
-            .select((user_stat::id, user_stat::sniped))
-            .order_by(user_stat::sniped.desc())
-            .load::<(i64, i64)>(&mut conn)
+        LeaderboardBy::VictimCount => user_stat::Entity::find()
+            .order_by_desc(user_stat::Column::Sniped)
+            .all(&ctx.data().db)
             .await?
             .into_iter()
             .enumerate()
-            .map(|(i, (u_id, n))| {
-                format!("{}. {}: {}", i + 1, UserId::from(u_id as u64).mention(), n)
+            .map(|(i, mdl)| {
+                format!("{}. {}: {}", i + 1, UserId::from(mdl.id as u64).mention(), mdl.sniped)
                     .into_boxed_str()
             })
             .collect_vec(),
-        LeaderboardBy::SnipeRate => user_stat::table
-            .select((user_stat::id, user_stat::snipe_rate))
-            .order((user_stat::snipe_rate.desc().nulls_last(), user_stat::snipe.desc()))
-            .load::<(i64, Option<f64>)>(&mut conn)
+        LeaderboardBy::SnipeRate => user_stat::Entity::find()
+            .order_by_with_nulls(user_stat::Column::SnipeRate, Order::Desc, NullOrdering::Last)
+            .order_by_desc(user_stat::Column::Snipe)
+            .all(&ctx.data().db)
             .await?
             .into_iter()
             .enumerate()
-            .map(|(i, (u_id, n))| {
+            .map(|(i, mdl)| {
                 format!(
                     "{}. {}: {}",
                     i + 1,
-                    UserId::from(u_id as u64).mention(),
-                    n.map(|n| n.to_string()).unwrap_or(String::from("N/A"))
+                    UserId::from(mdl.id as u64).mention(),
+                    mdl.snipe_rate.map(|n| n.to_string()).unwrap_or(String::from("N/A"))
                 )
                 .into_boxed_str()
             })

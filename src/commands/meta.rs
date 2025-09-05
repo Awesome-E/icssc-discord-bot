@@ -1,10 +1,7 @@
 use crate::{BotError, Context};
-use diesel_async::AsyncConnection;
 
 async fn check_db_ok(ctx: &Context<'_>) -> Result<(), BotError> {
-    let mut conn = ctx.data().db_pool.get().await?;
-
-    conn.begin_test_transaction().await?;
+    ctx.data().db.ping().await?;
     Ok(())
 }
 

@@ -1,14 +1,9 @@
 mod commands;
 mod handler;
-mod model;
-mod schema;
 mod util;
 
 use crate::commands::{leaderboard, meta, privacy, snipe};
 use clap::ValueHint;
-use diesel_async::pooled_connection::deadpool::Pool;
-use diesel_async::pooled_connection::AsyncDieselConnectionManager;
-use diesel_async::AsyncPgConnection;
 use itertools::Itertools;
 use pluralizer::pluralize;
 use poise::{Command, FrameworkOptions, PrefixFrameworkOptions};
@@ -19,7 +14,7 @@ use std::ops::BitAnd;
 use std::path::PathBuf;
 
 struct BotVars {
-    db_pool: Pool<AsyncPgConnection>,
+    db: sea_orm::DatabaseConnection,
 }
 
 const ICSSC_SERVER: u64 = 760915616793755669;
@@ -104,10 +99,12 @@ async fn main() {
                     );
                 }
 
-                let config = AsyncDieselConnectionManager::<AsyncPgConnection>::new(db_url);
-                let db_pool = Pool::builder(config).build()?;
+                //  TODO: anyhow
+                let db = sea_orm::Database::connect(&db_url)
+                    .await
+                    .unwrap();
 
-                Ok(BotVars { db_pool })
+                Ok(BotVars { db })
             })
         })
         .build();
