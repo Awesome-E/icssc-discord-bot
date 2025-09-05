@@ -28,7 +28,7 @@ async fn guild_members_with_role(
     ctx: &Context<'_>,
     guild: &Guild,
     role_id: RoleId,
-) -> anyhow::Result<Vec<UserId>> {
+) -> Result<Vec<UserId>> {
     // max number of pages to try to fetch (to avoid infinite loops in the event of the server
     // response format changing in a way that breaks the end-of-page detection)
     const MAX_PAGES: u64 = 20;
