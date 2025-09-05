@@ -2,6 +2,9 @@
 
 pub mod prelude;
 
+pub mod matchy_meetup_pair;
+pub mod matchy_meetup_pair_member;
+pub mod matchy_meetup_round;
 pub mod message;
 pub mod opt_out;
 pub mod snipe;
