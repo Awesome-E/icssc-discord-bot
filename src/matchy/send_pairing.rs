@@ -82,9 +82,9 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
                  schedule some time to hang out in the next two weeks. \
                  Don't forget to send pics to https://discord.com/channels/760915616793755669/1199228930222194779 \
                  while you're there, and I hope you enjoy!\n\
-                 \t\t\t\t\t\t\t \\- Jeffrey \n\n\n\
+                 \t\t\t\t\t\t\t \\- Ethan \n\n\n\
                  **Your pairing is with:** {pairing_str}\n\n\
-                 _(responses here will not be seen; please message Jeffrey directly if you have any questions)_");
+                 _(responses here will not be seen; please message Ethan (@awesome_e) directly if you have any questions)_");
             let _ = user
                 .create_dm_channel(&ctx)
                 .await?
