@@ -1,7 +1,4 @@
-use super::types::Data;
-use anyhow::Error;
 use itertools::Itertools;
-use poise::FrameworkError;
 use serenity::all::UserId;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
@@ -15,29 +12,6 @@ pub type Match<T> = Vec<T>;
 /// that were unable to be matched with unique elements. Each element in this second vector
 /// also appears somewhere in the first set of matchings.
 pub struct Pairing<T>(pub Vec<Match<T>>, pub Vec<T>);
-
-/// Logs an error to stdout.
-pub async fn handle_error(error: poise::FrameworkError<'_, Data, Error>) {
-    println!("Error: {:?}", error);
-
-    let Some(ctx) = error.ctx() else { return };
-    let error_res = match error {
-        FrameworkError::Command {
-            error: wrapped_error,
-            ..
-        } => {
-            ctx.say(format!("An unexpected error occurred: {:?}", wrapped_error))
-                .await
-        }
-        _ => ctx.say("An unknown error occurred").await,
-    };
-    if let Err(e) = error_res {
-        println!(
-            "A further error occurred sending the error message to discord: {:?}",
-            e
-        )
-    }
-}
 
 /// Hashes a string into a u64 that can be used as a seed
 pub fn hash_seed(seed: &str) -> u64 {

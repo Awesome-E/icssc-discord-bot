@@ -1,6 +1,6 @@
 use super::discord_helpers::match_members;
 use super::helpers::{format_id, format_pairs, hash_seed};
-use super::helpers::{handle_error, Pairing};
+use super::helpers::Pairing;
 use anyhow::Result;
 use itertools::Itertools;
 use crate::Context;
@@ -37,7 +37,6 @@ async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<Str
     ephemeral,
     required_permissions = "ADMINISTRATOR",
     aliases("pair"),
-    on_error = "handle_error"
 )]
 pub async fn create_pairing(
     ctx: Context<'_>,

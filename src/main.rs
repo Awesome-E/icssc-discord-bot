@@ -1,7 +1,7 @@
-mod spottings;
 mod handler;
-mod util;
 mod matchy;
+mod spottings;
+mod util;
 
 use crate::spottings::{leaderboard, meta, privacy, snipe};
 use crate::util::ContextExtras;
@@ -58,8 +58,27 @@ async fn main() {
         .options(FrameworkOptions {
             on_error: |error| {
                 Box::pin(async move {
-                    if let FrameworkError::Command { error, ctx, .. } = error {
-                        let _ = ctx.reply_ephemeral(format!("{}", error)).await;
+                    println!("Error: {}", error);
+
+                    let Some(ctx) = error.ctx() else { return };
+                    let error_res = match error {
+                        FrameworkError::Command {
+                            error: wrapped_error,
+                            ..
+                        } => {
+                            ctx.reply_ephemeral(format!(
+                                "An unexpected error occurred: {:?}",
+                                wrapped_error
+                            ))
+                            .await
+                        }
+                        _ => ctx.reply_ephemeral("An unknown error occurred").await,
+                    };
+                    if let Err(e) = error_res {
+                        println!(
+                            "A further error occurred sending the error message to discord: {:?}",
+                            e
+                        )
                     }
                 })
             },

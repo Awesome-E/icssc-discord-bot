@@ -1,7 +1,6 @@
 use super::config::HISTORY_CHANNEL_NAME;
 use super::helpers::{Match, Pairing};
 use super::matching::graph_pair;
-use super::types::Context;
 use super::ROLE_NAME;
 use anyhow::{bail, Context as _, Result};
 use chrono::{Duration, Local};
@@ -9,6 +8,7 @@ use itertools::Itertools;
 use poise::futures_util::StreamExt;
 use regex::Regex;
 use serenity::all::{ChannelId, Guild, GuildChannel, GuildId, RoleId, UserId};
+use crate::Context;
 
 pub async fn find_channel(
     ctx: &Context<'_>,

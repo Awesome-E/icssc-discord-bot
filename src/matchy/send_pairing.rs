@@ -1,10 +1,9 @@
 use super::config::{HISTORY_CHANNEL_NAME, NOTIFICATION_CHANNEL_NAME};
 use super::discord_helpers::{find_channel, match_members};
 use super::helpers::{checksum_matching, format_pairs, hash_seed, Pairing};
-use super::types::Context;
-use super::{helpers, ROLE_NAME};
+use super::ROLE_NAME;
+use crate::Context;
 use anyhow::{bail, ensure, Context as _, Error, Result};
-use helpers::handle_error;
 use poise::futures_util::future::try_join_all;
 use serenity::all::EditMessage;
 
@@ -105,7 +104,6 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
     track_edits,
     hide_in_help,
     required_permissions = "ADMINISTRATOR",
-    on_error = "handle_error"
 )]
 pub async fn send_pairing(
     ctx: Context<'_>,
