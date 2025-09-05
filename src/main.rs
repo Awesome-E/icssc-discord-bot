@@ -88,10 +88,6 @@ async fn main() {
                 leaderboard::leaderboard(),
                 privacy::opt_out(),
             ],
-            prefix_options: PrefixFrameworkOptions {
-                mention_as_prefix: true,
-                ..Default::default()
-            },
             command_check: Some(|ctx| {
                 async move {
                     Ok(ctx.guild_id() != Some(GuildId::from(ICSSC_SERVER))
