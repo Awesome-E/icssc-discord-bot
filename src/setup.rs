@@ -1,7 +1,9 @@
+use clap::{ArgMatches};
 use itertools::Itertools;
 use poise::{BoxFuture,Command,Framework,FrameworkError, FrameworkOptions};
 use pluralizer::pluralize;
 use serenity::all::{Context,Ready,GuildId};
+use std::{path::PathBuf};
 use std::env;
 use crate::util::ContextExtras;
 use crate::matchy;
@@ -9,7 +11,13 @@ use crate::spottings;
 use serenity::{FutureExt};
 use crate::{BotError, BotVars};
 
-async fn register_commands(ctx: &Context, framework: &Framework<BotVars, anyhow::Error>) -> Result<(), BotError> {
+pub(crate) fn load_env(args: ArgMatches) -> () {
+    dotenv::from_filename(
+        args.get_one::<PathBuf>("config").expect("config file is bad path?")
+    ).ok();
+}
+
+async fn register_commands (ctx: &Context, framework: &Framework<BotVars, anyhow::Error>) -> Result<(), BotError> {
     let is_global = env::var("ICSSC_REGISTER_GLOBAL").is_ok();
     let no_commands = &[] as &[Command<BotVars, BotError>];
     let commands = &framework.options().commands;

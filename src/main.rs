@@ -5,12 +5,12 @@ mod util;
 mod setup;
 
 use crate::setup::{create_bot_framework_options, framework_setup};
+use clap::ValueHint;
 use serenity::all::{GatewayIntents};
 use serenity::{Client};
 use std::env;
 use std::ops::BitAnd;
 use std::path::PathBuf;
-use clap::ValueHint;
 
 struct BotVars {
     db: sea_orm::DatabaseConnection,
@@ -26,12 +26,10 @@ async fn main() {
                 .value_hint(ValueHint::FilePath)
                 .default_value(".env"),
         );
-
+    
     let args = cmd.get_matches();
-    dotenv::from_filename(
-        args.get_one::<PathBuf>("config")
-            .expect("config file is bad path?"),
-    ).unwrap();
+
+    setup::load_env(args);
 
     let framework = poise::Framework::<BotVars, BotError>::builder()
         .options(create_bot_framework_options())
