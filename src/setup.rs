@@ -55,7 +55,7 @@ pub(crate) fn framework_setup<'a>(
     }.boxed()
 }
 
-fn handle_framework_error<'a>(error: FrameworkError<'a, BotVars, anyhow::Error>) -> BoxFuture<'a, ()> {
+fn handle_framework_error(error: FrameworkError<BotVars, anyhow::Error>) -> BoxFuture<()> {
     Box::pin(async move {
         println!("Error: {}", error);
 
