@@ -1,9 +1,9 @@
 use super::discord_helpers::match_members;
 use super::helpers::{format_id, format_pairs, hash_seed};
 use super::helpers::{handle_error, Pairing};
-use super::types::Context;
 use anyhow::Result;
 use itertools::Itertools;
+use crate::Context;
 
 async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<String> {
     let seed = hash_seed(&seed_str);

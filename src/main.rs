@@ -1,6 +1,7 @@
 mod spottings;
 mod handler;
 mod util;
+mod matchy;
 
 use crate::spottings::{leaderboard, meta, privacy, snipe};
 use crate::util::ContextExtras;
@@ -63,6 +64,8 @@ async fn main() {
                 })
             },
             commands: vec![
+                matchy::create_pairing::create_pairing(),
+                matchy::send_pairing::send_pairing(),
                 meta::ping(),
                 snipe::snipe(),
                 leaderboard::leaderboard(),
@@ -136,5 +139,5 @@ async fn main() {
     }
 }
 
-type BotError = Box<dyn std::error::Error + Send + Sync>;
+type BotError = anyhow::Error;
 type Context<'a> = poise::Context<'a, BotVars, BotError>;
