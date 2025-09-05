@@ -1,32 +1,13 @@
-use clap::ValueHint;
 use itertools::Itertools;
 use poise::{BoxFuture,Command,Framework,FrameworkError, FrameworkOptions};
 use pluralizer::pluralize;
 use serenity::all::{Context,Ready,GuildId};
-use std::{path::PathBuf};
 use std::env;
 use crate::util::ContextExtras;
 use crate::matchy;
 use crate::spottings;
 use serenity::{FutureExt};
 use crate::{BotError, BotVars};
-
-pub(crate) fn load_env() -> () {
-    let cmd = clap::command!("icssc-discord-bot")
-        .about("The somewhat official Discord bot for ICS Student Council")
-        .arg(
-            clap::arg!(["config"] ".env file path")
-                .value_parser(clap::value_parser!(PathBuf))
-                .value_hint(ValueHint::FilePath)
-                .default_value(".env"),
-        );
-
-    let args = cmd.get_matches();
-    dotenv::from_filename(
-        args.get_one::<PathBuf>("config")
-            .expect("config file is bad path?"),
-    ).ok();
-}
 
 async fn register_commands (ctx: &Context, framework: &Framework<BotVars, anyhow::Error>) -> Result<(), BotError> {
     let is_global = env::var("ICSSC_REGISTER_GLOBAL").is_ok();
