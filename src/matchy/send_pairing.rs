@@ -101,7 +101,6 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
 /// Send a message to each member of the pairing.
 #[poise::command(
     slash_command,
-    track_edits,
     hide_in_help,
     required_permissions = "ADMINISTRATOR",
 )]

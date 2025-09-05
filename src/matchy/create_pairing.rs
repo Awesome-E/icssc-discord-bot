@@ -32,7 +32,6 @@ async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<Str
 /// Generate a potential pairing of users who have reacted to a message
 #[poise::command(
     slash_command,
-    track_edits,
     hide_in_help,
     ephemeral,
     required_permissions = "ADMINISTRATOR",
