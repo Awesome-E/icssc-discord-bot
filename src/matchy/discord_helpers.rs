@@ -2,13 +2,13 @@ use super::config::HISTORY_CHANNEL_NAME;
 use super::helpers::{Match, Pairing};
 use super::matching::graph_pair;
 use super::ROLE_NAME;
+use crate::Context;
 use anyhow::{bail, Context as _, Result};
 use chrono::{Duration, Local};
 use itertools::Itertools;
 use poise::futures_util::StreamExt;
 use regex::Regex;
-use serenity::all::{ChannelId, Guild, GuildChannel, GuildId, RoleId, UserId};
-use crate::Context;
+use serenity::all::{ChannelId, GuildChannel, GuildId, PartialGuild, RoleId, UserId};
 
 pub async fn find_channel(
     ctx: &Context<'_>,
@@ -26,7 +26,7 @@ pub async fn find_channel(
 /// Returns a vector of all guild members with the specified role ID.
 async fn guild_members_with_role(
     ctx: &Context<'_>,
-    guild: &Guild,
+    guild: &PartialGuild,
     role_id: RoleId,
 ) -> Result<Vec<UserId>> {
     // max number of pages to try to fetch (to avoid infinite loops in the event of the server
@@ -108,7 +108,8 @@ pub async fn previous_matches(
 /// The result is a pairing of
 pub async fn match_members(ctx: Context<'_>, seed: u64) -> Result<Pairing<UserId>> {
     let guild = ctx
-        .guild()
+        .partial_guild()
+        .await
         .context("This command must be called from a guild (server).")?
         .clone();
     let Some(role) = guild.role_by_name(ROLE_NAME) else {
