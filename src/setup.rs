@@ -56,7 +56,7 @@ pub(crate) fn framework_setup<'a>(
 }
 
 fn handle_framework_error(error: FrameworkError<BotVars, anyhow::Error>) -> BoxFuture<()> {
-    Box::pin(async move {
+    async move {
         println!("Error: {}", error);
 
         let Some(ctx) = error.ctx() else { return };
@@ -73,7 +73,7 @@ fn handle_framework_error(error: FrameworkError<BotVars, anyhow::Error>) -> BoxF
         if let Err(e) = error_res {
             println!("A further error occurred sending the error message to discord: {:?}", e)
         }
-    })
+    }.boxed()
 }
 
 fn check_command_invocation<'a>(ctx: poise::Context<'a, BotVars, anyhow::Error>) -> BoxFuture<'a, Result<bool, anyhow::Error>> {
