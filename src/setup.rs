@@ -1,11 +1,14 @@
 use clap::ValueHint;
 use itertools::Itertools;
-use poise::{BoxFuture, Command, Framework};
+use poise::{BoxFuture,Command,Framework,FrameworkError, FrameworkOptions};
 use pluralizer::pluralize;
 use serenity::all::{Context,Ready,GuildId};
-use std::path::PathBuf;
+use std::{path::PathBuf};
 use std::env;
-
+use crate::util::ContextExtras;
+use crate::matchy;
+use crate::spottings;
+use serenity::{FutureExt};
 use crate::{BotError, BotVars};
 
 pub(crate) fn load_env() -> () {
@@ -61,12 +64,64 @@ pub(crate) fn framework_setup<'a>(
     _ready: &'a Ready,
     framework: &'a Framework<BotVars, BotError>
 ) -> BoxFuture<'a, Result<BotVars, BotError>> {
-    Box::pin(async move {
+    async move {
         register_commands(&ctx, &framework).await?;
 
         let db_url = env::var("DATABASE_URL").expect("need postgres URL!");
         let db = sea_orm::Database::connect(&db_url).await.unwrap();
 
         Ok(BotVars { db })
+    }.boxed()
+}
+
+fn handle_framework_error<'a>(error: FrameworkError<'a, BotVars, anyhow::Error>) -> BoxFuture<'a, ()> {
+    Box::pin(async move {
+        println!("Error: {}", error);
+
+        let Some(ctx) = error.ctx() else { return };
+        let error_res = match error {
+            FrameworkError::Command { error: wrapped_error, .. } => {
+                ctx.reply_ephemeral(format!(
+                    "An unexpected error occurred: {:?}",
+                    wrapped_error
+                ))
+                .await
+            }
+            _ => ctx.reply_ephemeral("An unknown error occurred").await,
+        };
+        if let Err(e) = error_res {
+            println!("A further error occurred sending the error message to discord: {:?}", e)
+        }
     })
+}
+
+fn check_command_invocation<'a>(ctx: poise::Context<'a, BotVars, anyhow::Error>) -> BoxFuture<'a, Result<bool, anyhow::Error>> {
+    const ICSSC_SERVER: u64 = 760915616793755669;
+    const ALLOWED_CHANNELS: &[u64] = &[1328907402321592391, 1338632123929591970];
+
+    async move {
+        Ok(ctx.guild_id() != Some(GuildId::from(ICSSC_SERVER))
+            || ALLOWED_CHANNELS.contains(&ctx.channel_id().into()))
+    }
+    .boxed()
+}
+
+fn get_bot_commands() -> Vec<Command<BotVars, anyhow::Error>> {
+    return vec![
+        matchy::create_pairing::create_pairing(),
+        matchy::send_pairing::send_pairing(),
+        spottings::meta::ping(),
+        spottings::snipe::snipe(),
+        spottings::leaderboard::leaderboard(),
+        spottings::privacy::opt_out(),
+    ];
+}
+
+pub(crate) fn create_bot_framework_options() -> FrameworkOptions<BotVars, anyhow::Error> {
+    FrameworkOptions {
+        on_error: handle_framework_error,
+        commands: get_bot_commands(),
+        command_check: Some(check_command_invocation),
+        ..Default::default()
+    }
 }
