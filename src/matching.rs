@@ -5,7 +5,7 @@ use petgraph::algo::{maximum_matching, Matching};
 use petgraph::matrix_graph::MatrixGraph;
 use petgraph::Undirected;
 use rand::prelude::SliceRandom;
-use rand::SeedableRng;
+use rand_chacha::rand_core::SeedableRng;
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -14,7 +14,7 @@ type NodeId = u16; // for adjacency matrix
 
 /// Shuffles and returns an immutable vec
 fn shuffled<T>(mut vec: Vec<T>, seed: u64) -> Vec<T> {
-    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(seed);
+    let mut rng = rand_chacha::ChaChaRng::seed_from_u64(seed);
     vec.shuffle(&mut rng);
     vec
 }
