@@ -1,17 +1,9 @@
-mod config;
-mod create_pairing;
-mod discord_helpers;
-mod helpers;
-mod matching;
-mod send_pairing;
-mod types;
-use crate::create_pairing::create_pairing;
-use crate::helpers::handle_error;
-use crate::send_pairing::send_pairing;
+mod matchy;
+use matchy::create_pairing::create_pairing;
+use matchy::helpers::handle_error;
+use matchy::send_pairing::send_pairing;
 use poise::serenity_prelude as serenity;
 use std::sync::Arc;
-
-pub const ROLE_NAME: &str = "matchy-meetups";
 
 #[tokio::main]
 async fn main() {

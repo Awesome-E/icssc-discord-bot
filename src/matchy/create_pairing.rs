@@ -1,7 +1,7 @@
-use crate::discord_helpers::match_members;
-use crate::helpers::{format_id, format_pairs, hash_seed};
-use crate::helpers::{handle_error, Pairing};
-use crate::types::Context;
+use super::discord_helpers::match_members;
+use super::helpers::{format_id, format_pairs, hash_seed};
+use super::helpers::{handle_error, Pairing};
+use super::types::Context;
 use anyhow::Result;
 use itertools::Itertools;
 
@@ -13,7 +13,7 @@ async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<Str
     let key = format!(
         "{}_{}",
         seed_str,
-        crate::helpers::checksum_matching(seed, &pairs)
+        super::helpers::checksum_matching(seed, &pairs)
     );
     let num_members: usize = pairs.iter().map(|p| p.len()).sum();
     let imperfect_matches_message = if imperfect_matches.is_empty() {

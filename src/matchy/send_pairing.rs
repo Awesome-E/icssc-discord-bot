@@ -1,8 +1,8 @@
-use crate::config::{HISTORY_CHANNEL_NAME, NOTIFICATION_CHANNEL_NAME};
-use crate::discord_helpers::{find_channel, match_members};
-use crate::helpers::{checksum_matching, format_pairs, hash_seed, Pairing};
-use crate::types::Context;
-use crate::{helpers, ROLE_NAME};
+use super::config::{HISTORY_CHANNEL_NAME, NOTIFICATION_CHANNEL_NAME};
+use super::discord_helpers::{find_channel, match_members};
+use super::helpers::{checksum_matching, format_pairs, hash_seed, Pairing};
+use super::types::Context;
+use super::{helpers, ROLE_NAME};
 use anyhow::{bail, ensure, Context as _, Error, Result};
 use helpers::handle_error;
 use poise::futures_util::future::try_join_all;
