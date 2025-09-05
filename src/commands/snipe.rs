@@ -9,7 +9,7 @@ use sea_orm::{
     ActiveValue, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryOrder,
     TransactionTrait,
 };
-use sea_orm::{QueryFilter, QuerySelect};
+use sea_orm::QueryFilter;
 use serenity::all::{
     CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage,
     Mentionable, ReactionType, User, UserId,
@@ -206,7 +206,7 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
     let got = message::Entity::find()
         // .column_as(Expr::cust("array_agg(snipe.victim_id)"), "victims")
         .find_with_related(snipe::Entity)
-        .group_by(message::Column::MessageId)
+        // .group_by(message::Column::MessageId)
         .order_by_desc(message::Column::MessageId)
         // .into_model::<ImplodedSnipes>()
         .all(conn)
