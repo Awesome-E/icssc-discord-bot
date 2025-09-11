@@ -17,7 +17,7 @@ pub(crate) fn load_env(args: ArgMatches) -> () {
     ).ok();
 }
 
-async fn register_commands(ctx: &Context, framework: &Framework<BotVars, anyhow::Error>) -> Result<(), BotError> {
+async fn register_commands(ctx: &Context, framework: &Framework<BotVars, BotError>) -> Result<(), BotError> {
     let is_global = env::var("ICSSC_REGISTER_GLOBAL").is_ok();
     let no_commands = &[] as &[Command<BotVars, BotError>];
     let commands = &framework.options().commands;
@@ -63,7 +63,7 @@ pub(crate) fn framework_setup<'a>(
     }.boxed()
 }
 
-fn handle_framework_error(error: FrameworkError<BotVars, anyhow::Error>) -> BoxFuture<()> {
+fn handle_framework_error(error: FrameworkError<BotVars, BotError>) -> BoxFuture<()> {
     async move {
         println!("Error: {}", error);
 
@@ -84,7 +84,7 @@ fn handle_framework_error(error: FrameworkError<BotVars, anyhow::Error>) -> BoxF
     }.boxed()
 }
 
-fn check_command_invocation(ctx: poise::Context<BotVars, anyhow::Error>) -> BoxFuture<Result<bool, anyhow::Error>> {
+fn check_command_invocation(ctx: poise::Context<BotVars, BotError>) -> BoxFuture<Result<bool, BotError>> {
     const ICSSC_SERVER: u64 = 760915616793755669;
     const ALLOWED_CHANNELS: &[u64] = &[1328907402321592391, 1338632123929591970];
 
@@ -95,7 +95,7 @@ fn check_command_invocation(ctx: poise::Context<BotVars, anyhow::Error>) -> BoxF
     .boxed()
 }
 
-fn get_bot_commands() -> Vec<Command<BotVars, anyhow::Error>> {
+fn get_bot_commands() -> Vec<Command<BotVars, BotError>> {
     vec![
         matchy::create_pairing::create_pairing(),
         matchy::send_pairing::send_pairing(),
@@ -106,7 +106,7 @@ fn get_bot_commands() -> Vec<Command<BotVars, anyhow::Error>> {
     ]
 }
 
-pub(crate) fn create_bot_framework_options() -> FrameworkOptions<BotVars, anyhow::Error> {
+pub(crate) fn create_bot_framework_options() -> FrameworkOptions<BotVars, BotError> {
     FrameworkOptions {
         on_error: handle_framework_error,
         commands: get_bot_commands(),
