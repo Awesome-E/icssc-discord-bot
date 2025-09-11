@@ -99,6 +99,7 @@ fn get_bot_commands() -> Vec<Command<BotVars, BotError>> {
     vec![
         matchy::create_pairing::create_pairing(),
         matchy::send_pairing::send_pairing(),
+        matchy::dump_pairings::dump_pairings(),
         spottings::meta::ping(),
         spottings::snipe::snipe(),
         spottings::leaderboard::leaderboard(),

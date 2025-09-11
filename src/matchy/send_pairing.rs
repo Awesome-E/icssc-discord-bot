@@ -85,11 +85,11 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
                  \t\t\t\t\t\t\t \\- Ethan \n\n\n\
                  **Your pairing is with:** {pairing_str}\n\n\
                  _(responses here will not be seen; please message Ethan (@awesome_e) directly if you have any questions)_");
-            let _ = user
-                .create_dm_channel(&ctx)
-                .await?
-                .say(&ctx, message_str)
-                .await;
+            // let _ = user
+            //     .create_dm_channel(&ctx)
+            //     .await?
+            //     .say(&ctx, message_str)
+            //     .await;
 
             messages_sent += 1;
         }
