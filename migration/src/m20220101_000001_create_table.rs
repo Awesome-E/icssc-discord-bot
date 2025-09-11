@@ -16,7 +16,7 @@ impl MigrationTrait for Migration {
                     .col(big_integer(Message::MessageId))
                     .col(big_integer(Message::AuthorId))
                     .col(timestamp(Message::TimePosted).generated(
-                        "to_timestamp((message_id / (2 ^ 22) + 1420070400000) / 1000)",
+                        Expr::cust("to_timestamp((message_id / (2 ^ 22) + 1420070400000) / 1000)"),
                         true,
                     ))
                     .primary_key(Index::create().col(Message::MessageId))
