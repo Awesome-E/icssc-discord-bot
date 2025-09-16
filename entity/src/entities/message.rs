@@ -11,6 +11,7 @@ pub struct Model {
     pub message_id: i64,
     pub author_id: i64,
     pub time_posted: DateTime,
+    pub is_social: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

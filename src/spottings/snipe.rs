@@ -139,6 +139,7 @@ pub(crate) async fn post(
         message_id: ActiveValue::Set(message.id.into()),
         author_id: ActiveValue::Set(message.author.id.into()),
         time_posted: ActiveValue::NotSet,
+        is_social: ActiveValue::Set(false),
     };
 
     let snipes_sql = victims

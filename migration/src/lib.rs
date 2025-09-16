@@ -2,6 +2,7 @@ pub use sea_orm_migration::prelude::*;
 
 mod m20220101_000001_create_table;
 mod m20250905_213900_matchy_history;
+mod m20250916_174534_social_spottings;
 
 pub struct Migrator;
 
@@ -11,6 +12,7 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20220101_000001_create_table::Migration),
             Box::new(m20250905_213900_matchy_history::Migration),
+            Box::new(m20250916_174534_social_spottings::Migration),
         ]
     }
 }
