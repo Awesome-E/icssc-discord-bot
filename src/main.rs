@@ -65,7 +65,7 @@ async fn main() {
             let data = data.clone();
             |ctx, _ready, framework| {
                 Box::pin(async move {
-                    register_commands(&ctx, &framework).await?;
+                    register_commands(ctx, framework).await?;
                     Ok(data)
                 })
             }

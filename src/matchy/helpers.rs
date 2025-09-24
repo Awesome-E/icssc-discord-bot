@@ -22,7 +22,7 @@ pub fn hash_seed(seed: &str) -> u64 {
 
 /// Generates a short checksum for a given seed & pairing, which can be used to verify that nothing
 /// has changed between multiple uses.
-pub fn checksum_matching<T: Hash>(seed: u64, pairs: &Vec<Match<T>>) -> String {
+pub fn checksum_matching<T: Hash>(seed: u64, pairs: &[Match<T>]) -> String {
     let mut hasher = DefaultHasher::new();
     seed.hash(&mut hasher);
     pairs.hash(&mut hasher);
@@ -36,7 +36,7 @@ pub fn format_id(id: &UserId) -> String {
 }
 
 /// Formats a pairing into a string suitable for a discord message
-pub fn format_pairs(pairs: &Vec<Match<UserId>>) -> String {
+pub fn format_pairs(pairs: &[Match<UserId>]) -> String {
     pairs
         .iter()
         .map(|p| {

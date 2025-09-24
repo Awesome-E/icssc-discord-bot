@@ -57,7 +57,7 @@ impl ConstraintEdge {
 /// Uses a graph matching algorithm.
 pub fn graph_pair<T: Hash + Eq + Copy>(
     vec: Vec<T>,
-    previous_pairings: &Vec<Match<T>>,
+    previous_pairings: &[Match<T>],
     seed: u64,
 ) -> Result<Pairing<T>> {
     if vec.len() < 2 {
@@ -114,8 +114,8 @@ pub fn graph_pair<T: Hash + Eq + Copy>(
 }
 
 fn build_matching_graph<T: Hash + Eq + Copy>(
-    vec: &Vec<T>,
-    previous_pairings: &Vec<Match<T>>,
+    vec: &[T],
+    previous_pairings: &[Match<T>],
 ) -> (UnMatrix, HashSet<ConstraintEdge>) {
     let nodes: HashMap<&T, NodeId> = vec
         .iter()
@@ -135,8 +135,7 @@ fn build_matching_graph<T: Hash + Eq + Copy>(
             // convert a Match into an iterable of edges of type NodeId
             // each edge has the smaller index first
             m.iter()
-                .flat_map(|u| nodes.get(u)) // filters out constraints not in `vec`
-                .map(|u| u.clone())
+                .flat_map(|u| nodes.get(u)).copied()
                 .tuple_combinations()
                 .map(ConstraintEdge::new)
         })
@@ -145,8 +144,7 @@ fn build_matching_graph<T: Hash + Eq + Copy>(
     (
         UnMatrix::from_edges(
             nodes
-                .values()
-                .map(|i| *i)
+                .values().copied()
                 .tuple_combinations()
                 .filter(|e| !constraints.contains(&ConstraintEdge::new(*e))),
         ),
@@ -192,7 +190,6 @@ fn add_remainder_to_pairing(
                     (count, v)
                 })
                 .min()
-                .map(|(score, m)| (score, m))
                 .context("Unexpectedly encountered empty matched iterable")?;
 
             remainder_match.push(remainder);

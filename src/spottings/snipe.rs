@@ -15,7 +15,6 @@ use serenity::all::{
     Mentionable, ReactionType, User, UserId,
 };
 use std::collections::HashSet;
-use std::convert::identity;
 use std::num::NonZeroUsize;
 use std::time::Duration;
 
@@ -54,7 +53,7 @@ pub(crate) async fn post(
         // victim10,
     ]
     .into_iter()
-    .filter_map(identity)
+    .flatten()
     .collect::<HashSet<_>>();
 
     if victims.iter().any(|v| v.bot) {

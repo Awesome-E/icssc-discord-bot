@@ -30,7 +30,7 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
         bail!("Could not find history channel");
     };
 
-    let seed = hash_seed(&seed_str);
+    let seed = hash_seed(seed_str);
 
     let Pairing(pairs, _) = match_members(ctx, seed).await?;
     let pairs_str = format_pairs(&pairs);
@@ -64,14 +64,14 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
         for user in &pair {
             let pairing: Vec<_> = pair.iter().filter(|u| *u != user).collect();
             let pairing_str = try_join_all(pairing.iter().map(|uid| {
-                return async {
+                async {
                     let u = uid.to_user(&ctx).await?;
                     Ok::<String, Error>(format!(
                         "<@{}> ({})",
                         u.id,
                         u.global_name.unwrap_or(u.name)
                     ))
-                };
+                }
             }))
             .await
             .context("Unable to fetch names for user ids")?
@@ -109,7 +109,7 @@ pub async fn send_pairing(
     ctx.defer().await?;
     let resp = handle_send_pairing(ctx, key)
         .await
-        .unwrap_or_else(|e| format!("Error: {}", e));
+        .unwrap_or_else(|e| format!("Error: {e}"));
     println!("{resp}");
     ctx.say(resp).await?;
     Ok(())

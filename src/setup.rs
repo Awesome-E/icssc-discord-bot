@@ -1,17 +1,17 @@
 use crate::spottings;
 use crate::util::ContextExtras;
 use crate::{BotError, BotVars};
-use crate::{BotVarsInner, matchy};
+use crate::matchy;
 use clap::ArgMatches;
 use itertools::Itertools;
 use pluralizer::pluralize;
 use poise::{BoxFuture, Command, Framework, FrameworkError, FrameworkOptions};
 use serenity::FutureExt;
-use serenity::all::{Context, GuildId, Ready};
+use serenity::all::{Context, GuildId};
 use std::env;
 use std::path::PathBuf;
 
-pub(crate) fn load_env(args: ArgMatches) -> () {
+pub(crate) fn load_env(args: ArgMatches) {
     dotenv::from_filename(
         args.get_one::<PathBuf>("config")
             .expect("config file is bad path?"),
@@ -55,7 +55,7 @@ pub(crate) async fn register_commands(
 
 fn handle_framework_error(error: FrameworkError<BotVars, BotError>) -> BoxFuture<()> {
     async move {
-        println!("Error: {}", error);
+        println!("Error: {error}");
 
         let Some(ctx) = error.ctx() else { return };
         let error_res = match error {
@@ -63,15 +63,14 @@ fn handle_framework_error(error: FrameworkError<BotVars, BotError>) -> BoxFuture
                 error: wrapped_error,
                 ..
             } => {
-                ctx.reply_ephemeral(format!("An unexpected error occurred: {:?}", wrapped_error))
+                ctx.reply_ephemeral(format!("An unexpected error occurred: {wrapped_error:?}"))
                     .await
             }
             _ => ctx.reply_ephemeral("An unknown error occurred").await,
         };
         if let Err(e) = error_res {
             println!(
-                "A further error occurred sending the error message to discord: {:?}",
-                e
+                "A further error occurred sending the error message to discord: {e:?}"
             )
         }
     }

@@ -1,6 +1,6 @@
 use crate::Context;
 use crate::matchy::discord_helpers::previous_matches;
-use anyhow::{Context as _, Error, Result};
+use anyhow::{Error, Result};
 use entity::{matchy_meetup_pair, matchy_meetup_pair_member, matchy_meetup_round};
 use sea_orm::{ActiveModelTrait, DbErr, Set, TransactionTrait};
 
@@ -53,7 +53,7 @@ pub async fn dump_pairings(ctx: Context<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
     let resp = handle_dump_pairings(&ctx)
         .await
-        .unwrap_or_else(|e| format!("Error: {}", e));
+        .unwrap_or_else(|e| format!("Error: {e}"));
     println!("{resp}");
     ctx.say(resp).await?;
     Ok(())

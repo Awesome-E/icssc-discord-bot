@@ -127,9 +127,9 @@ pub async fn match_members(ctx: Context<'_>, seed: u64) -> Result<Pairing<UserId
             role.id
         );
     }
-    Ok(graph_pair(
+    graph_pair(
         participants,
         &previous_matches(&ctx, history_channel.id).await?,
         seed,
-    )?)
+    )
 }

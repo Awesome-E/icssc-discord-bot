@@ -15,11 +15,11 @@ pub(crate) async fn ping(ctx: Context<'_>) -> Result<(), BotError> {
         "{}\n\n{}",
         match ping_num {
             0 => String::from("ok, waiting for more data to report ping"),
-            _ => format!("hi, heartbeat is pinging in {} ms", ping_num),
+            _ => format!("hi, heartbeat is pinging in {ping_num} ms"),
         },
         match check_db_ok(&ctx).await {
             Ok(_) => String::from("postgres ok"),
-            Err(err) => format!("postgres not ok: {}", err),
+            Err(err) => format!("postgres not ok: {err}"),
         }
     ))
     .await?;
