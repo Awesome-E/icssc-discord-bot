@@ -1,15 +1,15 @@
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
-use crate::util::{base_embed, ContextExtras};
+use crate::util::{ContextExtras, base_embed};
 use crate::{BotError, Context};
+use anyhow::Context as _;
 use entity::{message, opt_out, snipe};
 use itertools::Itertools;
 use poise::CreateReply;
-use sea_orm::{
-    ActiveValue, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryOrder,
-    TransactionTrait,
-};
 use sea_orm::QueryFilter;
+use sea_orm::{
+    ActiveValue, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryOrder, TransactionTrait,
+};
 use serenity::all::{
     CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage,
     Mentionable, ReactionType, User, UserId,
@@ -18,7 +18,6 @@ use std::collections::HashSet;
 use std::convert::identity;
 use std::num::NonZeroUsize;
 use std::time::Duration;
-use anyhow::Context as _;
 
 #[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
 pub(crate) async fn snipe(ctx: Context<'_>) -> Result<(), BotError> {
@@ -104,10 +103,10 @@ pub(crate) async fn post(
         .send(
             CreateReply::default()
                 .embed(emb.clone())
-                .components(vec![CreateActionRow::Buttons(vec![CreateButton::new(
-                    "snipe_post_confirm",
-                )
-                .emoji(ReactionType::Unicode(String::from("😎")))])])
+                .components(vec![CreateActionRow::Buttons(vec![
+                    CreateButton::new("snipe_post_confirm")
+                        .emoji(ReactionType::Unicode(String::from("😎"))),
+                ])])
                 .reply(true)
                 .ephemeral(true),
         )

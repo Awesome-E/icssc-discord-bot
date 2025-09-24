@@ -14,7 +14,7 @@ impl MigrationTrait for Migration {
                     .col(big_integer(MatchyMeetupOptIn::UserId))
                     .col(timestamp(MatchyMeetupOptIn::CreatedAt).default(Expr::cust("NOW()")))
                     .primary_key(Index::create().col(MatchyMeetupOptIn::UserId))
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }

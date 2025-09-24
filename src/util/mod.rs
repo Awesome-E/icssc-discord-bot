@@ -21,7 +21,10 @@ pub trait ContextExtras<'a> {
 }
 
 impl<'a> ContextExtras<'a> for Context<'a> {
-    async fn reply_ephemeral(self, text: impl Into<String>) -> Result<ReplyHandle<'a>, serenity::Error> {
+    async fn reply_ephemeral(
+        self,
+        text: impl Into<String>,
+    ) -> Result<ReplyHandle<'a>, serenity::Error> {
         self.send(
             CreateReply::default()
                 .content(text)

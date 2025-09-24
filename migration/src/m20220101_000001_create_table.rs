@@ -72,7 +72,10 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        manager.get_connection().execute_unprepared(r#"
+        manager
+            .get_connection()
+            .execute_unprepared(
+                r#"
 CREATE MATERIALIZED VIEW IF NOT EXISTS user_stat AS
 SELECT u.id,
        COALESCE(snipe.cnt, 0)::bigint  AS snipe,
@@ -98,13 +101,18 @@ FROM (SELECT DISTINCT author_id AS id
 ORDER BY snipe_rate DESC NULLS LAST;
 
 REFRESH MATERIALIZED VIEW user_stat;
-        "#).await?;
+        "#,
+            )
+            .await?;
 
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.get_connection().execute_unprepared("DROP MATERIALIZED VIEW user_stat;").await?;
+        manager
+            .get_connection()
+            .execute_unprepared("DROP MATERIALIZED VIEW user_stat;")
+            .await?;
 
         manager
             .drop_table(Table::drop().table(OptOut::Table).cascade().to_owned())

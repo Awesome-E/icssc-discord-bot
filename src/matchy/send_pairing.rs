@@ -1,9 +1,9 @@
+use super::ROLE_NAME;
 use super::config::{HISTORY_CHANNEL_NAME, NOTIFICATION_CHANNEL_NAME};
 use super::discord_helpers::{find_channel, match_members};
-use super::helpers::{checksum_matching, format_pairs, hash_seed, Pairing};
-use super::ROLE_NAME;
+use super::helpers::{Pairing, checksum_matching, format_pairs, hash_seed};
 use crate::Context;
-use anyhow::{bail, ensure, Context as _, Error, Result};
+use anyhow::{Context as _, Error, Result, bail, ensure};
 use poise::futures_util::future::try_join_all;
 use serenity::all::EditMessage;
 
@@ -73,18 +73,20 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
                     ))
                 };
             }))
-                .await
-                .context("Unable to fetch names for user ids")?
-                .join(" and ");
+            .await
+            .context("Unable to fetch names for user ids")?
+            .join(" and ");
 
-            let message_str = format!("Hey, thanks for joining ICSSC's Matchy Meetups. Your pairing \
+            let message_str = format!(
+                "Hey, thanks for joining ICSSC's Matchy Meetups. Your pairing \
                  for this round is here! Please take this opportunity to reach out to them and \
                  schedule some time to hang out in the next two weeks. \
                  Don't forget to send pics to https://discord.com/channels/760915616793755669/1199228930222194779 \
                  while you're there, and I hope you enjoy!\n\
                  \t\t\t\t\t\t\t \\- Ethan \n\n\n\
                  **Your pairing is with:** {pairing_str}\n\n\
-                 _(responses here will not be seen; please message Ethan (@awesome_e) directly if you have any questions)_");
+                 _(responses here will not be seen; please message Ethan (@awesome_e) directly if you have any questions)_"
+            );
             // let _ = user
             //     .create_dm_channel(&ctx)
             //     .await?
@@ -99,11 +101,7 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
 }
 
 /// Send a message to each member of the pairing.
-#[poise::command(
-    slash_command,
-    hide_in_help,
-    required_permissions = "ADMINISTRATOR",
-)]
+#[poise::command(slash_command, hide_in_help, required_permissions = "ADMINISTRATOR")]
 pub async fn send_pairing(
     ctx: Context<'_>,
     #[description = "A pairing key returned by /create_pairing."] key: String,

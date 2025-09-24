@@ -1,9 +1,9 @@
 use super::discord_helpers::match_members;
-use super::helpers::{format_id, format_pairs, hash_seed};
 use super::helpers::Pairing;
+use super::helpers::{format_id, format_pairs, hash_seed};
+use crate::Context;
 use anyhow::Result;
 use itertools::Itertools;
-use crate::Context;
 
 async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<String> {
     let seed = hash_seed(&seed_str);
@@ -35,7 +35,7 @@ async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<Str
     hide_in_help,
     ephemeral,
     required_permissions = "ADMINISTRATOR",
-    aliases("pair"),
+    aliases("pair")
 )]
 pub async fn create_pairing(
     ctx: Context<'_>,

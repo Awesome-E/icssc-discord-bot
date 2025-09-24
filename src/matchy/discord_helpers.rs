@@ -1,9 +1,9 @@
+use super::ROLE_NAME;
 use super::config::HISTORY_CHANNEL_NAME;
 use super::helpers::{Match, Pairing};
 use super::matching::graph_pair;
-use super::ROLE_NAME;
 use crate::Context;
-use anyhow::{bail, Context as _, Result};
+use anyhow::{Context as _, Result, bail};
 use chrono::{Duration, Local};
 use itertools::Itertools;
 use poise::futures_util::StreamExt;

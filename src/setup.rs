@@ -1,23 +1,28 @@
-use clap::{ArgMatches};
-use itertools::Itertools;
-use poise::{BoxFuture, Command, Framework, FrameworkError, FrameworkOptions};
-use pluralizer::pluralize;
-use serenity::all::{Context, Ready, GuildId};
-use std::{path::PathBuf};
-use std::env;
-use crate::util::ContextExtras;
-use crate::{matchy, BotVarsInner};
 use crate::spottings;
-use serenity::{FutureExt};
+use crate::util::ContextExtras;
 use crate::{BotError, BotVars};
+use crate::{BotVarsInner, matchy};
+use clap::ArgMatches;
+use itertools::Itertools;
+use pluralizer::pluralize;
+use poise::{BoxFuture, Command, Framework, FrameworkError, FrameworkOptions};
+use serenity::FutureExt;
+use serenity::all::{Context, GuildId, Ready};
+use std::env;
+use std::path::PathBuf;
 
 pub(crate) fn load_env(args: ArgMatches) -> () {
     dotenv::from_filename(
-        args.get_one::<PathBuf>("config").expect("config file is bad path?")
-    ).ok();
+        args.get_one::<PathBuf>("config")
+            .expect("config file is bad path?"),
+    )
+    .ok();
 }
 
-pub(crate) async fn register_commands(ctx: &Context, framework: &Framework<BotVars, BotError>) -> Result<(), BotError> {
+pub(crate) async fn register_commands(
+    ctx: &Context,
+    framework: &Framework<BotVars, BotError>,
+) -> Result<(), BotError> {
     let is_global = env::var("ICSSC_REGISTER_GLOBAL").is_ok();
     let no_commands = &[] as &[Command<BotVars, BotError>];
     let commands = &framework.options().commands;
@@ -54,22 +59,28 @@ fn handle_framework_error(error: FrameworkError<BotVars, BotError>) -> BoxFuture
 
         let Some(ctx) = error.ctx() else { return };
         let error_res = match error {
-            FrameworkError::Command { error: wrapped_error, .. } => {
-                ctx.reply_ephemeral(format!(
-                    "An unexpected error occurred: {:?}",
-                    wrapped_error
-                ))
+            FrameworkError::Command {
+                error: wrapped_error,
+                ..
+            } => {
+                ctx.reply_ephemeral(format!("An unexpected error occurred: {:?}", wrapped_error))
                     .await
             }
             _ => ctx.reply_ephemeral("An unknown error occurred").await,
         };
         if let Err(e) = error_res {
-            println!("A further error occurred sending the error message to discord: {:?}", e)
+            println!(
+                "A further error occurred sending the error message to discord: {:?}",
+                e
+            )
         }
-    }.boxed()
+    }
+    .boxed()
 }
 
-fn check_command_invocation(ctx: poise::Context<BotVars, BotError>) -> BoxFuture<Result<bool, BotError>> {
+fn check_command_invocation(
+    ctx: poise::Context<BotVars, BotError>,
+) -> BoxFuture<Result<bool, BotError>> {
     const ICSSC_SERVER: u64 = 760915616793755669;
     const ALLOWED_CHANNELS: &[u64] = &[1328907402321592391, 1338632123929591970];
 
@@ -77,7 +88,7 @@ fn check_command_invocation(ctx: poise::Context<BotVars, BotError>) -> BoxFuture
         Ok(ctx.guild_id() != Some(GuildId::from(ICSSC_SERVER))
             || ALLOWED_CHANNELS.contains(&ctx.channel_id().into()))
     }
-        .boxed()
+    .boxed()
 }
 
 fn get_bot_commands() -> Vec<Command<BotVars, BotError>> {

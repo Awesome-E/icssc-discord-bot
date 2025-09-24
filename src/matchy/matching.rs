@@ -1,9 +1,9 @@
 use super::helpers::{Match, Pairing};
-use anyhow::{bail, ensure, Context, Result};
+use anyhow::{Context, Result, bail, ensure};
 use itertools::Itertools;
-use petgraph::algo::{maximum_matching, Matching};
-use petgraph::matrix_graph::MatrixGraph;
 use petgraph::Undirected;
+use petgraph::algo::{Matching, maximum_matching};
+use petgraph::matrix_graph::MatrixGraph;
 use rand::prelude::SliceRandom;
 use rand_chacha::rand_core::SeedableRng;
 use std::cmp::{max, min};
@@ -64,7 +64,9 @@ pub fn graph_pair<T: Hash + Eq + Copy>(
         bail!("Cannot pair with < 2 elements.");
     }
     if vec.len() > 200 {
-        bail!("Exceeded the 200-element limit of graph_pair() (this can be increased if we verify performance)");
+        bail!(
+            "Exceeded the 200-element limit of graph_pair() (this can be increased if we verify performance)"
+        );
     }
     let vec = shuffled(vec, seed);
 

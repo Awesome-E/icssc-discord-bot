@@ -1,13 +1,13 @@
 mod handler;
 mod matchy;
+mod setup;
 mod spottings;
 mod util;
-mod setup;
 
 use crate::setup::{create_bot_framework_options, register_commands};
 use clap::ValueHint;
-use serenity::all::{GatewayIntents};
-use serenity::{Client};
+use serenity::Client;
+use serenity::all::GatewayIntents;
 use std::env;
 use std::ops::{BitAnd, Deref};
 use std::path::PathBuf;
@@ -36,12 +36,11 @@ impl BotVars {
                 db: {
                     let db_url = env::var("DATABASE_URL").expect("need postgres URL!");
                     sea_orm::Database::connect(&db_url).await.unwrap()
-                }
-            })
+                },
+            }),
         }
     }
 }
-
 
 #[tokio::main]
 async fn main() {
@@ -64,10 +63,12 @@ async fn main() {
         .options(create_bot_framework_options())
         .setup({
             let data = data.clone();
-            |ctx, _ready, framework| Box::pin(async move {
-                register_commands(&ctx, &framework).await?;
-                Ok(data)
-            })
+            |ctx, _ready, framework| {
+                Box::pin(async move {
+                    register_commands(&ctx, &framework).await?;
+                    Ok(data)
+                })
+            }
         })
         .build();
 
@@ -78,10 +79,10 @@ async fn main() {
             .bitand(GatewayIntents::GUILD_MEMBERS)
             .bitand(GatewayIntents::MESSAGE_CONTENT),
     )
-        .event_handler(handler::LaikaEventHandler { data })
-        .framework(framework)
-        .await
-        .expect("couldn't make client");
+    .event_handler(handler::LaikaEventHandler { data })
+    .framework(framework)
+    .await
+    .expect("couldn't make client");
 
     if let Err(why) = client.start().await {
         println!("Client error: {why:?}");

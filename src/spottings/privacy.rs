@@ -1,10 +1,10 @@
-use anyhow::Context as _;
 use crate::util::ContextExtras;
 use crate::{BotError, Context};
+use anyhow::Context as _;
 use entity::opt_out;
 use poise::ChoiceParameter;
-use sea_orm::EntityTrait;
 use sea_orm::ActiveValue;
+use sea_orm::EntityTrait;
 
 #[poise::command(prefix_command, slash_command, subcommands("status", "set"))]
 pub(crate) async fn opt_out(ctx: Context<'_>) -> Result<(), BotError> {
@@ -17,7 +17,8 @@ pub(crate) async fn opt_out(ctx: Context<'_>) -> Result<(), BotError> {
 pub(crate) async fn status(ctx: Context<'_>) -> Result<(), BotError> {
     let got = opt_out::Entity::find_by_id(ctx.author().id.get() as i64)
         .one(&ctx.data().db)
-        .await.context("get opt out user id")?;
+        .await
+        .context("get opt out user id")?;
 
     ctx.reply_ephemeral(format!(
         "you are opted **{}** snipes",

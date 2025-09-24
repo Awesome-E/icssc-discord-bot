@@ -1,5 +1,5 @@
-use crate::{BotError, Context};
 use crate::util::ContextExtras;
+use crate::{BotError, Context};
 
 async fn check_db_ok(ctx: &Context<'_>) -> Result<(), BotError> {
     ctx.data().db.ping().await?;

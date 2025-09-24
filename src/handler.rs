@@ -1,11 +1,14 @@
-use crate::util::text::bot_invite_url;
 use crate::BotVars;
+use crate::matchy::opt_in::MatchyMeetupOptIn;
+use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
-use serenity::all::{ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse, EventHandler, Interaction, OnlineStatus, Permissions, Ready};
+use serenity::all::{
+    ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse, EventHandler,
+    Interaction, OnlineStatus, Permissions, Ready,
+};
 use serenity::async_trait;
 use std::time::Duration;
 use tokio::time;
-use crate::matchy::opt_in::MatchyMeetupOptIn;
 
 pub(crate) struct LaikaEventHandler {
     pub(crate) data: BotVars,
@@ -63,9 +66,21 @@ impl EventHandler for LaikaEventHandler {
         if let Interaction::Component(interaction) = interaction {
             match interaction.data.custom_id.as_str() {
                 // TODO consider creating enums for custom IDs to avoid magic strings
-                "matchy_opt_in" => MatchyMeetupOptIn::new(&ctx, &self.data).join(&interaction).await,
-                "matchy_opt_out" => MatchyMeetupOptIn::new(&ctx, &self.data).leave(&interaction).await,
-                "matchy_check_participation" => MatchyMeetupOptIn::new(&ctx, &self.data).check(&interaction).await,
+                "matchy_opt_in" => {
+                    MatchyMeetupOptIn::new(&ctx, &self.data)
+                        .join(&interaction)
+                        .await
+                }
+                "matchy_opt_out" => {
+                    MatchyMeetupOptIn::new(&ctx, &self.data)
+                        .leave(&interaction)
+                        .await
+                }
+                "matchy_check_participation" => {
+                    MatchyMeetupOptIn::new(&ctx, &self.data)
+                        .check(&interaction)
+                        .await
+                }
                 _ => {
                     let _ = interaction
                         .create_response(ctx.http(), CreateInteractionResponse::Acknowledge)

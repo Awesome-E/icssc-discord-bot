@@ -9,8 +9,14 @@ pub(crate) fn bot_invite_url(
     with_slash_commands: bool,
 ) -> String {
     let perms_section = permissions.bits().to_string();
-    format!("https://discord.com/oauth2/authorize?client_id={id}&permissions={perms_section}&integration_type=0&scope=bot{}",
-            if with_slash_commands { "+applications.commands" } else { "" })
+    format!(
+        "https://discord.com/oauth2/authorize?client_id={id}&permissions={perms_section}&integration_type=0&scope=bot{}",
+        if with_slash_commands {
+            "+applications.commands"
+        } else {
+            ""
+        }
+    )
 }
 
 pub(crate) fn remove_markdown(input: &str) -> String {

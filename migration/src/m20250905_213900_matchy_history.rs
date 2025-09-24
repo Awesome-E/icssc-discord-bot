@@ -47,7 +47,10 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from(MatchyMeetupPairMember::Table, MatchyMeetupPairMember::PairId)
+                            .from(
+                                MatchyMeetupPairMember::Table,
+                                MatchyMeetupPairMember::PairId,
+                            )
                             .to(MatchyMeetupPair::Table, MatchyMeetupPair::Id),
                     )
                     .to_owned(),
