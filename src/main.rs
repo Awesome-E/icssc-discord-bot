@@ -4,17 +4,44 @@ mod spottings;
 mod util;
 mod setup;
 
-use crate::setup::{create_bot_framework_options, framework_setup};
+use crate::setup::{create_bot_framework_options, register_commands};
 use clap::ValueHint;
 use serenity::all::{GatewayIntents};
 use serenity::{Client};
 use std::env;
-use std::ops::BitAnd;
+use std::ops::{BitAnd, Deref};
 use std::path::PathBuf;
 
-struct BotVars {
+struct BotVarsInner {
     db: sea_orm::DatabaseConnection,
 }
+
+#[derive(Clone)]
+struct BotVars {
+    inner: std::sync::Arc<BotVarsInner>,
+}
+
+impl Deref for BotVars {
+    type Target = BotVarsInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl BotVars {
+    async fn new() -> Self {
+        Self {
+            inner: std::sync::Arc::new(BotVarsInner {
+                db: {
+                    let db_url = env::var("DATABASE_URL").expect("need postgres URL!");
+                    sea_orm::Database::connect(&db_url).await.unwrap()
+                }
+            })
+        }
+    }
+}
+
 
 #[tokio::main]
 async fn main() {
@@ -31,9 +58,17 @@ async fn main() {
 
     setup::load_env(args);
 
+    let data = BotVars::new().await;
+
     let framework = poise::Framework::<BotVars, BotError>::builder()
         .options(create_bot_framework_options())
-        .setup(framework_setup)
+        .setup({
+            let data = data.clone();
+            |ctx, _ready, framework| Box::pin(async move {
+                register_commands(&ctx, &framework).await?;
+                Ok(data)
+            })
+        })
         .build();
 
     let token = env::var("ICSSC_DISCORD_TOKEN").expect("no discord token set");
@@ -43,10 +78,10 @@ async fn main() {
             .bitand(GatewayIntents::GUILD_MEMBERS)
             .bitand(GatewayIntents::MESSAGE_CONTENT),
     )
-    .event_handler(handler::ICSSpottingsCouncilEventHandler)
-    .framework(framework)
-    .await
-    .expect("couldn't make client");
+        .event_handler(handler::LaikaEventHandler { data })
+        .framework(framework)
+        .await
+        .expect("couldn't make client");
 
     if let Err(why) = client.start().await {
         println!("Client error: {why:?}");

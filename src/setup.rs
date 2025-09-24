@@ -1,12 +1,12 @@
 use clap::{ArgMatches};
 use itertools::Itertools;
-use poise::{BoxFuture,Command,Framework,FrameworkError, FrameworkOptions};
+use poise::{BoxFuture, Command, Framework, FrameworkError, FrameworkOptions};
 use pluralizer::pluralize;
-use serenity::all::{Context,Ready,GuildId};
+use serenity::all::{Context, Ready, GuildId};
 use std::{path::PathBuf};
 use std::env;
 use crate::util::ContextExtras;
-use crate::matchy;
+use crate::{matchy, BotVarsInner};
 use crate::spottings;
 use serenity::{FutureExt};
 use crate::{BotError, BotVars};
@@ -17,7 +17,7 @@ pub(crate) fn load_env(args: ArgMatches) -> () {
     ).ok();
 }
 
-async fn register_commands(ctx: &Context, framework: &Framework<BotVars, BotError>) -> Result<(), BotError> {
+pub(crate) async fn register_commands(ctx: &Context, framework: &Framework<BotVars, BotError>) -> Result<(), BotError> {
     let is_global = env::var("ICSSC_REGISTER_GLOBAL").is_ok();
     let no_commands = &[] as &[Command<BotVars, BotError>];
     let commands = &framework.options().commands;
@@ -48,21 +48,6 @@ async fn register_commands(ctx: &Context, framework: &Framework<BotVars, BotErro
     Ok(())
 }
 
-pub(crate) fn framework_setup<'a>(
-    ctx: &'a Context,
-    _ready: &'a Ready,
-    framework: &'a Framework<BotVars, BotError>
-) -> BoxFuture<'a, Result<BotVars, BotError>> {
-    async move {
-        register_commands(&ctx, &framework).await?;
-
-        let db_url = env::var("DATABASE_URL").expect("need postgres URL!");
-        let db = sea_orm::Database::connect(&db_url).await.unwrap();
-
-        Ok(BotVars { db })
-    }.boxed()
-}
-
 fn handle_framework_error(error: FrameworkError<BotVars, BotError>) -> BoxFuture<()> {
     async move {
         println!("Error: {}", error);
@@ -74,7 +59,7 @@ fn handle_framework_error(error: FrameworkError<BotVars, BotError>) -> BoxFuture
                     "An unexpected error occurred: {:?}",
                     wrapped_error
                 ))
-                .await
+                    .await
             }
             _ => ctx.reply_ephemeral("An unknown error occurred").await,
         };
@@ -92,7 +77,7 @@ fn check_command_invocation(ctx: poise::Context<BotVars, BotError>) -> BoxFuture
         Ok(ctx.guild_id() != Some(GuildId::from(ICSSC_SERVER))
             || ALLOWED_CHANNELS.contains(&ctx.channel_id().into()))
     }
-    .boxed()
+        .boxed()
 }
 
 fn get_bot_commands() -> Vec<Command<BotVars, BotError>> {

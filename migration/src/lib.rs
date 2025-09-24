@@ -3,6 +3,7 @@ pub use sea_orm_migration::prelude::*;
 mod m20220101_000001_create_table;
 mod m20250905_213900_matchy_history;
 mod m20250916_174534_social_spottings;
+mod m20250923_231905_matchy_opt_in;
 
 pub struct Migrator;
 
@@ -13,6 +14,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20220101_000001_create_table::Migration),
             Box::new(m20250905_213900_matchy_history::Migration),
             Box::new(m20250916_174534_social_spottings::Migration),
+            Box::new(m20250923_231905_matchy_opt_in::Migration),
         ]
     }
 }

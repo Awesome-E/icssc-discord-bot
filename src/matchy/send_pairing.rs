@@ -73,9 +73,9 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
                     ))
                 };
             }))
-            .await
-            .context("Unable to fetch names for user ids")?
-            .join(" and ");
+                .await
+                .context("Unable to fetch names for user ids")?
+                .join(" and ");
 
             let message_str = format!("Hey, thanks for joining ICSSC's Matchy Meetups. Your pairing \
                  for this round is here! Please take this opportunity to reach out to them and \

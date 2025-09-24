@@ -5,3 +5,10 @@ Discord Utility Bot for ICSSC
 
 Discord bot to track "snipes", incidental encounters on the UCI campus, between members of the [ICS Student Council](https://icssc.club).
 Massive thanks to the ICSSC Graphics Committee for being awesome and drawing up custom assets in line with ICSSC and UCI's graphical themes.
+
+## Create Database Migration
+
+- `sea-orm-cli migrate generate [name]`
+- `sea-orm-cli migrate up`
+- `sea-orm-cli generate entity -o entity/src/entities`
+    - Revert the removed line in `entities/mod.rs` for the materialized view :P
