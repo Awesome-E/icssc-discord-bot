@@ -62,7 +62,6 @@ impl EventHandler for LaikaEventHandler {
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        dbg!(&interaction);
         if let Interaction::Component(interaction) = interaction {
             match interaction.data.custom_id.as_str() {
                 // TODO consider creating enums for custom IDs to avoid magic strings

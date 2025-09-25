@@ -1,11 +1,12 @@
-use crate::Context;
+use crate::{BotVars, Context};
 use crate::matchy::discord_helpers::previous_matches;
 use anyhow::{Error, Result};
 use entity::{matchy_meetup_pair, matchy_meetup_pair_member, matchy_meetup_round};
 use sea_orm::{ActiveModelTrait, DbErr, Set, TransactionTrait};
+use crate::matchy::participation::get_previous_matches;
 
 async fn handle_dump_pairings(ctx: &Context<'_>) -> Result<String> {
-    let prev_matches = previous_matches(ctx, ctx.channel_id()).await?;
+    let prev_matches = get_previous_matches(ctx.data()).await?;
 
     let round_sql = matchy_meetup_round::ActiveModel {
         id: Default::default(),
@@ -47,7 +48,7 @@ async fn handle_dump_pairings(ctx: &Context<'_>) -> Result<String> {
     Ok(String::from("Dumped pairings to database"))
 }
 
-/// Dump pairing history from teh current into the database
+/// Dump pairing history from the current into the database
 #[poise::command(slash_command, hide_in_help, required_permissions = "ADMINISTRATOR")]
 pub async fn dump_pairings(ctx: Context<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;

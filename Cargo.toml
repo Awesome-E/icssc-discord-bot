@@ -24,6 +24,9 @@ serenity = { version = "0.12.4", features = ["full"] }
 tokio = { version = "1.42.0", features = ["rt", "rt-multi-thread", "macros"] }
 entity = { path = "entity" }
 migration = { path = "migration" }
+serde = "1.0.226"
+jsonwebtoken = "9.3.1"
+reqwest = { version = "0.12.23", features = ["json"] }
 
 [profile.release]
 lto = "fat"
