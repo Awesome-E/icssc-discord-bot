@@ -1,6 +1,10 @@
 use itertools::Itertools;
 use serenity::all::UserId;
 use std::hash::{DefaultHasher, Hash, Hasher};
+use anyhow::Context as _;
+use sea_orm::{ActiveModelTrait, Set, TransactionTrait};
+use entity::{matchy_meetup_pair, matchy_meetup_pair_member, matchy_meetup_round};
+use crate::{BotError, Context};
 
 /// A Match represents a single set of elements matched together. In the context of matchy meetups
 /// most Matches are pairs, but if there are an odd number there will be one 3-matching.
@@ -46,4 +50,39 @@ pub fn format_pairs(pairs: &[Match<UserId>]) -> String {
         })
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+pub(crate) async fn add_pairings_to_db(ctx: &Context<'_>, pairs: Vec<Vec<UserId>>) -> Result<(), BotError> {
+    let round_sql = matchy_meetup_round::ActiveModel {
+        id: Default::default(),
+        created_at: Default::default(),
+    };
+
+    let conn = &ctx.data().db;
+    conn.transaction::<_, (), BotError>(move |txn| {
+        Box::pin(async move {
+            let round = round_sql.insert(txn).await.context("insert round")?;
+
+            for pair in pairs {
+                let pair_sql = matchy_meetup_pair::ActiveModel {
+                    id: Default::default(),
+                    round_id: Set(round.id),
+                };
+                let pair_sql = pair_sql.insert(txn).await.context("insert pair")?;
+
+                for user_id in pair {
+                    let pair_member_sql = matchy_meetup_pair_member::ActiveModel {
+                        pair_id: Set(pair_sql.id),
+                        discord_uid: Set(user_id.into()),
+                    };
+                    pair_member_sql
+                        .insert(txn)
+                        .await
+                        .context("insert pair member")?;
+                }
+            }
+            Ok(())
+        })
+    })
+        .await.context("pairing insert fail")
 }

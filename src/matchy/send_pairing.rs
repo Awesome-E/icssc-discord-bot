@@ -1,5 +1,5 @@
 use super::discord_helpers::{find_channel, match_members};
-use super::helpers::{checksum_matching, format_pairs, hash_seed, Pairing};
+use super::helpers::{add_pairings_to_db, checksum_matching, format_pairs, hash_seed, Pairing};
 use crate::Context;
 use anyhow::{bail, ensure, Context as _, Error, Result};
 use itertools::Itertools;
@@ -21,7 +21,7 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
         bail!("Invalid key. Please make sure you only use keys returned by /create_pairing.")
     };
     let Some(notification_channel) =
-        find_channel(&ctx, guild.id, "matchy-meetups").await?
+        find_channel(&ctx, guild.id, "🐕・laika").await?
     else {
         bail!("Could not find notification channel");
     };
@@ -36,6 +36,8 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
         matchy meetups role have changed since this key was generated. Please call /create_pairing \
         again to get a new key."
     );
+
+    add_pairings_to_db(&ctx, pairs.clone()).await?;
 
     notification_channel.say(
         &ctx,
