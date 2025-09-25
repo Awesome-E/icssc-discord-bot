@@ -1,8 +1,8 @@
 use super::helpers::{Match, Pairing};
 use super::matching::graph_pair;
-use crate::matchy::participation::{get_current_opted_in, get_previous_matches};
 use crate::Context;
-use anyhow::{bail, Result};
+use crate::matchy::participation::{get_current_opted_in, get_previous_matches};
+use anyhow::{Result, bail};
 use chrono::{Duration, Local};
 use itertools::Itertools;
 use poise::futures_util::StreamExt;
@@ -48,61 +48,15 @@ async fn guild_members_with_role(
     Ok(members_with_role)
 }
 
-/// Returns an iterable over all previous pairings
-pub async fn previous_matches(
-    ctx: &Context<'_>,
-    channel_id: ChannelId,
-) -> anyhow::Result<Vec<Match<UserId>>> {
-    const MAX_MESSAGES_TO_REQUEST: usize = 1000;
-
-    let mut pairings: Vec<Vec<UserId>> = Vec::new();
-
-    let re = Regex::new(r"<@([0-9]+)>").expect("regex creation should succeed");
-
-    let mut messages = channel_id
-        .messages_iter(&ctx)
-        .boxed()
-        .take(MAX_MESSAGES_TO_REQUEST);
-
-    while let Some(message_result) = messages.next().await {
-        match message_result {
-            Ok(message) => {
-                if *message.timestamp < Local::now() - Duration::days(365) {
-                    // this message was not within the last year
-                    break;
-                }
-                pairings.extend(
-                    message
-                        .content
-                        .split("\n")
-                        .map(|line| {
-                            re.captures_iter(line)
-                                .map(|c| c.extract())
-                                .flat_map(|(_, [id])| id.parse().ok())
-                                .collect()
-                        })
-                        .filter(|pair: &Vec<_>| pair.len() > 1),
-                );
-            }
-            Err(error) => bail!("Error fetching message history: {}", error),
-        }
-    }
-    Ok(pairings)
-}
-
 /// Pairs members with ROLE_NAME in the guild together.
 /// The result is a pairing of
 pub async fn match_members(ctx: Context<'_>, seed: u64) -> Result<Pairing<UserId>> {
-    let participants = get_current_opted_in(&ctx.data()).await?;
+    let participants = get_current_opted_in(ctx.data()).await?;
     if participants.len() <= 1 {
         bail!(
             "Need at least two members to create a pairing (found {}).",
             participants.len()
         );
     }
-    graph_pair(
-        participants,
-        &get_previous_matches(ctx.data()).await?,
-        seed,
-    )
+    graph_pair(participants, &get_previous_matches(ctx.data()).await?, seed)
 }

@@ -42,10 +42,12 @@ impl BotVars {
                 },
                 icssc_guild_id: env::var("ICSSC_GUILD_ID")
                     .expect("need ICSSC_GUILD_ID")
-                    .parse::<_>().expect("ICSSC_GUILD_ID must be valid u64"),
+                    .parse::<_>()
+                    .expect("ICSSC_GUILD_ID must be valid u64"),
                 matchy_channel_id: env::var("ICSSC_MATCHY_CHANNEL_ID")
                     .expect("need ICSSC_MATCHY_CHANNEL_ID")
-                    .parse::<_>().expect("ICSSC_MATCHY_CHANNEL_ID must be valid u64")
+                    .parse::<_>()
+                    .expect("ICSSC_MATCHY_CHANNEL_ID must be valid u64"),
             }),
         }
     }

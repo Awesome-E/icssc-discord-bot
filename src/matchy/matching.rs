@@ -137,7 +137,8 @@ fn build_matching_graph<T: Hash + Eq + Copy>(
             // convert a Match into an iterable of edges of type NodeId
             // each edge has the smaller index first
             m.iter()
-                .flat_map(|u| nodes.get(u)).copied()
+                .flat_map(|u| nodes.get(u))
+                .copied()
                 .tuple_combinations()
                 .map(ConstraintEdge::new)
         })
@@ -146,7 +147,8 @@ fn build_matching_graph<T: Hash + Eq + Copy>(
     (
         UnMatrix::from_edges(
             nodes
-                .values().copied()
+                .values()
+                .copied()
                 .tuple_combinations()
                 .filter(|e| !constraints.contains(&ConstraintEdge::new(*e))),
         ),

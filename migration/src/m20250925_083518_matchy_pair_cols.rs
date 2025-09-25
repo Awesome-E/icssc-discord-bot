@@ -10,58 +10,96 @@ impl MigrationTrait for Migration {
             .alter_table(
                 Table::alter()
                     .table(MatchyMeetupRound::Table)
-                    .modify_column(timestamp(MatchyMeetupRound::CreatedAt).default(Expr::cust("NOW()")))
+                    .modify_column(
+                        timestamp(MatchyMeetupRound::CreatedAt).default(Expr::cust("NOW()")),
+                    )
                     .to_owned(),
             )
             .await?;
 
-        manager.drop_foreign_key(ForeignKey::drop()
-            .name("matchy_meetup_pair_round_id_fkey")
-            .table(MatchyMeetupPair::Table)
-            .to_owned()).await?;
-
-        manager.create_foreign_key(ForeignKey::create()
-            .from(MatchyMeetupPair::Table, MatchyMeetupPair::RoundId)
-            .to(MatchyMeetupRound::Table, MatchyMeetupRound::Id)
-            .on_delete(ForeignKeyAction::Cascade).to_owned()).await?;
-
-        manager.drop_foreign_key(ForeignKey::drop()
-            .name("matchy_meetup_pair_member_pair_id_fkey")
-            .table(MatchyMeetupPairMember::Table)
-            .to_owned()).await?;
-
-        manager.create_foreign_key(ForeignKey::create()
-            .from(
-                MatchyMeetupPairMember::Table,
-                MatchyMeetupPairMember::PairId,
+        manager
+            .drop_foreign_key(
+                ForeignKey::drop()
+                    .name("matchy_meetup_pair_round_id_fkey")
+                    .table(MatchyMeetupPair::Table)
+                    .to_owned(),
             )
-            .to(MatchyMeetupPair::Table, MatchyMeetupPair::Id).on_delete(ForeignKeyAction::Cascade).to_owned()).await?;
+            .await?;
+
+        manager
+            .create_foreign_key(
+                ForeignKey::create()
+                    .from(MatchyMeetupPair::Table, MatchyMeetupPair::RoundId)
+                    .to(MatchyMeetupRound::Table, MatchyMeetupRound::Id)
+                    .on_delete(ForeignKeyAction::Cascade)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_foreign_key(
+                ForeignKey::drop()
+                    .name("matchy_meetup_pair_member_pair_id_fkey")
+                    .table(MatchyMeetupPairMember::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_foreign_key(
+                ForeignKey::create()
+                    .from(
+                        MatchyMeetupPairMember::Table,
+                        MatchyMeetupPairMember::PairId,
+                    )
+                    .to(MatchyMeetupPair::Table, MatchyMeetupPair::Id)
+                    .on_delete(ForeignKeyAction::Cascade)
+                    .to_owned(),
+            )
+            .await?;
 
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_foreign_key(ForeignKey::drop()
-            .name("matchy_meetup_pair_member_pair_id_fkey")
-            .table(MatchyMeetupPairMember::Table)
-            .to_owned()).await?;
-
-        manager.create_foreign_key(ForeignKey::create()
-            .from(
-                MatchyMeetupPairMember::Table,
-                MatchyMeetupPairMember::PairId,
+        manager
+            .drop_foreign_key(
+                ForeignKey::drop()
+                    .name("matchy_meetup_pair_member_pair_id_fkey")
+                    .table(MatchyMeetupPairMember::Table)
+                    .to_owned(),
             )
-            .to(MatchyMeetupPair::Table, MatchyMeetupPair::Id).to_owned()).await?;
+            .await?;
 
-        manager.drop_foreign_key(ForeignKey::drop()
-            .name("matchy_meetup_pair_round_id_fkey")
-            .table(MatchyMeetupPair::Table)
-            .to_owned()).await?;
+        manager
+            .create_foreign_key(
+                ForeignKey::create()
+                    .from(
+                        MatchyMeetupPairMember::Table,
+                        MatchyMeetupPairMember::PairId,
+                    )
+                    .to(MatchyMeetupPair::Table, MatchyMeetupPair::Id)
+                    .to_owned(),
+            )
+            .await?;
 
-        manager.create_foreign_key(ForeignKey::create()
-            .from(MatchyMeetupPair::Table, MatchyMeetupPair::RoundId)
-            .to(MatchyMeetupRound::Table, MatchyMeetupRound::Id)
-            .to_owned()).await?;
+        manager
+            .drop_foreign_key(
+                ForeignKey::drop()
+                    .name("matchy_meetup_pair_round_id_fkey")
+                    .table(MatchyMeetupPair::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_foreign_key(
+                ForeignKey::create()
+                    .from(MatchyMeetupPair::Table, MatchyMeetupPair::RoundId)
+                    .to(MatchyMeetupRound::Table, MatchyMeetupRound::Id)
+                    .to_owned(),
+            )
+            .await?;
 
         manager
             .alter_table(

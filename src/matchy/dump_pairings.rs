@@ -1,7 +1,7 @@
-use crate::matchy::participation::get_previous_matches;
 use crate::Context;
-use anyhow::{Error, Result};
 use crate::matchy::helpers::add_pairings_to_db;
+use crate::matchy::participation::get_previous_matches;
+use anyhow::{Error, Result};
 
 async fn handle_dump_pairings(ctx: &Context<'_>) -> Result<String> {
     let prev_matches = get_previous_matches(ctx.data()).await?;

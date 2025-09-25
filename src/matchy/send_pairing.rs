@@ -1,8 +1,8 @@
 use super::discord_helpers::match_members;
-use super::helpers::{add_pairings_to_db, checksum_matching, format_pairs, hash_seed, Pairing};
-use crate::util::text::remove_markdown;
+use super::helpers::{Pairing, add_pairings_to_db, checksum_matching, format_pairs, hash_seed};
 use crate::Context;
-use anyhow::{bail, ensure, Context as _, Error, Result};
+use crate::util::text::remove_markdown;
+use anyhow::{Context as _, Error, Result, bail, ensure};
 use itertools::Itertools;
 use poise::futures_util::future::try_join_all;
 use serenity::all::GuildId;
@@ -22,10 +22,11 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
         bail!("Invalid key. Please make sure you only use keys returned by /create_pairing.")
     };
 
-    let channel_map = GuildId::from(ctx.data().icssc_guild_id).channels(ctx.http()).await.context("get channel map in ICSSC_GUILD_ID")?;
-    let Some(notification_channel) =
-        channel_map.get(&ctx.data().matchy_channel_id.into())
-    else {
+    let channel_map = GuildId::from(ctx.data().icssc_guild_id)
+        .channels(ctx.http())
+        .await
+        .context("get channel map in ICSSC_GUILD_ID")?;
+    let Some(notification_channel) = channel_map.get(&ctx.data().matchy_channel_id.into()) else {
         bail!("Could not find notification channel");
     };
 
@@ -42,13 +43,14 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
 
     add_pairings_to_db(&ctx, pairs.clone()).await?;
 
-    notification_channel.say(
-        &ctx,
-        format!(
-            "Hey all, here are the pairings for the next round of matchy meetups!\n\n{}",
-            pairs_str
-        ),
-    ).await?;
+    notification_channel
+        .say(
+            &ctx,
+            format!(
+                "Hey all, here are the pairings for the next round of matchy meetups!\n\n{pairs_str}"
+            ),
+        )
+        .await?;
 
     let mut messages_sent = 0;
 
@@ -57,19 +59,17 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
     for pair in pairs {
         for user in &pair {
             let pairing: Vec<_> = pair.iter().filter(|u| *u != user).collect();
-            let pairing_str = try_join_all(pairing.iter().map(|uid| {
-                async {
-                    let u = uid.to_user(&ctx).await?;
-                    Ok::<String, Error>(format!(
-                        "<@{}> ({})",
-                        u.id,
-                        remove_markdown(&u.global_name.unwrap_or(u.name))
-                    ))
-                }
+            let pairing_str = try_join_all(pairing.iter().map(|uid| async {
+                let u = uid.to_user(&ctx).await?;
+                Ok::<String, Error>(format!(
+                    "<@{}> ({})",
+                    u.id,
+                    remove_markdown(&u.global_name.unwrap_or(u.name))
+                ))
             }))
-                .await
-                .context("Unable to fetch names for user ids")?
-                .join(" and ");
+            .await
+            .context("Unable to fetch names for user ids")?
+            .join(" and ");
 
             let message_str = format!(
                 "Hey, thanks for joining ICSSC's Matchy Meetups. Your pairing \
@@ -82,9 +82,7 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
                  _(responses here will not be seen; please message Ethan (@awesome\\_e) directly if you have any questions)_"
             );
             let success = {
-                match user
-                    .create_dm_channel(&ctx)
-                    .await {
+                match user.create_dm_channel(&ctx).await {
                     Ok(ch) => ch.say(&ctx, message_str).await.ok(),
                     Err(_) => None,
                 }
