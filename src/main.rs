@@ -1,3 +1,4 @@
+mod attendance;
 mod handler;
 mod matchy;
 mod setup;

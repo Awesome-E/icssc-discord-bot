@@ -1,4 +1,4 @@
-use crate::spottings;
+use crate::{attendance, spottings};
 use crate::util::ContextExtras;
 use crate::{BotError, BotVars};
 use crate::matchy;
@@ -92,6 +92,7 @@ fn check_command_invocation(
 
 fn get_bot_commands() -> Vec<Command<BotVars, BotError>> {
     vec![
+        attendance::checkin::check_in(),
         matchy::create_pairing::create_pairing(),
         matchy::send_pairing::send_pairing(),
         matchy::dump_pairings::dump_pairings(),
