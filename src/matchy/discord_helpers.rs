@@ -1,28 +1,13 @@
-use super::ROLE_NAME;
-use super::config::HISTORY_CHANNEL_NAME;
 use super::helpers::{Match, Pairing};
 use super::matching::graph_pair;
-use crate::{BotVars, Context};
-use anyhow::{Context as _, Result, bail};
+use crate::matchy::participation::{get_current_opted_in, get_previous_matches};
+use crate::Context;
+use anyhow::{bail, Result};
 use chrono::{Duration, Local};
 use itertools::Itertools;
 use poise::futures_util::StreamExt;
 use regex::Regex;
-use serenity::all::{ChannelId, GuildChannel, GuildId, PartialGuild, RoleId, UserId};
-use crate::matchy::participation::{get_current_opted_in, get_previous_matches};
-
-pub async fn find_channel(
-    ctx: &Context<'_>,
-    guild_id: GuildId,
-    name: &str,
-) -> Result<Option<GuildChannel>> {
-    Ok(guild_id
-        .channels(ctx)
-        .await?
-        .into_iter()
-        .find(|(_, c)| c.name == name)
-        .map(|(_, c)| c))
-}
+use serenity::all::{ChannelId, PartialGuild, RoleId, UserId};
 
 /// Returns a vector of all guild members with the specified role ID.
 async fn guild_members_with_role(

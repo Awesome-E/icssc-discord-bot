@@ -1,11 +1,12 @@
-use super::discord_helpers::{find_channel, match_members};
+use super::discord_helpers::match_members;
 use super::helpers::{add_pairings_to_db, checksum_matching, format_pairs, hash_seed, Pairing};
+use crate::util::text::remove_markdown;
 use crate::Context;
 use anyhow::{bail, ensure, Context as _, Error, Result};
 use itertools::Itertools;
 use poise::futures_util::future::try_join_all;
+use serenity::all::GuildId;
 use std::collections::HashSet;
-use crate::util::text::remove_markdown;
 
 /// Run the /send_pairing command
 async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
@@ -20,8 +21,10 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
     let Some((seed_str, checksum)) = key.rsplit_once("_") else {
         bail!("Invalid key. Please make sure you only use keys returned by /create_pairing.")
     };
+
+    let channel_map = GuildId::from(ctx.data().icssc_guild_id).channels(ctx.http()).await.context("get channel map in ICSSC_GUILD_ID")?;
     let Some(notification_channel) =
-        find_channel(&ctx, guild.id, "🐕・laika").await?
+        channel_map.get(&ctx.data().matchy_channel_id.into())
     else {
         bail!("Could not find notification channel");
     };
