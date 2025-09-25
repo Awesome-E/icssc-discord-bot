@@ -9,7 +9,7 @@ use itertools::Itertools;
 use poise::futures_util::StreamExt;
 use regex::Regex;
 use serenity::all::{ChannelId, GuildChannel, GuildId, PartialGuild, RoleId, UserId};
-use crate::matchy::participation::get_previous_matches;
+use crate::matchy::participation::{get_current_opted_in, get_previous_matches};
 
 pub async fn find_channel(
     ctx: &Context<'_>,
@@ -108,24 +108,11 @@ pub async fn previous_matches(
 /// Pairs members with ROLE_NAME in the guild together.
 /// The result is a pairing of
 pub async fn match_members(ctx: Context<'_>, seed: u64) -> Result<Pairing<UserId>> {
-    let guild = ctx
-        .partial_guild()
-        .await
-        .context("This command must be called from a guild (server).")?
-        .clone();
-    let Some(role) = guild.role_by_name(ROLE_NAME) else {
-        bail!("Could not find a role with name `{ROLE_NAME}`");
-    };
-    let Some(history_channel) = find_channel(&ctx, guild.id, HISTORY_CHANNEL_NAME).await? else {
-        bail!("Could not find history channel");
-    };
-    let participants = guild_members_with_role(&ctx, &guild, role.id).await?;
+    let participants = get_current_opted_in(&ctx.data()).await?;
     if participants.len() <= 1 {
         bail!(
-            "Need at least two members to create a pairing (found {} member{} with role <@&{}>).",
-            participants.len(),
-            if participants.len() == 1 { "" } else { "s" },
-            role.id
+            "Need at least two members to create a pairing (found {}).",
+            participants.len()
         );
     }
     graph_pair(

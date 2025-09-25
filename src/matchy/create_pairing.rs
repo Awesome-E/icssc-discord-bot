@@ -29,7 +29,7 @@ async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<Str
     ))
 }
 
-/// Generate a potential pairing of users who have reacted to a message
+/// Generate a potential pairing of users who have opted in to Matchy Meetups
 #[poise::command(
     slash_command,
     hide_in_help,
