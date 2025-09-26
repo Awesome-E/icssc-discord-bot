@@ -1,13 +1,10 @@
-use super::helpers::{Match, Pairing};
+use super::helpers::Pairing;
 use super::matching::graph_pair;
-use crate::Context;
 use crate::matchy::participation::{get_current_opted_in, get_previous_matches};
-use anyhow::{Result, bail};
-use chrono::{Duration, Local};
+use crate::Context;
+use anyhow::{bail, Result};
 use itertools::Itertools;
-use poise::futures_util::StreamExt;
-use regex::Regex;
-use serenity::all::{ChannelId, PartialGuild, RoleId, UserId};
+use serenity::all::{PartialGuild, RoleId, UserId};
 
 /// Returns a vector of all guild members with the specified role ID.
 async fn guild_members_with_role(
