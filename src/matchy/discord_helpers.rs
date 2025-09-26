@@ -1,8 +1,8 @@
 use super::helpers::Pairing;
 use super::matching::graph_pair;
-use crate::matchy::participation::{get_current_opted_in, get_previous_matches};
 use crate::Context;
-use anyhow::{bail, Result};
+use crate::matchy::participation::{get_current_opted_in, get_previous_matches};
+use anyhow::{Result, bail};
 use itertools::Itertools;
 use serenity::all::{PartialGuild, RoleId, UserId};
 
