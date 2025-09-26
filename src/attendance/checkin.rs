@@ -140,7 +140,7 @@ async fn check_in_with_email(email: String) -> Result<(), BotError> {
     }
 }
 
-/// Check in today's ICSSC event!
+/// Check into today's ICSSC event!
 #[poise::command(slash_command, hide_in_help)]
 pub(crate) async fn check_in(ctx: Context<'_>) -> Result<(), Error> {
     let Ok(TokenResponse {
