@@ -73,7 +73,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
         })
         .bind(("::", port))
         .with_context(|| format!("failed to bind to port {port}"))
-    }?;
+    }.expect("Start server");
 
     println!("Listening on port {port}...");
 
