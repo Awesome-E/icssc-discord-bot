@@ -1,6 +1,7 @@
 mod attendance;
 mod handler;
 mod matchy;
+mod server;
 mod setup;
 mod spottings;
 mod util;
@@ -95,8 +96,20 @@ async fn main() {
     .await
     .expect("couldn't make client");
 
-    if let Err(why) = client.start().await {
-        println!("Client error: {why:?}");
+    let discord_task = tokio::spawn(async move {
+        if let Err(why) = client.start().await {
+            println!("Client error: {:?}", why);
+        }
+    });
+
+    let server_task = tokio::spawn(async move {
+        if let Err(why) = crate::server::run().await {
+            println!("HTTP server error: {:?}", why);
+        }
+    });
+
+    if let Err(why) = tokio::try_join!(discord_task, server_task) {
+        println!("Task Error: {:?}", why);
     }
 }
 
