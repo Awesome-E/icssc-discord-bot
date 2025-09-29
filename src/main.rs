@@ -7,9 +7,10 @@ mod spottings;
 mod util;
 
 use crate::setup::{create_bot_framework_options, register_commands};
+use anyhow::Context as _;
 use clap::ValueHint;
-use serenity::Client;
 use serenity::all::GatewayIntents;
+use serenity::Client;
 use std::env;
 use std::ops::{BitAnd, Deref};
 use std::path::PathBuf;
@@ -96,20 +97,30 @@ async fn main() {
     .await
     .expect("couldn't make client");
 
-    let discord_task = tokio::spawn(async move {
-        if let Err(why) = client.start().await {
-            println!("Client error: {:?}", why);
-        }
-    });
+    let serenity_task = async move {
+        client.start().await.context("start serenity")?;
+        anyhow::Result::<()>::Ok(())
+    };
 
-    let server_task = tokio::spawn(async move {
-        if let Err(why) = crate::server::run().await {
-            println!("HTTP server error: {:?}", why);
-        }
-    });
+    let actix_task = async move {
+        crate::server::run().await.context("start axtix")?;
+        anyhow::Result::<()>::Ok(())
+    };
 
-    if let Err(why) = tokio::try_join!(discord_task, server_task) {
-        println!("Task Error: {:?}", why);
+    tokio::select! {
+        biased;
+
+        _ = tokio::signal::ctrl_c() => {
+            println!("SIGINT, going down");
+        }
+
+        _ = serenity_task => {
+            println!("serenity has stopped")
+        }
+
+        _ = actix_task => {
+            println!("actix has stopped")
+        }
     }
 }
 
