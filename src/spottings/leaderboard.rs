@@ -5,7 +5,8 @@ use entity::user_stat;
 use itertools::Itertools;
 use migration::NullOrdering;
 use poise::ChoiceParameter;
-use sea_orm::{EntityTrait, Order, QueryOrder};
+use sea_orm::sea_query::Expr;
+use sea_orm::{EntityTrait, FromQueryResult, Order, QueryOrder, QuerySelect};
 use serenity::all::{Mentionable, UserId};
 use std::num::NonZeroUsize;
 
@@ -20,6 +21,12 @@ enum LeaderboardBy {
     SnipeRate,
 }
 
+#[derive(FromQueryResult)]
+struct SnipeRateQuery {
+    id: i64,
+    snipe_rate: Option<f64>,
+}
+
 /// Show leaderboards by various sniping statistics
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub(crate) async fn leaderboard(
@@ -30,7 +37,7 @@ pub(crate) async fn leaderboard(
 
     let lines = match by {
         LeaderboardBy::SnipeCount => user_stat::Entity::find()
-            .order_by_desc(user_stat::Column::Snipe)
+            .order_by_desc(user_stat::Column::SnipesInitiated)
             .all(&ctx.data().db)
             .await
             .context("fetch leaderboard from db")?
@@ -41,13 +48,13 @@ pub(crate) async fn leaderboard(
                     "{}. {}: {}",
                     i + 1,
                     UserId::from(mdl.id as u64).mention(),
-                    mdl.snipe
+                    mdl.snipes_initiated
                 )
                 .into_boxed_str()
             })
             .collect_vec(),
         LeaderboardBy::VictimCount => user_stat::Entity::find()
-            .order_by_desc(user_stat::Column::Sniped)
+            .order_by_desc(user_stat::Column::SnipesVictim)
             .all(&ctx.data().db)
             .await
             .context("fetch leaderboard from db")?
@@ -58,18 +65,22 @@ pub(crate) async fn leaderboard(
                     "{}. {}: {}",
                     i + 1,
                     UserId::from(mdl.id as u64).mention(),
-                    mdl.sniped
+                    mdl.snipes_victim
                 )
                 .into_boxed_str()
             })
             .collect_vec(),
         LeaderboardBy::SnipeRate => user_stat::Entity::find()
-            .order_by_with_nulls(
-                user_stat::Column::SnipeRate,
-                Order::Desc,
-                NullOrdering::Last,
+            .select_only()
+            .column(user_stat::Column::Id)
+            .column_as(
+                Expr::col(user_stat::Column::SnipesInitiated)
+                    .div(Expr::col(user_stat::Column::SnipesVictim)),
+                "snipe_rate",
             )
-            .order_by_desc(user_stat::Column::Snipe)
+            .order_by_with_nulls(Expr::col("snipe_rate"), Order::Desc, NullOrdering::Last)
+            .order_by_desc(user_stat::Column::SnipesInitiated)
+            .into_model::<SnipeRateQuery>()
             .all(&ctx.data().db)
             .await
             .context("fetch leaderboard from db")?
