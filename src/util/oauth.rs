@@ -25,17 +25,17 @@ pub(crate) mod start {
 
     use super::*;
     // use crate::ExtractedAppData;
+    use crate::server::Result;
     use actix_web::cookie::time::UtcDateTime;
     use actix_web::cookie::{Cookie, SameSite};
-    use actix_web::{cookie, get, HttpResponse, Responder};
-    use anyhow::{Context};
+    use actix_web::{HttpResponse, Responder, cookie, get};
+    use anyhow::Context;
     use jsonwebtoken::Header;
     use std::ops::Add;
-    use crate::server::Result;
 
     #[get("/goog")]
     async fn goog(data: ExtractedAppData) -> Result<impl Responder> {
-        let state = String::from("test");// uuid::Uuid::new_v4();
+        let state = String::from("test"); // uuid::Uuid::new_v4();
 
         let redirect_uri = format!("{}/api/login/google", data.oauth.frontend_url);
 
@@ -77,12 +77,12 @@ pub(crate) mod start {
 pub(crate) mod cb {
     // use crate::ExtractedAppData;
     // use actix_session::Session;
+    use crate::server::{ExtractedAppData, Result};
     use actix_web::http::StatusCode;
-    use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
-    use anyhow::{Context};
+    use actix_web::{HttpRequest, HttpResponse, Responder, get, web};
+    use anyhow::Context;
     use jsonwebtoken::Validation;
     use serde::{Deserialize, Serialize};
-    use crate::server::{ExtractedAppData, Result};
     // use uuid::Uuid;
 
     // JS will give us the query params unchanged

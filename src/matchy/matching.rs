@@ -98,11 +98,10 @@ pub fn graph_pair<T: Hash + Eq + Copy>(
             .cloned()
             .map(index_to_element)
             .collect();
-        if let Some(remainder) = remainder {
-            if remainder_match_score > 0 {
+        if let Some(remainder) = remainder
+            && remainder_match_score > 0 {
                 v.push(index_to_element(remainder));
             }
-        }
         v
     };
 

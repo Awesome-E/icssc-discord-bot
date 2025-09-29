@@ -1,4 +1,4 @@
-use crate::util::{spottings_embed};
+use crate::util::spottings_embed;
 use crate::{BotError, Context};
 use poise::CreateReply;
 use serenity::all::{
