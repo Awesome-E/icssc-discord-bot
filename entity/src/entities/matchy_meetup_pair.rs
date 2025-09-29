@@ -19,7 +19,7 @@ pub enum Relation {
         from = "Column::RoundId",
         to = "super::matchy_meetup_round::Column::Id",
         on_update = "NoAction",
-        on_delete = "NoAction"
+        on_delete = "Cascade"
     )]
     MatchyMeetupRound,
 }

@@ -18,7 +18,7 @@ pub enum Relation {
         from = "Column::PairId",
         to = "super::matchy_meetup_pair::Column::Id",
         on_update = "NoAction",
-        on_delete = "NoAction"
+        on_delete = "Cascade"
     )]
     MatchyMeetupPair,
 }

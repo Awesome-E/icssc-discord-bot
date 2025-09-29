@@ -7,3 +7,4 @@ pub use super::matchy_meetup_round::Entity as MatchyMeetupRound;
 pub use super::message::Entity as Message;
 pub use super::opt_out::Entity as OptOut;
 pub use super::snipe::Entity as Snipe;
+pub use super::user_stat::Entity as UserStat;

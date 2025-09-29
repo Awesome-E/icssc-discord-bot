@@ -9,10 +9,11 @@ pub struct Model {
     pub message_id: i64,
     #[sea_orm(primary_key, auto_increment = false)]
     pub victim_id: i64,
-    #[sea_orm(column_type = "Float", nullable)]
-    pub latitude: Option<f32>,
-    #[sea_orm(column_type = "Float", nullable)]
-    pub longitude: Option<f32>,
+    #[sea_orm(column_type = "Double", nullable)]
+    pub latitude: Option<f64>,
+    #[sea_orm(column_type = "Double", nullable)]
+    pub longitude: Option<f64>,
+    #[sea_orm(column_type = "Text", nullable)]
     pub notes: Option<String>,
 }
 
