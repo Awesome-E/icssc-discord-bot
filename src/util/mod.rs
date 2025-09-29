@@ -13,6 +13,13 @@ pub(crate) fn base_embed(ctx: Context<'_>) -> CreateEmbed {
         )))
 }
 
+pub(crate) fn spottings_embed() -> CreateEmbed {
+    CreateEmbed::default()
+        .color(0xff87a6)
+        .author(CreateEmbedAuthor::new("ICS Spottings Council")
+            .icon_url("https://cdn.discordapp.com/avatars/1336510972403126292/8db135d66c041c0191e0ae8085b9baa6.webp?size=512"))
+}
+
 pub trait ContextExtras<'a> {
     async fn reply_ephemeral(
         self,

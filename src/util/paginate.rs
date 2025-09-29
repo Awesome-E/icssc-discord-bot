@@ -1,4 +1,4 @@
-use crate::util::base_embed;
+use crate::util::{spottings_embed};
 use crate::{BotError, Context};
 use poise::CreateReply;
 use serenity::all::{
@@ -100,7 +100,7 @@ impl EmbedLinePaginator {
     }
 
     fn embed_for(&self, ctx: Context<'_>, page: u8) -> CreateEmbed {
-        base_embed(ctx)
+        spottings_embed()
             .description(self.pages[(page - 1) as usize].clone())
             .footer(CreateEmbedFooter::new(format!(
                 "{page}/{}",

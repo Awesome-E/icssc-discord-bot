@@ -1,6 +1,6 @@
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
-use crate::util::{ContextExtras, base_embed};
+use crate::util::{spottings_embed, ContextExtras};
 use crate::{BotError, Context};
 use anyhow::Context as _;
 use entity::{message, opt_out, snipe};
@@ -86,14 +86,14 @@ pub(crate) async fn post(
         .context("log snipe get opt out user id")?;
 
     if !got.is_empty() {
-        ctx.send(CreateReply::default().embed(base_embed(ctx).description(format!(
+        ctx.send(CreateReply::default().embed(spottings_embed().description(format!(
             "**the following people in that post are opted out of sniping!**\n{}\n\nthis means they do not consent to being photographed!",
             got.into_iter().map(|opted_out| UserId::new(opted_out.id as u64).mention()).join("\n"),
         ))).reply(true).ephemeral(true)).await?;
         return Ok(());
     }
 
-    let emb = base_embed(ctx).description(format!(
+    let emb = spottings_embed().description(format!(
         "**you are claiming that {} sniped**:\n{}\n\nclick to confirm! (times out in 15 seconds)",
         message.author.mention(),
         victims.iter().join("")
