@@ -1,5 +1,4 @@
 use anyhow::{Error, Result, bail};
-use clap::builder::TypedValueParser;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -19,8 +18,7 @@ struct Claims {
 #[derive(Debug, Deserialize)]
 pub(crate) struct TokenResponse {
     access_token: String,
-    token_type: String,
-    expires_in: u64,
+    // Can also read token_type: String and expires_in: u64
 }
 
 #[derive(Debug, Deserialize)]
@@ -144,11 +142,7 @@ async fn check_in_with_email(email: String) -> Result<(), BotError> {
 /// Check in today's ICSSC event!
 #[poise::command(slash_command, hide_in_help)]
 pub(crate) async fn check_in(ctx: Context<'_>) -> Result<(), Error> {
-    let Ok(TokenResponse {
-        access_token,
-        token_type: _,
-        expires_in: _,
-    }) = get_gsheets_token().await
+    let Ok(TokenResponse { access_token }) = get_gsheets_token().await
     else {
         ctx.reply_ephemeral("Unable to find who you are :(").await?;
         return Ok(());
