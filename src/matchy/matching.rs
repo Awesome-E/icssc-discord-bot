@@ -8,7 +8,7 @@ use rand::prelude::SliceRandom;
 use rand_chacha::rand_core::SeedableRng;
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
-use std::hash::Hash;
+use std::hash::{Hash, RandomState};
 
 type NodeId = u16; // for adjacency matrix
 
@@ -35,7 +35,7 @@ pub fn random_pair<T: Clone>(vec: Vec<T>, seed: u64) -> Pairing<T> {
     Pairing(x, Vec::new())
 }
 
-type UnMatrix = MatrixGraph<(), (), Undirected, Option<()>, NodeId>;
+type UnMatrix = MatrixGraph<(), (), RandomState, Undirected, Option<()>, NodeId>;
 
 /// (lower_id, upper_id)
 #[derive(Eq, Hash, PartialEq)]
@@ -98,11 +98,10 @@ pub fn graph_pair<T: Hash + Eq + Copy>(
             .cloned()
             .map(index_to_element)
             .collect();
-        if let Some(remainder) = remainder {
-            if remainder_match_score > 0 {
+        if let Some(remainder) = remainder
+            && remainder_match_score > 0 {
                 v.push(index_to_element(remainder));
             }
-        }
         v
     };
 

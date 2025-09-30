@@ -1,8 +1,9 @@
 use std::{fmt::{Display, Formatter}, sync::Arc};
 
-use actix_web::{web, App, HttpServer, ResponseError};
+use actix_web::{App, HttpServer, ResponseError, web};
 use anyhow::{Context};
 use serenity::all::Http;
+use anyhow::Context;
 
 use crate::routes::{self, oauth::{self, GoogleOAuthConfig, OAuth}};
 
@@ -15,7 +16,6 @@ pub(crate) struct AppData {
     // db: sea_orm::DatabaseConnection,
 }
 pub(crate) type ExtractedAppData = web::Data<AppData>;
-
 
 #[repr(transparent)]
 #[derive(Debug)]
@@ -47,9 +47,12 @@ pub(crate) async fn run(http_action: Arc<Http>) -> anyhow::Result<()> {
         .context("$PORT not valid u16 port")?;
 
     let jwt_secret = std::env::var_os("JWT_SECRET").context("Missing JWT_SECRET")?;
-    let server_url = std::env::var("RAILWAY_PUBLIC_DOMAIN").context("Missing RAILWAY_PUBLIC_DOMAIN")?;
-    let oauth_client_id = std::env::var("GOOGLE_OAUTH_CLIENT_ID").context("Missing GOOGLE_OAUTH_CLIENT_ID")?;
-    let oauth_secret = std::env::var("GOOGLE_OAUTH_CLIENT_SECRET").context("Missing GOOGLE_OAUTH_CLIENT_SECRET")?;
+    let server_url =
+        std::env::var("RAILWAY_PUBLIC_DOMAIN").context("Missing RAILWAY_PUBLIC_DOMAIN")?;
+    let oauth_client_id =
+        std::env::var("GOOGLE_OAUTH_CLIENT_ID").context("Missing GOOGLE_OAUTH_CLIENT_ID")?;
+    let oauth_secret = std::env::var("GOOGLE_OAUTH_CLIENT_SECRET")
+        .context("Missing GOOGLE_OAUTH_CLIENT_SECRET")?;
 
     let app_data = AppData {
         client: reqwest::Client::new(),

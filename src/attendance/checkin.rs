@@ -142,8 +142,7 @@ async fn check_in_with_email(email: String) -> Result<(), BotError> {
 /// Check into today's ICSSC event!
 #[poise::command(slash_command, hide_in_help)]
 pub(crate) async fn check_in(ctx: Context<'_>) -> Result<(), Error> {
-    let Ok(TokenResponse { access_token }) = get_gsheets_token().await
-    else {
+    let Ok(TokenResponse { access_token }) = get_gsheets_token().await else {
         ctx.reply_ephemeral("Unable to find who you are :(").await?;
         return Ok(());
     };

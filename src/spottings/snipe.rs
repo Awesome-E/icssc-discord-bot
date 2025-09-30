@@ -1,6 +1,6 @@
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
-use crate::util::{spottings_embed, ContextExtras};
+use crate::util::{ContextExtras, spottings_embed};
 use crate::{BotError, Context};
 use anyhow::Context as _;
 use entity::{message, opt_out, snipe};
