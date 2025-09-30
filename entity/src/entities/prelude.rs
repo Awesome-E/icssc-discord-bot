@@ -6,5 +6,7 @@ pub use super::matchy_meetup_pair_member::Entity as MatchyMeetupPairMember;
 pub use super::matchy_meetup_round::Entity as MatchyMeetupRound;
 pub use super::message::Entity as Message;
 pub use super::opt_out::Entity as OptOut;
+pub use super::server_calendar::Entity as ServerCalendar;
+pub use super::server_event::Entity as ServerEvent;
 pub use super::snipe::Entity as Snipe;
 pub use super::user_stat::Entity as UserStat;

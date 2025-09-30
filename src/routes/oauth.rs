@@ -196,11 +196,3 @@ pub(crate) mod cb {
         Ok(HttpResponse::build(StatusCode::OK).body("hi"))
     }
 }
-
-/*
-
-guild_id | calendar_id | calendar_name | access_token | access_expires | refresh_token
-
-guild_id | calendar_id | event_id | event_name
-
-*/
