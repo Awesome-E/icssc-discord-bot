@@ -1,7 +1,7 @@
 mod attendance;
 mod handler;
-mod matchy;
 mod internal_commands;
+mod matchy;
 mod routes;
 mod server;
 mod setup;
@@ -107,7 +107,9 @@ async fn main() {
     };
 
     let actix_task = async move {
-        crate::server::run(http_action).await.context("start axtix")?;
+        crate::server::run(http_action)
+            .await
+            .context("start axtix")?;
         anyhow::Result::<()>::Ok(())
     };
 

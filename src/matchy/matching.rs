@@ -99,9 +99,10 @@ pub fn graph_pair<T: Hash + Eq + Copy>(
             .map(index_to_element)
             .collect();
         if let Some(remainder) = remainder
-            && remainder_match_score > 0 {
-                v.push(index_to_element(remainder));
-            }
+            && remainder_match_score > 0
+        {
+            v.push(index_to_element(remainder));
+        }
         v
     };
 

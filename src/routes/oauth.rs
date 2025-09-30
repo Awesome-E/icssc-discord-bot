@@ -28,37 +28,40 @@ pub(crate) mod start {
     use crate::server::Result;
     use actix_web::cookie::time::UtcDateTime;
     use actix_web::cookie::{Cookie, SameSite};
-    use actix_web::{cookie, get, web, HttpResponse, Responder};
-    use anyhow::{Context};
     use actix_web::{HttpResponse, Responder, cookie, get};
+    use actix_web::{HttpResponse, Responder, cookie, get, web};
+    use anyhow::Context;
     use anyhow::Context;
     use jsonwebtoken::Header;
     use std::ops::Add;
 
     #[derive(Debug, Deserialize)]
-    struct Query { interaction: String }
+    struct Query {
+        interaction: String,
+    }
 
     #[get("/google")]
-    async fn google(
-        info: web::Query<Query>,
-        data: ExtractedAppData
-    ) -> Result<impl Responder> {
+    async fn google(info: web::Query<Query>, data: ExtractedAppData) -> Result<impl Responder> {
         let state = uuid::Uuid::new_v4();
 
         let redirect_uri = format!("{}/oauth/cb/google", data.oauth.frontend_url);
 
-        let goog_request = data.client
-        .get("https://accounts.google.com/o/oauth2/v2/auth")
-        .query(&[
-            ("client_id", &*data.oauth.google.client_id),
-            ("redirect_uri", &*redirect_uri),
-            ("response_type", "code"),
-            ("state", state.to_string().as_str()),
-            ("scope", "https://www.googleapis.com/auth/calendar.events.readonly"),
-            ("access_type", "offline"),
-            ("prompt", "consent"),
-        ])
-        .build()?;
+        let goog_request = data
+            .client
+            .get("https://accounts.google.com/o/oauth2/v2/auth")
+            .query(&[
+                ("client_id", &*data.oauth.google.client_id),
+                ("redirect_uri", &*redirect_uri),
+                ("response_type", "code"),
+                ("state", state.to_string().as_str()),
+                (
+                    "scope",
+                    "https://www.googleapis.com/auth/calendar.events.readonly",
+                ),
+                ("access_type", "offline"),
+                ("prompt", "consent"),
+            ])
+            .build()?;
 
         let jwt = GoogleOAuthJWT {
             state: state.to_string(),
@@ -78,15 +81,15 @@ pub(crate) mod start {
                     .same_site(SameSite::Lax) // not defaulted on firefox and safari
                     .path("/")
                     .finish(),
-            ).cookie(
+            )
+            .cookie(
                 Cookie::build("interaction", info.interaction.clone())
                     .max_age(cookie::time::Duration::minutes(10))
                     .same_site(SameSite::Lax)
                     .path("/")
                     .finish(),
             )
-            .finish()
-        )
+            .finish())
     }
 }
 
@@ -196,7 +199,7 @@ pub(crate) mod cb {
     }
 }
 
-/* 
+/*
 
 guild_id | calendar_id | calendar_name | access_token | access_expires | refresh_token
 

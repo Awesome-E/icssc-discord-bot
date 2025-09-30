@@ -1,11 +1,17 @@
-use std::{fmt::{Display, Formatter}, sync::Arc};
+use std::{
+    fmt::{Display, Formatter},
+    sync::Arc,
+};
 
 use actix_web::{App, HttpServer, ResponseError, web};
-use anyhow::{Context};
-use serenity::all::Http;
 use anyhow::Context;
+use anyhow::Context;
+use serenity::all::Http;
 
-use crate::routes::{self, oauth::{self, GoogleOAuthConfig, OAuth}};
+use crate::routes::{
+    self,
+    oauth::{self, GoogleOAuthConfig, OAuth},
+};
 
 #[derive(Clone)]
 pub(crate) struct AppData {
@@ -58,13 +64,16 @@ pub(crate) async fn run(http_action: Arc<Http>) -> anyhow::Result<()> {
         client: reqwest::Client::new(),
         oauth: OAuth {
             frontend_url: server_url,
-            google: GoogleOAuthConfig { client_id: oauth_client_id, client_secret: oauth_secret, },
+            google: GoogleOAuthConfig {
+                client_id: oauth_client_id,
+                client_secret: oauth_secret,
+            },
         },
         jwt_keys: (
             jsonwebtoken::EncodingKey::from_secret(jwt_secret.as_encoded_bytes()),
             jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_encoded_bytes()),
         ),
-        http_action
+        http_action,
     };
 
     let server = {
@@ -73,11 +82,14 @@ pub(crate) async fn run(http_action: Arc<Http>) -> anyhow::Result<()> {
                 .app_data(web::Data::new(app_data.clone()))
                 .service(web::scope("/oauth/start").service(oauth::start::google))
                 .service(web::scope("/oauth/cb").service(oauth::cb::google))
-                .service(web::scope("/webhook").service(routes::webhook::add_event_test::add_event_test))
+                .service(
+                    web::scope("/webhook").service(routes::webhook::add_event_test::add_event_test),
+                )
         })
         .bind(("::", port))
         .with_context(|| format!("failed to bind to port {port}"))
-    }.expect("Start server");
+    }
+    .expect("Start server");
 
     println!("Listening on port {port}...");
 

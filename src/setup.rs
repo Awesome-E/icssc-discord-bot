@@ -1,6 +1,6 @@
 use crate::util::ContextExtras;
 use crate::{BotError, BotVars};
-use crate::{attendance, spottings, matchy, internal_commands};
+use crate::{attendance, internal_commands, matchy, spottings};
 use clap::ArgMatches;
 use itertools::Itertools;
 use pluralizer::pluralize;
