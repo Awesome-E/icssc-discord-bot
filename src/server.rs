@@ -1,15 +1,17 @@
-use std::fmt::{Display, Formatter};
+use std::{fmt::{Display, Formatter}, sync::Arc};
 
 use actix_web::{web, App, HttpServer, ResponseError};
 use anyhow::{Context};
+use serenity::all::Http;
 
-use crate::util::oauth::{self, GoogleOAuthConfig, OAuth};
+use crate::routes::{self, oauth::{self, GoogleOAuthConfig, OAuth}};
 
 #[derive(Clone)]
 pub(crate) struct AppData {
     pub(crate) client: reqwest::Client,
     pub(crate) oauth: OAuth,
     pub(crate) jwt_keys: (jsonwebtoken::EncodingKey, jsonwebtoken::DecodingKey),
+    pub(crate) http_action: Arc<Http>,
     // db: sea_orm::DatabaseConnection,
 }
 pub(crate) type ExtractedAppData = web::Data<AppData>;
@@ -38,7 +40,7 @@ pub(crate) type Result<T> = std::result::Result<T, AnyhowBridge>;
 
 impl ResponseError for AnyhowBridge {}
 
-pub(crate) async fn run() -> anyhow::Result<()> {
+pub(crate) async fn run(http_action: Arc<Http>) -> anyhow::Result<()> {
     let port = std::env::var("PORT")
         .unwrap_or(String::from("2509"))
         .parse::<u16>()
@@ -53,23 +55,22 @@ pub(crate) async fn run() -> anyhow::Result<()> {
         client: reqwest::Client::new(),
         oauth: OAuth {
             frontend_url: server_url,
-            google: GoogleOAuthConfig {
-                client_id: oauth_client_id,
-                client_secret: oauth_secret,
-            },
+            google: GoogleOAuthConfig { client_id: oauth_client_id, client_secret: oauth_secret, },
         },
         jwt_keys: (
             jsonwebtoken::EncodingKey::from_secret(jwt_secret.as_encoded_bytes()),
             jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_encoded_bytes()),
         ),
+        http_action
     };
 
     let server = {
         HttpServer::new(move || {
             App::new()
                 .app_data(web::Data::new(app_data.clone()))
-                .service(web::scope("/oauth/start").service(oauth::start::goog))
-                .service(web::scope("/oauth/cb").service(oauth::cb::goog))
+                .service(web::scope("/oauth/start").service(oauth::start::google))
+                .service(web::scope("/oauth/cb").service(oauth::cb::google))
+                .service(web::scope("/webhook").service(routes::webhook::add_event_test::add_event_test))
         })
         .bind(("::", port))
         .with_context(|| format!("failed to bind to port {port}"))

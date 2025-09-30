@@ -1,0 +1,32 @@
+use anyhow::{anyhow, Context as _};
+use crate::{util::calendar::generate_add_calendar_link, BotError, Context, util::ContextExtras};
+
+/// Link Google Calendars to Discord!
+#[poise::command(slash_command, rename="calendar", subcommands("add_calendar", "list_calendars"))]
+pub(crate) async fn calendar_command(_: Context<'_>) -> Result<(), BotError> { Ok(()) }
+
+/// Add a calendar to the current server
+#[poise::command(slash_command, rename="add")]
+pub(crate) async fn add_calendar(
+    ctx: Context<'_>,
+    #[description = "ID of the Google Calendar to add (usually in the form of an email address)"] calendar_id: String
+) -> Result<(), BotError> {
+    let poise::Context::Application(app_ctx) = ctx else {
+        return Err(anyhow!("receive application command"));
+    };
+
+    let link = generate_add_calendar_link(&app_ctx.interaction, calendar_id)
+        .context("generate add calendar link")?;
+
+    ctx.reply_ephemeral(link).await?;
+
+    Ok(())
+}
+
+/// List calendars in the current server
+#[poise::command(slash_command, rename="list")]
+pub(crate) async fn list_calendars(
+    ctx: Context<'_>,
+) -> Result<(), BotError> {
+    Ok(())
+}

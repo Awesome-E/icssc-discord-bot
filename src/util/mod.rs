@@ -1,6 +1,6 @@
+pub(crate) mod calendar;
 pub(crate) mod paginate;
 pub(crate) mod text;
-pub(crate) mod oauth;
 
 use crate::Context;
 use poise::{CreateReply, ReplyHandle};

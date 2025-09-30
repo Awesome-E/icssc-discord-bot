@@ -1,7 +1,6 @@
-use crate::matchy;
 use crate::util::ContextExtras;
 use crate::{BotError, BotVars};
-use crate::{attendance, spottings};
+use crate::{attendance, spottings, matchy, internal_commands};
 use clap::ArgMatches;
 use itertools::Itertools;
 use pluralizer::pluralize;
@@ -98,6 +97,7 @@ fn get_bot_commands() -> Vec<Command<BotVars, BotError>> {
         spottings::snipe::snipe(),
         spottings::leaderboard::leaderboard(),
         spottings::privacy::opt_out(),
+        internal_commands::calendar::calendar_command(),
     ]
 }
 

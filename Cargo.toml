@@ -28,6 +28,7 @@ serde = "1.0.226"
 jsonwebtoken = "9.3.1"
 reqwest = { version = "0.12.23", features = ["json"] }
 actix-web = "4.11.0"
+uuid = { version = "1.18.1", features = ["v4"] }
 
 [profile.release]
 lto = "fat"

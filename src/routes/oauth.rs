@@ -27,17 +27,23 @@ pub(crate) mod start {
     // use crate::ExtractedAppData;
     use actix_web::cookie::time::UtcDateTime;
     use actix_web::cookie::{Cookie, SameSite};
-    use actix_web::{cookie, get, HttpResponse, Responder};
+    use actix_web::{cookie, get, web, HttpResponse, Responder};
     use anyhow::{Context};
     use jsonwebtoken::Header;
     use std::ops::Add;
     use crate::server::Result;
 
-    #[get("/goog")]
-    async fn goog(data: ExtractedAppData) -> Result<impl Responder> {
-        let state = String::from("test");// uuid::Uuid::new_v4();
+    #[derive(Debug, Deserialize)]
+    struct Query { interaction: String }
 
-        let redirect_uri = format!("{}/api/login/google", data.oauth.frontend_url);
+    #[get("/google")]
+    async fn google(
+        info: web::Query<Query>,
+        data: ExtractedAppData
+    ) -> Result<impl Responder> {
+        let state = uuid::Uuid::new_v4();
+
+        let redirect_uri = format!("{}/oauth/cb/google", data.oauth.frontend_url);
 
         let goog_request = data.client
         .get("https://accounts.google.com/o/oauth2/v2/auth")
@@ -46,7 +52,9 @@ pub(crate) mod start {
             ("redirect_uri", &*redirect_uri),
             ("response_type", "code"),
             ("state", state.to_string().as_str()),
-            ("scope", "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile"),
+            ("scope", "https://www.googleapis.com/auth/calendar.events.readonly"),
+            ("access_type", "offline"),
+            ("prompt", "consent"),
         ])
         .build()?;
 
@@ -60,17 +68,23 @@ pub(crate) mod start {
         let encoded = jsonwebtoken::encode(&Header::default(), &jwt, &data.jwt_keys.0)
             .context("build JWT token")?;
 
-        // give back the google URL and the state
-
-        Ok(HttpResponse::Ok()
+        Ok(HttpResponse::Found()
+            .insert_header(("Location", goog_request.url().as_str()))
             .cookie(
                 Cookie::build("oauth_state", encoded.to_string())
-                    .max_age(cookie::time::Duration::minutes(5))
-                    // not defaulted on firefox and safari
+                    .max_age(cookie::time::Duration::minutes(10))
+                    .same_site(SameSite::Lax) // not defaulted on firefox and safari
+                    .path("/")
+                    .finish(),
+            ).cookie(
+                Cookie::build("interaction", info.interaction.clone())
+                    .max_age(cookie::time::Duration::minutes(10))
                     .same_site(SameSite::Lax)
+                    .path("/")
                     .finish(),
             )
-            .body(goog_request.url().as_str().to_owned()))
+            .finish()
+        )
     }
 }
 
@@ -93,25 +107,14 @@ pub(crate) mod cb {
         state: String,
     }
 
-    #[derive(Serialize)]
-    enum CompletedAuthMethod {
-        Google(GoogleUserInfoResponse),
-    }
-
-    #[derive(Serialize)]
-    struct CompletedAuth {
-        exp: usize,
-        user_id: String,
-        kind: CompletedAuthMethod,
-    }
-
     #[derive(Debug, Deserialize)]
     struct GoogleExchangeResponse {
         access_token: String,
-        expires_in: usize,
-        scope: String,
+        // expires_in: usize,
+        // scope: String,
         // always Bearer, for now (https://developers.google.com/identity/protocols/oauth2/web-server)
-        token_type: String,
+        // token_type: String,
+        refresh_token: Option<String>,
     }
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -122,8 +125,8 @@ pub(crate) mod cb {
         id: String,
     }
 
-    #[get("/goog")]
-    async fn goog(
+    #[get("/google")]
+    async fn google(
         info: web::Query<OAuthCbGoogQuery>,
         data: ExtractedAppData,
         req: HttpRequest,
@@ -155,7 +158,7 @@ pub(crate) mod cb {
             return Ok(HttpResponse::build(StatusCode::BAD_REQUEST).body("state mismatch"));
         }
 
-        let redirect_uri = format!("{}/api/login/google", data.oauth.frontend_url);
+        let redirect_uri = format!("{}/oauth/cb/google", data.oauth.frontend_url);
 
         let exchange_response = match data
             .client
@@ -184,22 +187,17 @@ pub(crate) mod cb {
         .await
         .context("parse exchange response")?;
 
-        // i don't think there's a way the user could deny scopes if we set them correctly, so let's not check again
-
-        let _ = data
-            .client
-            .get("https://www.googleapis.com/userinfo/v2/me")
-            .header(
-                "Authorization",
-                format!("Bearer {}", exchange_response.access_token),
-            )
-            .send()
-            .await
-            .context("send userinfo request to google")?
-            .json::<GoogleUserInfoResponse>()
-            .await
-            .context("parse userinfo response")?;
+        dbg!(&exchange_response.access_token);
+        dbg!(&exchange_response.refresh_token);
 
         Ok(HttpResponse::build(StatusCode::OK).body("hi"))
     }
 }
+
+/* 
+
+guild_id | calendar_id | calendar_name | access_token | access_expires | refresh_token
+
+guild_id | calendar_id | event_id | event_name
+
+*/
