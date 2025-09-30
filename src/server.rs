@@ -5,7 +5,6 @@ use std::{
 
 use actix_web::{App, HttpServer, ResponseError, web};
 use anyhow::Context;
-use anyhow::Context;
 use serenity::all::Http;
 
 use crate::routes::{
