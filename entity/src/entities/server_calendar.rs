@@ -18,6 +18,7 @@ pub struct Model {
     pub access_expires: DateTime,
     #[sea_orm(column_type = "Text")]
     pub refresh_token: String,
+    pub webhook_last_updated: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

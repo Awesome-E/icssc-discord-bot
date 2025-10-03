@@ -95,12 +95,18 @@ pub(crate) mod cb {
     // use crate::ExtractedAppData;
     // use actix_session::Session;
     use crate::server::{ExtractedAppData, Result};
+    use crate::util::calendar::AddCalendarInteractionTrigger;
+    use actix_web::cookie::Cookie;
     use actix_web::http::StatusCode;
     use actix_web::{HttpRequest, HttpResponse, Responder, get, web};
-    use anyhow::Context;
+    use anyhow::{Context, anyhow};
     use jsonwebtoken::Validation;
+    use sea_orm::{ActiveValue, EntityTrait};
     use serde::{Deserialize, Serialize};
     // use uuid::Uuid;
+    use crate::util;
+    use chrono::{Duration, Utc};
+    use serenity::all::GuildId;
 
     // JS will give us the query params unchanged
     #[derive(Debug, Deserialize)]
@@ -113,7 +119,7 @@ pub(crate) mod cb {
     #[derive(Debug, Deserialize)]
     struct GoogleExchangeResponse {
         access_token: String,
-        // expires_in: usize,
+        expires_in: i64,
         // scope: String,
         // always Bearer, for now (https://developers.google.com/identity/protocols/oauth2/web-server)
         // token_type: String,
@@ -128,15 +134,14 @@ pub(crate) mod cb {
         id: String,
     }
 
-    #[get("/google")]
-    async fn google(
+    async fn get_oauth_tokens(
         info: web::Query<OAuthCbGoogQuery>,
-        data: ExtractedAppData,
-        req: HttpRequest,
-    ) -> Result<impl Responder> {
+        data: &ExtractedAppData,
+        req: &HttpRequest,
+    ) -> anyhow::Result<GoogleExchangeResponse> {
         // client has their "correct state" in the signed cookie
         let cookie_value = match req.cookie("oauth_state") {
-            None => return Ok(HttpResponse::build(StatusCode::BAD_REQUEST).body("no state")),
+            None => return Err(anyhow!("Missing OAuth State")),
             Some(state) => state.value().to_owned(),
         };
 
@@ -147,7 +152,7 @@ pub(crate) mod cb {
             ..
         } = info.into_inner()
         else {
-            return Ok(HttpResponse::build(StatusCode::BAD_REQUEST).body("no code or error"));
+            return Err(anyhow!("OAuth code was missing"));
         };
         let query_state = state;
 
@@ -158,11 +163,10 @@ pub(crate) mod cb {
         )?;
 
         if token.claims.state != query_state {
-            return Ok(HttpResponse::build(StatusCode::BAD_REQUEST).body("state mismatch"));
+            return Err(anyhow!("OAuth state mismatch"));
         }
 
         let redirect_uri = format!("{}/oauth/cb/google", data.oauth.frontend_url);
-
         let exchange_response = match data
             .client
             .post("https://oauth2.googleapis.com/token")
@@ -177,12 +181,8 @@ pub(crate) mod cb {
             .send()
             .await
         {
-            Err(e) if e.is_status() => {
-                return Ok(HttpResponse::build(StatusCode::BAD_REQUEST)
-                    .body("goog did not accept exchange"));
-            }
             Err(e) => {
-                return Err(anyhow::anyhow!(e))?;
+                return Err(anyhow!("OAuth exchange error: {}", e))?;
             }
             Ok(response) => response,
         }
@@ -190,9 +190,115 @@ pub(crate) mod cb {
         .await
         .context("parse exchange response")?;
 
-        dbg!(&exchange_response.access_token);
-        dbg!(&exchange_response.refresh_token);
+        Ok(exchange_response)
+    }
 
-        Ok(HttpResponse::build(StatusCode::OK).body("hi"))
+    fn get_interaction(
+        data: &ExtractedAppData,
+        req: &HttpRequest,
+    ) -> anyhow::Result<AddCalendarInteractionTrigger> {
+        let Some(ixn_cookie) = req.cookie("interaction") else {
+            return Err(anyhow!("No interaction found"));
+        };
+
+        let decoded = jsonwebtoken::decode::<AddCalendarInteractionTrigger>(
+            ixn_cookie.value(),
+            &data.jwt_keys.1,
+            &Validation::default(),
+        );
+        let Ok(ixn_data) = decoded else {
+            return Err(anyhow!("Bad interaction data"));
+        };
+
+        Ok(ixn_data.claims)
+    }
+
+    #[get("/google")]
+    async fn google(
+        info: web::Query<OAuthCbGoogQuery>,
+        data: ExtractedAppData,
+        req: HttpRequest,
+    ) -> Result<impl Responder> {
+        let exchange_response = get_oauth_tokens(info, &data, &req).await?;
+
+        let Some(refresh_token) = exchange_response.refresh_token else {
+            return Ok(HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+                .body("Failed to get refresh token"));
+        };
+
+        let interaction = get_interaction(&data, &req)?;
+
+        // check member permission to add events
+        let original_ixn = data
+            .http_action
+            .get_original_interaction_response(&interaction.interaction_token)
+            .await
+            .context("Failed to get original interaction")?;
+
+        let author_id = original_ixn.author.id;
+        let has_event_perms = data
+            .http_action
+            .get_member(GuildId::from(interaction.guild_id.clone()), author_id)
+            .await
+            .map(|member| {
+                let Some(permissions) = member.permissions else {
+                    return false;
+                };
+                permissions.create_events()
+                    | permissions.manage_events()
+                    | permissions.administrator()
+            })?;
+        if !has_event_perms {
+            return Ok(HttpResponse::build(StatusCode::FORBIDDEN)
+                .body("You do not have permission to create events"));
+        }
+
+        // pull events from GCal
+        let events = util::calendar::get_calendar_events(
+            &interaction.calendar_id,
+            &data,
+            exchange_response.access_token.clone(),
+        )
+        .await?;
+
+        let webhook_id = uuid::Uuid::new_v4().to_string();
+
+        let expires = Utc::now() + Duration::seconds(exchange_response.expires_in);
+        let server_cal_model = entity::server_calendar::ActiveModel {
+            guild_id: ActiveValue::set(interaction.guild_id as i64),
+            calendar_id: ActiveValue::set(interaction.calendar_id.clone()),
+            calendar_name: ActiveValue::set(events.summary.clone()),
+            webhook_id: ActiveValue::set(webhook_id.clone()),
+            access_token: ActiveValue::set(exchange_response.access_token),
+            access_expires: ActiveValue::set(expires.naive_utc()),
+            refresh_token: ActiveValue::Set(refresh_token),
+        };
+
+        let conn = {
+            // DO NOT ACTUALLY DO THIS HERE LMAO
+            let db_url = std::env::var("DATABASE_URL").expect("need postgres URL!");
+            sea_orm::Database::connect(&db_url).await?
+        };
+        entity::server_calendar::Entity::insert(server_cal_model)
+            .exec(&conn)
+            .await?;
+
+        // Create the Google Calendar Webhook
+
+
+        // let ixn_token = ixn_data.claims.interaction_token;
+        let interaction_update = serenity::all::EditInteractionResponse::new()
+            .content(format!("Added new calendar: `{}`", events.summary));
+        data.http_action
+            .edit_original_interaction_response(
+                &interaction.interaction_token,
+                &interaction_update,
+                vec![],
+            )
+            .await?;
+
+        Ok(HttpResponse::build(StatusCode::OK)
+            .cookie(Cookie::build("interaction", "").finish())
+            .body("Successfully added calendar!"))
     }
 }

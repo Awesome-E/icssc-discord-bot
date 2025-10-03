@@ -7,6 +7,7 @@ mod m20250923_231905_matchy_opt_in;
 mod m20250925_083518_matchy_pair_cols;
 mod m20250926_214250_stats_with_socials;
 mod m20250930_012439_calendar_events;
+mod m20251003_231509_calendar_indexes;
 
 pub struct Migrator;
 
@@ -21,6 +22,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250925_083518_matchy_pair_cols::Migration),
             Box::new(m20250926_214250_stats_with_socials::Migration),
             Box::new(m20250930_012439_calendar_events::Migration),
+            Box::new(m20251003_231509_calendar_indexes::Migration),
         ]
     }
 }

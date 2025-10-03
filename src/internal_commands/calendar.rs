@@ -25,13 +25,15 @@ pub(crate) async fn add_calendar(
     let link = generate_add_calendar_link(&app_ctx.interaction, calendar_id)
         .context("generate add calendar link")?;
 
-    ctx.reply_ephemeral(link).await?;
+    let content =
+        format!("To finish adding the calendar, please [authorize your Google account]({link}).");
+    ctx.reply_ephemeral(content).await?;
 
     Ok(())
 }
 
 /// List calendars in the current server
 #[poise::command(slash_command, rename = "list")]
-pub(crate) async fn list_calendars(ctx: Context<'_>) -> Result<(), BotError> {
+pub(crate) async fn list_calendars(_ctx: Context<'_>) -> Result<(), BotError> {
     Ok(())
 }
