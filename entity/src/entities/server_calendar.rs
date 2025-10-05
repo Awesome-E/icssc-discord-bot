@@ -19,6 +19,8 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub refresh_token: String,
     pub webhook_last_updated: Option<DateTime>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub webhook_g_cal_resource_id: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

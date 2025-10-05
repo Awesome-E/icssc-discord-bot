@@ -18,7 +18,7 @@ pub(crate) async fn add_calendar(
     #[description = "ID of the Google Calendar to add (usually in the form of an email address)"]
     calendar_id: String,
 ) -> Result<(), BotError> {
-    let poise::Context::Application(app_ctx) = ctx else {
+    let Context::Application(app_ctx) = ctx else {
         return Err(anyhow!("receive application command"));
     };
 

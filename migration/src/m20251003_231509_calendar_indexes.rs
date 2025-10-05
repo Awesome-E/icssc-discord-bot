@@ -27,6 +27,12 @@ impl MigrationTrait for Migration {
                             .to_owned()
                             .null(),
                     )
+                    .add_column(
+                        ColumnDef::new(ServerCalendar::WebhookGCalResourceId)
+                            .text()
+                            .to_owned()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await
@@ -38,6 +44,7 @@ impl MigrationTrait for Migration {
                 Table::alter()
                     .table(ServerCalendar::Table)
                     .drop_column(ServerCalendar::WebhookLastUpdated)
+                    .drop_column(ServerCalendar::WebhookGCalResourceId)
                     .to_owned(),
             )
             .await?;
@@ -53,4 +60,5 @@ enum ServerCalendar {
     Table,
     WebhookId,
     WebhookLastUpdated,
+    WebhookGCalResourceId,
 }
