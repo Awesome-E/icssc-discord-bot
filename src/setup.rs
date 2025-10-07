@@ -1,5 +1,5 @@
 use crate::util::ContextExtras;
-use crate::{BotError, BotVars};
+use crate::{AppError, AppVars};
 use crate::{attendance, internal_commands, matchy, spottings};
 use clap::ArgMatches;
 use itertools::Itertools;
@@ -20,10 +20,10 @@ pub(crate) fn load_env(args: ArgMatches) {
 
 pub(crate) async fn register_commands(
     ctx: &Context,
-    framework: &Framework<BotVars, BotError>,
-) -> Result<(), BotError> {
+    framework: &Framework<AppVars, AppError>,
+) -> Result<(), AppError> {
     let is_global = env::var("ICSSC_REGISTER_GLOBAL").is_ok();
-    let no_commands = &[] as &[Command<BotVars, BotError>];
+    let no_commands = &[] as &[Command<AppVars, AppError>];
     let commands = &framework.options().commands;
     let global_registration = if is_global { commands } else { no_commands };
     let local_registration = if is_global { no_commands } else { commands };
@@ -52,7 +52,7 @@ pub(crate) async fn register_commands(
     Ok(())
 }
 
-fn handle_framework_error(error: FrameworkError<BotVars, BotError>) -> BoxFuture<()> {
+fn handle_framework_error(error: FrameworkError<AppVars, AppError>) -> BoxFuture<()> {
     async move {
         println!("Error: {error}");
 
@@ -75,8 +75,8 @@ fn handle_framework_error(error: FrameworkError<BotVars, BotError>) -> BoxFuture
 }
 
 fn check_command_invocation(
-    ctx: poise::Context<BotVars, BotError>,
-) -> BoxFuture<Result<bool, BotError>> {
+    ctx: poise::Context<AppVars, AppError>,
+) -> BoxFuture<Result<bool, AppError>> {
     const ICSSC_SERVER: u64 = 760915616793755669;
     const ALLOWED_CHANNELS: &[u64] = &[1328907402321592391, 1338632123929591970];
 
@@ -87,7 +87,7 @@ fn check_command_invocation(
     .boxed()
 }
 
-fn get_bot_commands() -> Vec<Command<BotVars, BotError>> {
+fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
     vec![
         attendance::checkin::check_in(),
         matchy::create_pairing::create_pairing(),
@@ -101,7 +101,7 @@ fn get_bot_commands() -> Vec<Command<BotVars, BotError>> {
     ]
 }
 
-pub(crate) fn create_bot_framework_options() -> FrameworkOptions<BotVars, BotError> {
+pub(crate) fn create_bot_framework_options() -> FrameworkOptions<AppVars, AppError> {
     FrameworkOptions {
         on_error: handle_framework_error,
         commands: get_bot_commands(),

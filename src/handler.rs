@@ -1,4 +1,4 @@
-use crate::BotVars;
+use crate::AppVars;
 use crate::matchy::opt_in::MatchyMeetupOptIn;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
@@ -11,7 +11,7 @@ use std::time::Duration;
 use tokio::time;
 
 pub(crate) struct LaikaEventHandler {
-    pub(crate) data: BotVars,
+    pub(crate) data: AppVars,
 }
 
 #[async_trait]

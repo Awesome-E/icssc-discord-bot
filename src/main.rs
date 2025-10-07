@@ -17,29 +17,29 @@ use std::env;
 use std::ops::{BitAnd, Deref};
 use std::path::PathBuf;
 
-struct BotVarsInner {
+struct AppVarsInner {
     db: sea_orm::DatabaseConnection,
     icssc_guild_id: u64,
     matchy_channel_id: u64,
 }
 
 #[derive(Clone)]
-struct BotVars {
-    inner: std::sync::Arc<BotVarsInner>,
+struct AppVars {
+    inner: std::sync::Arc<AppVarsInner>,
 }
 
-impl Deref for BotVars {
-    type Target = BotVarsInner;
+impl Deref for AppVars {
+    type Target = AppVarsInner;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
-impl BotVars {
+impl AppVars {
     async fn new() -> Self {
         Self {
-            inner: std::sync::Arc::new(BotVarsInner {
+            inner: std::sync::Arc::new(AppVarsInner {
                 db: {
                     let db_url = env::var("DATABASE_URL").expect("need postgres URL!");
                     sea_orm::Database::connect(&db_url).await.unwrap()
@@ -72,9 +72,9 @@ async fn main() {
 
     setup::load_env(args);
 
-    let data = BotVars::new().await;
+    let data = AppVars::new().await;
 
-    let framework = poise::Framework::<BotVars, BotError>::builder()
+    let framework = poise::Framework::<AppVars, AppError>::builder()
         .options(create_bot_framework_options())
         .setup({
             let data = data.clone();
@@ -130,5 +130,5 @@ async fn main() {
     }
 }
 
-type BotError = anyhow::Error;
-type Context<'a> = poise::Context<'a, BotVars, BotError>;
+type AppError = anyhow::Error;
+type Context<'a> = poise::Context<'a, AppVars, AppError>;

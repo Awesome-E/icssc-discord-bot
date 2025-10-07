@@ -1,5 +1,5 @@
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
-use crate::{BotError, Context};
+use crate::{AppError, Context};
 use anyhow::Context as _;
 use entity::user_stat;
 use itertools::Itertools;
@@ -32,7 +32,7 @@ struct SnipeRateQuery {
 pub(crate) async fn leaderboard(
     ctx: Context<'_>,
     #[description = "Leaderboard type; default is \"Total snipes\'"] by: Option<LeaderboardBy>,
-) -> Result<(), BotError> {
+) -> Result<(), AppError> {
     let by = by.unwrap_or_default();
 
     let lines = match by {

@@ -1,4 +1,4 @@
-use crate::{BotError, Context};
+use crate::{AppError, Context};
 use anyhow::Context as _;
 use entity::{matchy_meetup_pair, matchy_meetup_pair_member, matchy_meetup_round};
 use itertools::Itertools;
@@ -55,14 +55,14 @@ pub fn format_pairs(pairs: &[Match<UserId>]) -> String {
 pub(crate) async fn add_pairings_to_db(
     ctx: &Context<'_>,
     pairs: Vec<Vec<UserId>>,
-) -> Result<(), BotError> {
+) -> Result<(), AppError> {
     let round_sql = matchy_meetup_round::ActiveModel {
         id: Default::default(),
         created_at: Default::default(),
     };
 
     let conn = &ctx.data().db;
-    conn.transaction::<_, (), BotError>(move |txn| {
+    conn.transaction::<_, (), AppError>(move |txn| {
         Box::pin(async move {
             let round = round_sql.insert(txn).await.context("insert round")?;
 

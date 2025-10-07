@@ -1,4 +1,4 @@
-use crate::BotVars;
+use crate::AppVars;
 use anyhow::{Context, Result};
 use entity::{matchy_meetup_opt_in, matchy_meetup_pair_member};
 use itertools::Itertools;
@@ -7,7 +7,7 @@ use sea_orm::{EntityTrait, FromQueryResult, QuerySelect};
 use serenity::all::UserId;
 
 /// Gets the currently opted in participants for Matchy Meetups
-pub(crate) async fn get_current_opted_in(data: &BotVars) -> Result<Vec<UserId>> {
+pub(crate) async fn get_current_opted_in(data: &AppVars) -> Result<Vec<UserId>> {
     let opted_in = matchy_meetup_opt_in::Entity::find()
         .all(&data.db)
         .await
@@ -25,7 +25,7 @@ struct GroupedPairMembers {
 }
 
 /// Fetching pairs from previous matchy meetups
-pub(crate) async fn get_previous_matches(data: &BotVars) -> Result<Vec<Vec<UserId>>> {
+pub(crate) async fn get_previous_matches(data: &AppVars) -> Result<Vec<Vec<UserId>>> {
     let matches = matchy_meetup_pair_member::Entity::find()
         .select_only()
         .column_as(

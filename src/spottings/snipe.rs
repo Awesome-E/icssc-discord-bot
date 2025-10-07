@@ -1,7 +1,7 @@
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
 use crate::util::{ContextExtras, spottings_embed};
-use crate::{BotError, Context};
+use crate::{AppError, Context};
 use anyhow::Context as _;
 use entity::{message, opt_out, snipe};
 use itertools::Itertools;
@@ -19,7 +19,7 @@ use std::num::NonZeroUsize;
 use std::time::Duration;
 
 #[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
-pub(crate) async fn snipe(ctx: Context<'_>) -> Result<(), BotError> {
+pub(crate) async fn snipe(ctx: Context<'_>) -> Result<(), AppError> {
     ctx.reply("base command is a noop").await?;
     Ok(())
 }
@@ -39,7 +39,7 @@ pub(crate) async fn post(
     #[description = "Another victim, if applicable"] victim8: Option<User>,
     // #[description = "Another victim, if applicable"] victim9: Option<User>,
     // #[description = "Another victim, if applicable"] victim10: Option<User>,
-) -> Result<(), BotError> {
+) -> Result<(), AppError> {
     let victims = vec![
         Some(victim1),
         victim2,
@@ -201,7 +201,7 @@ pub(crate) async fn post(
 
 /// Log past snipes
 #[poise::command(prefix_command, slash_command, guild_only)]
-pub(crate) async fn log(ctx: Context<'_>) -> Result<(), BotError> {
+pub(crate) async fn log(ctx: Context<'_>) -> Result<(), AppError> {
     let conn = &ctx.data().db;
 
     let got = message::Entity::find()

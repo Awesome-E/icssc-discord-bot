@@ -1,5 +1,5 @@
 use std::cmp::max;
-use crate::BotError;
+use crate::AppError;
 use crate::server::ExtractedAppData;
 use anyhow::{anyhow, bail, Context};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
@@ -29,7 +29,7 @@ pub(crate) struct AddCalendarInteractionTrigger {
 pub(crate) fn generate_add_calendar_link(
     ixn: &CommandInteraction,
     calendar_id: String,
-) -> Result<String, BotError> {
+) -> Result<String, AppError> {
     let root_url = std::env::var("RAILWAY_PUBLIC_DOMAIN").context("Missing Domain")?;
 
     let now = SystemTime::now()

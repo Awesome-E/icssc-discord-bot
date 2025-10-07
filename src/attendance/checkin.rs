@@ -3,7 +3,7 @@ use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{BotError, Context, util::ContextExtras};
+use crate::{AppError, Context, util::ContextExtras};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -33,7 +33,7 @@ struct SheetsResp {
     values: Vec<[String; 3]>,
 }
 
-async fn get_gsheets_token() -> Result<TokenResponse, BotError> {
+async fn get_gsheets_token() -> Result<TokenResponse, AppError> {
     let key_id =
         std::env::var("ICSSC_SERVICE_ACC_KEY_ID").expect("Need ICSSC Service Account Key ID");
     let key_email =
@@ -82,7 +82,7 @@ async fn get_gsheets_token() -> Result<TokenResponse, BotError> {
 async fn get_user_from_discord(
     access_token: &String,
     username: String,
-) -> Result<Option<SheetsRow>, BotError> {
+) -> Result<Option<SheetsRow>, AppError> {
     let spreadsheet_id =
         std::env::var("ICSSC_ROSTER_SPREADSHEET_ID").expect("Spreadsheet ID not defined");
     let spreadsheet_range =
@@ -114,7 +114,7 @@ async fn get_user_from_discord(
     Ok(user)
 }
 
-async fn check_in_with_email(email: String) -> Result<(), BotError> {
+async fn check_in_with_email(email: String) -> Result<(), AppError> {
     let form_id = std::env::var("ICSSC_ROSTER_FORM_ID").expect("ICSSC Roster Form ID Missing");
     let submission_url = format!("https://docs.google.com/forms/d/{form_id}/formResponse");
     let form_token_input_id = std::env::var("ICSSC_ROSTER_FORM_TOK_INPUT_ID")

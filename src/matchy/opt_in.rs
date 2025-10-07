@@ -1,4 +1,4 @@
-use crate::BotVars;
+use crate::AppVars;
 use entity::matchy_meetup_opt_in;
 use sea_orm::{ActiveValue, DbErr, EntityTrait};
 use serenity::all::{
@@ -9,11 +9,11 @@ use serenity::client::Context;
 
 pub(crate) struct MatchyMeetupOptIn<'a> {
     ctx: &'a Context,
-    data: &'a BotVars,
+    data: &'a AppVars,
 }
 
 impl<'a> MatchyMeetupOptIn<'a> {
-    pub(crate) fn new(ctx: &'a Context, data: &'a BotVars) -> Self {
+    pub(crate) fn new(ctx: &'a Context, data: &'a AppVars) -> Self {
         Self { ctx, data }
     }
 
