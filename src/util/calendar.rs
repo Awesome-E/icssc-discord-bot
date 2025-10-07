@@ -1,17 +1,16 @@
 use std::cmp::max;
 use crate::AppError;
 use crate::server::ExtractedAppData;
-use anyhow::{anyhow, bail, Context};
+use anyhow::{bail, Context};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use itertools::Itertools;
 use jsonwebtoken::Header;
-use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, IntoActiveValue, ModelTrait, QueryFilter};
+use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, ModelTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
-use serenity::all::{CommandInteraction, GuildId, ScheduledEvent, ScheduledEventId, ScheduledEventType};
+use serenity::all::{CommandInteraction, GuildId, ScheduledEventId, ScheduledEventType};
 use serenity::builder::{CreateScheduledEvent, EditScheduledEvent};
 use serenity::http::Http;
 use std::collections::HashMap;
-use std::future::pending;
 use std::ops::Add;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -77,19 +76,22 @@ pub(crate) enum GoogleCalendarEventTime {
         date: NaiveDate,
     },
     DateAndTime {
-        dateTime: DateTime<Utc>,
-        timeZone: String,
+        #[serde(rename = "dateTime")]
+        date_time: DateTime<Utc>,
+        #[serde(rename = "timeZone")]
+        time_zone: String,
     },
 }
 
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct GoogleCalendarEventDetails {
     pub(crate) id: String,
     pub(crate) kind: String,
     pub(crate) description: Option<String>,
     pub(crate) status: Option<String>,
-    pub(crate) htmlLink: String,
+    pub(crate) html_link: String,
     pub(crate) created: Option<String>,
     pub(crate) updated: Option<String>,
     pub(crate) summary: String,
@@ -102,16 +104,17 @@ pub(crate) struct GoogleCalendarEventDetails {
     // },
     pub(crate) start: GoogleCalendarEventTime,
     pub(crate) end: GoogleCalendarEventTime,
-    pub(crate) iCalUID: String,
-    pub(crate) eventType: String,
+    pub(crate) i_cal_uid: String,
+    pub(crate) event_type: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct GoogleCalendarEventListResponse {
     pub(crate) summary: String,
     pub(crate) description: Option<String>,
     pub(crate) updated: DateTime<Utc>,
-    pub(crate) timeZone: String,
+    pub(crate) time_zone: String,
     pub(crate) items: Vec<GoogleCalendarEventDetails>,
 }
 
@@ -148,8 +151,9 @@ pub(crate) async fn get_calendar_events(
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct CreateWebhookResponse {
-    pub(crate) resourceId: String
+    pub(crate) resource_id: String
 }
 
 /// Creates a Google Calendar webhook and returns its Resource ID
@@ -182,7 +186,7 @@ pub(crate) async fn create_webhook(
         .context("parse create webhook response");
 
     match resp {
-        Ok(resp) => Ok(resp.resourceId),
+        Ok(resp) => Ok(resp.resource_id),
         Err(why) => {
             dbg!(&why);
             Err(why)
@@ -267,13 +271,13 @@ pub(crate) async fn update_discord_events(
         };
 
         // Editable if the event on Discord has not started yet
-        if let GoogleCalendarEventTime::DateAndTime { dateTime, .. } = event.start
+        if let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.start
             && curr_event.start_time > now.into()
         {
-            let new_start = max(dateTime, now);
+            let new_start = max(date_time, now);
             payload = payload.start_time(new_start);
-            if let GoogleCalendarEventTime::DateAndTime { dateTime, .. } = event.end {
-                let new_end = max(new_start, dateTime);
+            if let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.end {
+                let new_end = max(new_start, date_time);
                 payload = payload.end_time(new_end);
             };
         };
@@ -291,19 +295,19 @@ pub(crate) async fn update_discord_events(
     // added events => db and discord
     let pending_db_entries = created.into_iter().map(async |event| {
         // for now, ignore all day events
-        let GoogleCalendarEventTime::DateAndTime { dateTime, .. } = event.start else {
+        let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.start else {
             return None;
         };
-        let start = max(dateTime, now);
+        let start = max(date_time, now);
 
         let location = event.location.as_deref().unwrap_or("Unknown Location 😱");
         let mut payload =
             CreateScheduledEvent::new(ScheduledEventType::External, event.summary, start)
                 .location(location);
         if let Some(desc) = event.description { payload = payload.description(desc); };
-        if let GoogleCalendarEventTime::DateAndTime { dateTime, .. } = event.end {
-            let end = max(start, dateTime);
-            payload = payload.end_time(dateTime);
+        if let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.end {
+            let end = max(start, date_time);
+            payload = payload.end_time(end);
         }
 
         let discord_event = http.create_scheduled_event(

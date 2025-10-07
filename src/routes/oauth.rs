@@ -103,11 +103,8 @@ pub(crate) mod cb {
     use jsonwebtoken::Validation;
     use sea_orm::{ActiveValue, ColumnTrait, EntityTrait, QueryFilter};
     use serde::{Deserialize, Serialize};
-    // use uuid::Uuid;
     use crate::util;
     use chrono::{Duration, Utc};
-    use serenity::all::{Guild, GuildId};
-    use log::debug;
 
     // JS will give us the query params unchanged
     #[derive(Debug, Deserialize)]
