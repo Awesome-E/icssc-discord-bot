@@ -1,11 +1,11 @@
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
-use crate::util::{ContextExtras, spottings_embed};
+use crate::util::{spottings_embed, ContextExtras};
 use crate::{BotError, Context};
 use anyhow::Context as _;
 use entity::{message, opt_out, snipe};
 use itertools::Itertools;
-use poise::CreateReply;
+use poise::{ChoiceParameter, CreateReply};
 use sea_orm::QueryFilter;
 use sea_orm::{
     ActiveValue, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryOrder, TransactionTrait,
@@ -18,17 +18,24 @@ use std::collections::HashSet;
 use std::num::NonZeroUsize;
 use std::time::Duration;
 
+#[derive(ChoiceParameter)]
+enum SpottingType {
+    Social,
+    Snipe,
+}
+
 #[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
-pub(crate) async fn snipe(ctx: Context<'_>) -> Result<(), BotError> {
+pub(crate) async fn spotting(ctx: Context<'_>) -> Result<(), BotError> {
     ctx.reply("base command is a noop").await?;
     Ok(())
 }
 
-/// Log a snipe
+/// Log a social or snipe
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub(crate) async fn post(
     ctx: Context<'_>,
     #[description = "Link to message with proof"] message: serenity::all::Message,
+    #[description = "Was this a social or a snipe?"] r#type: SpottingType,
     #[description = "The first victim"] victim1: User,
     #[description = "Another victim, if applicable"] victim2: Option<User>,
     #[description = "Another victim, if applicable"] victim3: Option<User>,
@@ -85,7 +92,7 @@ pub(crate) async fn post(
         .await
         .context("log snipe get opt out user id")?;
 
-    if !got.is_empty() {
+    if !got.is_empty() && matches!(r#type, SpottingType::Snipe) {
         ctx.send(CreateReply::default().embed(spottings_embed().description(format!(
             "**the following people in that post are opted out of sniping!**\n{}\n\nthis means they do not consent to being photographed!",
             got.into_iter().map(|opted_out| UserId::new(opted_out.id as u64).mention()).join("\n"),
@@ -94,16 +101,19 @@ pub(crate) async fn post(
     }
 
     let emb = spottings_embed().description(format!(
-        "**you are claiming that {} sniped**:\n{}\n\nclick to confirm! (times out in 15 seconds)",
+        "**you are claiming that {} spotted**:\n{}\n\nclick to confirm! (times out in 15 seconds)",
         message.author.mention(),
         victims.iter().join("")
     ));
+
+    let post_confirm_id = "spotting_post_confirm";
+
     let handle = ctx
         .send(
             CreateReply::default()
                 .embed(emb.clone())
                 .components(vec![CreateActionRow::Buttons(vec![
-                    CreateButton::new("snipe_post_confirm")
+                    CreateButton::new(post_confirm_id)
                         .emoji(ReactionType::Unicode(String::from("😎"))),
                 ])])
                 .reply(true)
@@ -116,7 +126,7 @@ pub(crate) async fn post(
         .await?
         .await_component_interaction(&ctx.serenity_context().shard)
         .author_id(ctx.author().id)
-        .custom_ids(vec![String::from("snipe_post_confirm")])
+        .custom_ids(vec![String::from(post_confirm_id)])
         .timeout(Duration::from_secs(15))
         .await
     {
@@ -137,7 +147,10 @@ pub(crate) async fn post(
         message_id: ActiveValue::Set(message.id.into()),
         author_id: ActiveValue::Set(message.author.id.into()),
         time_posted: ActiveValue::NotSet,
-        is_social: ActiveValue::Set(false),
+        is_social: ActiveValue::Set(match r#type {
+            SpottingType::Social => true,
+            SpottingType::Snipe => false,
+        }),
     };
 
     let snipes_sql = victims
