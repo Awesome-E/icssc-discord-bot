@@ -231,7 +231,7 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), AppError> {
         got.iter()
             .map(|(msg, victims)| {
                 format!(
-                    "<t:{}:f>: **{}** sniped {} ([msg](https://discord.com/channels/{}/{}/{}))",
+                    "<t:{}:d> at <t:{0}:t>: **{}** spotted {} ([original {}](https://discord.com/channels/{}/{}/{}))",
                     msg.time_posted.and_utc().timestamp(),
                     UserId::from(msg.author_id as u64).mention(),
                     comma_join(
@@ -239,6 +239,7 @@ pub(crate) async fn log(ctx: Context<'_>) -> Result<(), AppError> {
                             .iter()
                             .map(|victim| UserId::from(victim.victim_id as u64).mention())
                     ),
+                    if msg.is_social { "social" } else { "snipe" },
                     msg.guild_id,
                     msg.channel_id,
                     msg.message_id,
