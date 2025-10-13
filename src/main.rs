@@ -120,7 +120,7 @@ async fn main() {
     let actix_task = async move {
         crate::server::run(http_action)
             .await
-            .context("start axtix")?;
+            .context("start actix")?;
         anyhow::Result::<()>::Ok(())
     };
 
