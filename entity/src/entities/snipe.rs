@@ -23,7 +23,7 @@ pub enum Relation {
         from = "Column::MessageId",
         to = "super::message::Column::MessageId",
         on_update = "NoAction",
-        on_delete = "NoAction"
+        on_delete = "Cascade"
     )]
     Message,
 }
