@@ -74,18 +74,18 @@ fn handle_framework_error(error: FrameworkError<AppVars, AppError>) -> BoxFuture
     .boxed()
 }
 
-fn check_command_invocation(
-    ctx: poise::Context<AppVars, AppError>,
-) -> BoxFuture<Result<bool, AppError>> {
-    const ICSSC_SERVER: u64 = 760915616793755669;
-    const ALLOWED_CHANNELS: &[u64] = &[1328907402321592391, 1338632123929591970];
-
-    async move {
-        Ok(ctx.guild_id() != Some(GuildId::from(ICSSC_SERVER))
-            || ALLOWED_CHANNELS.contains(&ctx.channel_id().into()))
-    }
-    .boxed()
-}
+// fn check_command_invocation(
+//     ctx: poise::Context<AppVars, AppError>,
+// ) -> BoxFuture<Result<bool, AppError>> {
+//     const ICSSC_SERVER: u64 = 760915616793755669;
+//     const ALLOWED_CHANNELS: &[u64] = &[1328907402321592391, 1338632123929591970];
+//
+//     async move {
+//         Ok(ctx.guild_id() != Some(GuildId::from(ICSSC_SERVER))
+//             || ALLOWED_CHANNELS.contains(&ctx.channel_id().into()))
+//     }
+//     .boxed()
+// }
 
 fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
     vec![
@@ -105,7 +105,7 @@ pub(crate) fn create_bot_framework_options() -> FrameworkOptions<AppVars, AppErr
     FrameworkOptions {
         on_error: handle_framework_error,
         commands: get_bot_commands(),
-        command_check: Some(check_command_invocation),
+        // command_check: Some(check_command_invocation),
         ..Default::default()
     }
 }
