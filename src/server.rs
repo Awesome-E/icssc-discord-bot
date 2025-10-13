@@ -79,7 +79,9 @@ pub(crate) async fn run(http_action: Arc<Http>) -> anyhow::Result<()> {
         HttpServer::new(move || {
             App::new()
                 .app_data(web::Data::new(app_data.clone()))
-                .service(web::scope("/calendar").service(routes::calendar::webhook::update_calendar))
+                .service(
+                    web::scope("/calendar").service(routes::calendar::webhook::update_calendar),
+                )
                 .service(web::scope("/oauth/start").service(oauth::start::google))
                 .service(web::scope("/oauth/cb").service(oauth::cb::google))
                 .service(

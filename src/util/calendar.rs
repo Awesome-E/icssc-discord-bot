@@ -1,20 +1,23 @@
-use std::cmp::max;
 use crate::AppError;
 use crate::server::ExtractedAppData;
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use itertools::Itertools;
 use jsonwebtoken::Header;
-use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, ModelTrait, QueryFilter};
+use sea_orm::{
+    ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, ModelTrait,
+    QueryFilter,
+};
 use serde::{Deserialize, Serialize};
 use serenity::all::{CommandInteraction, GuildId, ScheduledEventId, ScheduledEventType};
 use serenity::builder::{CreateScheduledEvent, EditScheduledEvent};
+use serenity::futures;
 use serenity::http::Http;
+use std::cmp::max;
 use std::collections::HashMap;
 use std::ops::Add;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serenity::futures;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct AddCalendarInteractionTrigger {
@@ -83,7 +86,6 @@ pub(crate) enum GoogleCalendarEventTime {
     },
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct GoogleCalendarEventDetails {
@@ -126,7 +128,8 @@ pub(crate) async fn get_calendar_events(
     let now = Utc::now();
     let max_ahead = now + Duration::weeks(2);
 
-    let result = data.client
+    let result = data
+        .client
         .get(format!(
             "https://www.googleapis.com/calendar/v3/calendars/{}/events",
             calendar_id
@@ -145,7 +148,9 @@ pub(crate) async fn get_calendar_events(
         .await
         .context("Deserialize calendar events");
 
-    if result.is_err() { dbg!(&result); };
+    if result.is_err() {
+        dbg!(&result);
+    };
 
     result
 }
@@ -153,7 +158,7 @@ pub(crate) async fn get_calendar_events(
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct CreateWebhookResponse {
-    pub(crate) resource_id: String
+    pub(crate) resource_id: String,
 }
 
 /// Creates a Google Calendar webhook and returns its Resource ID
@@ -163,8 +168,7 @@ pub(crate) async fn create_webhook(
     webhook_id: String,
     access_token: String,
 ) -> anyhow::Result<String> {
-    let app_url = std::env::var("RAILWAY_PUBLIC_DOMAIN")
-        .context("Missing webhook target url")?;
+    let app_url = std::env::var("RAILWAY_PUBLIC_DOMAIN").context("Missing webhook target url")?;
 
     let resp = client
         .post(format!(
@@ -190,7 +194,7 @@ pub(crate) async fn create_webhook(
         Err(why) => {
             dbg!(&why);
             Err(why)
-        },
+        }
     }
 }
 
@@ -243,31 +247,45 @@ pub(crate) async fn update_discord_events(
     // changed events => update discord only
     for event in updated {
         let mut payload = EditScheduledEvent::new().name(event.summary.clone());
-        if let Some(desc) = &event.description { payload = payload.description(desc); };
+        if let Some(desc) = &event.description {
+            payload = payload.description(desc);
+        };
 
         // by definition of `updated`, it's in stored_events
         let curr_evt_entry = stored_events.get(&event.id).unwrap();
         // TODO handle cases where event has already finished or was deleted by user or completed
-        let curr_event = http.get_scheduled_event(
-            GuildId::from(calendar.guild_id as u64),
-            ScheduledEventId::from(curr_evt_entry.guild_event_id as u64),
-            false
-        ).await;
+        let curr_event = http
+            .get_scheduled_event(
+                GuildId::from(calendar.guild_id as u64),
+                ScheduledEventId::from(curr_evt_entry.guild_event_id as u64),
+                false,
+            )
+            .await;
 
-        let mut move_to_creates = async |event: GoogleCalendarEventDetails, entry: &server_event::Model| -> anyhow::Result<()> {
+        let mut move_to_creates = async |event: GoogleCalendarEventDetails,
+                                         entry: &server_event::Model|
+               -> anyhow::Result<()> {
             created.push(event);
             // allow nonexistent deletions to silently fail
-            let _ = server_event::Entity::delete(entry.clone().into_active_model()).exec(conn).await;
+            let _ = server_event::Entity::delete(entry.clone().into_active_model())
+                .exec(conn)
+                .await;
             Ok(())
         };
 
         let curr_event = match curr_event {
             Ok(ev) => match ev.end_time {
                 Some(end) if end > now.into() => ev,
-                Some(_) => { move_to_creates(event, curr_evt_entry).await?; continue; },
+                Some(_) => {
+                    move_to_creates(event, curr_evt_entry).await?;
+                    continue;
+                }
                 None => ev,
             },
-            _ => { move_to_creates(event, curr_evt_entry).await?; continue; }
+            _ => {
+                move_to_creates(event, curr_evt_entry).await?;
+                continue;
+            }
         };
 
         // Editable if the event on Discord has not started yet
@@ -286,47 +304,58 @@ pub(crate) async fn update_discord_events(
             GuildId::from(calendar.guild_id as u64),
             curr_event.id,
             &payload,
-            Some("Sync from Google Calendar")
-        ).await?;
+            Some("Sync from Google Calendar"),
+        )
+        .await?;
     }
 
     println!("Starting to add events...");
 
     // added events => db and discord
-    let pending_db_entries = created.into_iter().map(async |event| {
-        // for now, ignore all day events
-        let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.start else {
-            return None;
-        };
-        let start = max(date_time, now);
+    let pending_db_entries = created
+        .into_iter()
+        .map(async |event| {
+            // for now, ignore all day events
+            let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.start else {
+                return None;
+            };
+            let start = max(date_time, now);
 
-        let location = event.location.as_deref().unwrap_or("Unknown Location 😱");
-        let mut payload =
-            CreateScheduledEvent::new(ScheduledEventType::External, event.summary, start)
-                .location(location);
-        if let Some(desc) = event.description { payload = payload.description(desc); };
-        if let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.end {
-            let end = max(start, date_time);
-            payload = payload.end_time(end);
-        }
+            let location = event.location.as_deref().unwrap_or("Unknown Location 😱");
+            let mut payload =
+                CreateScheduledEvent::new(ScheduledEventType::External, event.summary, start)
+                    .location(location);
+            if let Some(desc) = event.description {
+                payload = payload.description(desc);
+            };
+            if let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.end {
+                let end = max(start, date_time);
+                payload = payload.end_time(end);
+            }
 
-        let discord_event = http.create_scheduled_event(
-            GuildId::from(calendar.guild_id as u64),
-            &payload,
-            "Sync from Google Calendar".into(),
-        ).await;
-        let discord_event = match discord_event {
-            Ok(ev) => ev,
-            Err(why) => { dbg!(why); return None; }
-        };
-        let db_entry = server_event::ActiveModel {
-            guild_id: ActiveValue::set(discord_event.guild_id.into()),
-            calendar_id: ActiveValue::set(calendar.calendar_id.clone()),
-            calendar_event_id: ActiveValue::set(event.id),
-            guild_event_id: ActiveValue::set(discord_event.id.into()),
-        };
-        Some(db_entry)
-    }).collect_vec();
+            let discord_event = http
+                .create_scheduled_event(
+                    GuildId::from(calendar.guild_id as u64),
+                    &payload,
+                    "Sync from Google Calendar".into(),
+                )
+                .await;
+            let discord_event = match discord_event {
+                Ok(ev) => ev,
+                Err(why) => {
+                    dbg!(why);
+                    return None;
+                }
+            };
+            let db_entry = server_event::ActiveModel {
+                guild_id: ActiveValue::set(discord_event.guild_id.into()),
+                calendar_id: ActiveValue::set(calendar.calendar_id.clone()),
+                calendar_event_id: ActiveValue::set(event.id),
+                guild_event_id: ActiveValue::set(discord_event.id.into()),
+            };
+            Some(db_entry)
+        })
+        .collect_vec();
 
     dbg!(pending_db_entries.len());
 
@@ -338,11 +367,16 @@ pub(crate) async fn update_discord_events(
 
     dbg!(&pending_db_entries);
 
-    let db_res = server_event::Entity::insert_many(pending_db_entries).exec(conn).await;
+    let db_res = server_event::Entity::insert_many(pending_db_entries)
+        .exec(conn)
+        .await;
 
     // For all events that do not exist
     match db_res {
         Ok(_) => Ok(()),
-        Err(why) => { dbg!(&why); bail!("db error") }
+        Err(why) => {
+            dbg!(&why);
+            bail!("db error")
+        }
     }
 }

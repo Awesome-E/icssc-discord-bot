@@ -95,16 +95,16 @@ pub(crate) mod cb {
     // use crate::ExtractedAppData;
     // use actix_session::Session;
     use crate::server::{ExtractedAppData, Result};
-    use crate::util::calendar::{create_webhook, AddCalendarInteractionTrigger};
+    use crate::util;
+    use crate::util::calendar::{AddCalendarInteractionTrigger, create_webhook};
     use actix_web::cookie::{Cookie, SameSite};
     use actix_web::http::StatusCode;
     use actix_web::{HttpRequest, HttpResponse, Responder, get, web};
     use anyhow::{Context, anyhow, bail};
+    use chrono::{Duration, Utc};
     use jsonwebtoken::Validation;
     use sea_orm::{ActiveValue, ColumnTrait, EntityTrait, QueryFilter};
     use serde::{Deserialize, Serialize};
-    use crate::util;
-    use chrono::{Duration, Utc};
 
     // JS will give us the query params unchanged
     #[derive(Debug, Deserialize)]
@@ -207,7 +207,10 @@ pub(crate) mod cb {
 
         let ixn_data = match decoded {
             Ok(ixn_data) => ixn_data,
-            Err(why) => { dbg!(why); bail!("Bad interaction data") }
+            Err(why) => {
+                dbg!(why);
+                bail!("Bad interaction data")
+            }
         };
 
         Ok(ixn_data.claims)
@@ -265,7 +268,8 @@ pub(crate) mod cb {
             .await
             .context("Search calendars")?
         else {
-            return Ok(HttpResponse::build(StatusCode::CONFLICT).body("This calendar is already being watched in this server"));
+            return Ok(HttpResponse::build(StatusCode::CONFLICT)
+                .body("This calendar is already being watched in this server"));
         };
 
         // pull events from GCal
@@ -273,7 +277,8 @@ pub(crate) mod cb {
             &interaction.calendar_id,
             &data,
             exchange_response.access_token.clone(),
-        ).await?;
+        )
+        .await?;
 
         let webhook_id = uuid::Uuid::new_v4().to_string();
 
@@ -282,8 +287,9 @@ pub(crate) mod cb {
             &data.client,
             interaction.calendar_id.clone(),
             webhook_id.clone(),
-            exchange_response.access_token.clone()
-        ).await?;
+            exchange_response.access_token.clone(),
+        )
+        .await?;
 
         let expires = Utc::now() + Duration::seconds(exchange_response.expires_in);
         let server_cal_model = entity::server_calendar::ActiveModel {
@@ -315,10 +321,11 @@ pub(crate) mod cb {
             .await?;
 
         Ok(HttpResponse::build(StatusCode::OK)
-            .cookie(Cookie::build("interaction", "")
-                .same_site(SameSite::Lax)
-                .path("/")
-                .finish()
+            .cookie(
+                Cookie::build("interaction", "")
+                    .same_site(SameSite::Lax)
+                    .path("/")
+                    .finish(),
             )
             .body("Successfully added calendar!"))
     }

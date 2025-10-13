@@ -2,7 +2,10 @@ use crate::AppVars;
 use crate::matchy::opt_in::MatchyMeetupOptIn;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
-use serenity::all::{ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse, CreateInteractionResponseMessage, EventHandler, Interaction, OnlineStatus, Permissions, Ready};
+use serenity::all::{
+    ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse,
+    CreateInteractionResponseMessage, EventHandler, Interaction, OnlineStatus, Permissions, Ready,
+};
 use serenity::async_trait;
 use std::time::Duration;
 use tokio::time;
@@ -77,7 +80,7 @@ impl EventHandler for LaikaEventHandler {
                         .check(&interaction)
                         .await
                 }
-                _ => ()
+                _ => (),
             };
         }
     }

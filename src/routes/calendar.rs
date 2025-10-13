@@ -1,13 +1,16 @@
 pub(crate) mod webhook {
     use crate::routes::oauth::cb::GoogleExchangeResponse;
     use crate::server::ExtractedAppData;
-    use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
-    use anyhow::{anyhow, Context};
-    use chrono::{Duration, Utc};
-    use sea_orm::{ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter};
-    use serde::{Deserialize, Serialize};
-    use entity::server_calendar;
     use crate::util::calendar::{get_calendar_events, update_discord_events};
+    use actix_web::{HttpRequest, HttpResponse, Responder, post, web};
+    use anyhow::{Context, anyhow};
+    use chrono::{Duration, Utc};
+    use entity::server_calendar;
+    use sea_orm::{
+        ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait,
+        IntoActiveModel, QueryFilter,
+    };
+    use serde::{Deserialize, Serialize};
 
     #[derive(Serialize, Deserialize)]
     struct UpdateCalendarQuery {
@@ -88,7 +91,8 @@ pub(crate) mod webhook {
         println!("[update] webhook received {} events", events.items.len());
 
         // handle each event... something like that...
-        let update_resp = update_discord_events(&calendar, &conn, data.http_action.clone(), events).await;
+        let update_resp =
+            update_discord_events(&calendar, &conn, data.http_action.clone(), events).await;
         if let Err(why) = update_resp {
             dbg!(&why);
         }
@@ -96,7 +100,9 @@ pub(crate) mod webhook {
         // update db
         let mut cal_update = calendar.into_active_model();
         cal_update.webhook_last_updated = ActiveValue::set(Utc::now().naive_utc().into());
-        server_calendar::Entity::update(cal_update).exec(&conn).await?;
+        server_calendar::Entity::update(cal_update)
+            .exec(&conn)
+            .await?;
 
         println!("[update] Done updating");
         Ok(HttpResponse::Ok().body("ok"))
