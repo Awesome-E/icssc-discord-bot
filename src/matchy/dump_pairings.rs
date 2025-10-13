@@ -11,7 +11,7 @@ async fn handle_dump_pairings(ctx: &Context<'_>) -> Result<String> {
     Ok(String::from("Dumped pairings to database"))
 }
 
-/// Dump pairing history from the current into the database
+/// Dump pairing history from the current channel into the database
 #[poise::command(slash_command, hide_in_help, required_permissions = "ADMINISTRATOR")]
 pub async fn dump_pairings(ctx: Context<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
