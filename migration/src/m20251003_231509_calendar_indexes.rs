@@ -50,7 +50,11 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
-            .drop_index(Index::drop().name("idx_server_calendar_webhook_id").to_owned())
+            .drop_index(
+                Index::drop()
+                    .name("idx_server_calendar_webhook_id")
+                    .to_owned(),
+            )
             .await
     }
 }

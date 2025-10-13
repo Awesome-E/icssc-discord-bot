@@ -18,9 +18,12 @@ impl MigrationTrait for Migration {
                     .col(text(ServerCalendar::AccessToken))
                     .col(timestamp(ServerCalendar::AccessExpires))
                     .col(text(ServerCalendar::RefreshToken))
-                    .primary_key(Index::create().col(ServerCalendar::GuildId).col(ServerCalendar::CalendarId))
+                    .primary_key(
+                        Index::create()
+                            .col(ServerCalendar::GuildId)
+                            .col(ServerCalendar::CalendarId),
+                    )
                     .to_owned(),
-                    
             )
             .await?;
 
@@ -33,15 +36,23 @@ impl MigrationTrait for Migration {
                     .col(text(ServerEvent::CalendarId))
                     .col(text(ServerEvent::CalendarEventId))
                     .col(big_integer(ServerEvent::GuildEventId))
-                    .primary_key(Index::create()
-                        .col(ServerEvent::GuildId)
-                        .col(ServerEvent::CalendarId)
-                        .col(ServerEvent::CalendarEventId)
+                    .primary_key(
+                        Index::create()
+                            .col(ServerEvent::GuildId)
+                            .col(ServerEvent::CalendarId)
+                            .col(ServerEvent::CalendarEventId),
                     )
-                    .foreign_key(ForeignKey::create()
-                        .from(ServerEvent::Table, (ServerEvent::GuildId, ServerEvent::CalendarId))
-                        .to(ServerCalendar::Table, (ServerCalendar::GuildId, ServerCalendar::CalendarId))
-                        .on_delete(ForeignKeyAction::Cascade)
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(
+                                ServerEvent::Table,
+                                (ServerEvent::GuildId, ServerEvent::CalendarId),
+                            )
+                            .to(
+                                ServerCalendar::Table,
+                                (ServerCalendar::GuildId, ServerCalendar::CalendarId),
+                            )
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
