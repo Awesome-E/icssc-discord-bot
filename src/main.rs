@@ -66,11 +66,15 @@ async fn main() {
                 .value_parser(clap::value_parser!(PathBuf))
                 .value_hint(ValueHint::FilePath)
                 .default_value(".env"),
-        );
+        )
+        .arg(clap::arg!("--migrate"));
 
     let args = cmd.get_matches();
+    setup::load_env(&args);
 
-    setup::load_env(args);
+    if args.get_flag("migrate") {
+        return migration::cli::run_cli(migration::Migrator).await;
+    }
 
     let data = AppVars::new().await;
 

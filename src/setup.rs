@@ -10,7 +10,7 @@ use serenity::all::{Context, GuildId};
 use std::env;
 use std::path::PathBuf;
 
-pub(crate) fn load_env(args: ArgMatches) {
+pub(crate) fn load_env(args: &ArgMatches) {
     dotenv::from_filename(
         args.get_one::<PathBuf>("config")
             .expect("config file is bad path?"),
