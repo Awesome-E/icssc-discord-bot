@@ -11,6 +11,8 @@ mod util;
 use crate::setup::{create_bot_framework_options, register_commands};
 use anyhow::Context as _;
 use clap::ValueHint;
+use migration::{Migrator, MigratorTrait};
+use sea_orm::DatabaseConnection;
 use serenity::Client;
 use serenity::all::GatewayIntents;
 use std::env;
@@ -37,13 +39,10 @@ impl Deref for AppVars {
 }
 
 impl AppVars {
-    async fn new() -> Self {
+    async fn new(connection: DatabaseConnection) -> Self {
         Self {
             inner: std::sync::Arc::new(AppVarsInner {
-                db: {
-                    let db_url = env::var("DATABASE_URL").expect("need postgres URL!");
-                    sea_orm::Database::connect(&db_url).await.unwrap()
-                },
+                db: connection,
                 icssc_guild_id: env::var("ICSSC_GUILD_ID")
                     .expect("need ICSSC_GUILD_ID")
                     .parse::<_>()
@@ -61,22 +60,30 @@ impl AppVars {
 async fn main() {
     let cmd = clap::command!("icssc-discord-bot")
         .about("The somewhat official Discord bot for ICS Student Council")
+        .arg(clap::arg!(--migrate "migrate db"))
         .arg(
-            clap::arg!(["config"] ".env file path")
+            clap::arg!(--config <PATH> ".env file path")
                 .value_parser(clap::value_parser!(PathBuf))
                 .value_hint(ValueHint::FilePath)
                 .default_value(".env"),
-        )
-        .arg(clap::arg!("--migrate"));
+        );
 
     let args = cmd.get_matches();
     setup::load_env(&args);
 
+    let connection = {
+        let db_url = env::var("DATABASE_URL").expect("need postgres URL!");
+        sea_orm::Database::connect(&db_url).await.unwrap()
+    };
+
     if args.get_flag("migrate") {
-        return migration::cli::run_cli(migration::Migrator).await;
+        Migrator::up(&connection, None)
+            .await
+            .expect("Migration failed");
+        return;
     }
 
-    let data = AppVars::new().await;
+    let data = AppVars::new(connection).await;
 
     let framework = poise::Framework::<AppVars, AppError>::builder()
         .options(create_bot_framework_options())
