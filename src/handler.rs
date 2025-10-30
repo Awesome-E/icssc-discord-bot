@@ -1,5 +1,6 @@
 use crate::AppVars;
 use crate::matchy::opt_in::MatchyMeetupOptIn;
+use crate::spottings::snipe::confirm_message_snipe_modal;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
 use serenity::all::{
@@ -80,11 +81,17 @@ impl EventHandler for LaikaEventHandler {
                         .check(&interaction)
                         .await
                 }
-                "spotting_modal_confirm" => {
-                    // ...
-                }
                 _ => (),
             };
+            return;
+        }
+        if let Interaction::Modal(interaction) = interaction {
+            match interaction.data.custom_id.as_str() {
+                "spotting_modal_confirm" => {
+                    let _ = confirm_message_snipe_modal(ctx, &self.data, interaction).await;
+                },
+                _ => ()
+            }
         }
     }
 }
