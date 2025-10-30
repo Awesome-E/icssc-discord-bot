@@ -95,6 +95,7 @@ fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
         matchy::dump_pairings::dump_pairings(),
         spottings::meta::ping(),
         spottings::snipe::spotting(),
+        spottings::snipe::log_message_snipe(),
         spottings::leaderboard::leaderboard(),
         spottings::privacy::opt_out(),
         internal_commands::calendar::calendar_command(),

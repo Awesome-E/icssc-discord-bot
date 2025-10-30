@@ -2,7 +2,7 @@ use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
 use crate::util::{ContextExtras, spottings_embed};
 use crate::{AppError, Context};
-use anyhow::Context as _;
+use anyhow::{Context as _, bail};
 use entity::{message, opt_out, snipe};
 use itertools::Itertools;
 use poise::{ChoiceParameter, CreateReply};
@@ -11,8 +11,7 @@ use sea_orm::{
     ActiveValue, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryOrder, TransactionTrait,
 };
 use serenity::all::{
-    CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage,
-    Mentionable, ReactionType, User, UserId,
+    CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse, CreateInteractionResponseMessage, CreateModal, InputTextStyle, Mentionable, ReactionType, User, UserId
 };
 use std::collections::HashSet;
 use std::num::NonZeroUsize;
@@ -23,6 +22,43 @@ enum SpottingType {
     Social,
     Snipe,
 }
+
+#[poise::command(context_menu_command = "Log Snipe")]
+pub(crate) async fn log_message_snipe(ctx: Context<'_>, message: serenity::all::Message) -> Result<(), AppError> {
+    let spotted = message.mentions.into_iter().map(|user| user.id.to_string()).collect_vec();
+
+    // TODO update when labels are supported
+    // let spotter_input = CreateActionRow::InputText(
+    //     CreateSelectMenu::new("spotting_modal_spotter", CreateSelectMenuKind::User {
+    //         default_users: Some(vec![message.author.id])
+    //     })
+    // );
+    // let spotted_input = CreateActionRow::SelectMenu(
+    //     CreateSelectMenu::new("spotting_modal_spotted", CreateSelectMenuKind::User {
+    //         default_users: Some(spotted)
+    //     })
+    // );
+    let input = CreateActionRow::InputText(
+        CreateInputText::new(InputTextStyle::Short, "Who was spotted?", "spotting_modal_spotted")
+            .value(spotted.join(", "))
+    );
+
+    let modal = CreateModal::new("spotting_modal_confirm", "Confirm Snipe")
+        .components(vec![input]);
+    
+    let reply = CreateInteractionResponse::Modal(modal);
+    let Context::Application(ctx) = ctx else { bail!("unexpected context type") };
+
+    ctx.interaction.create_response(ctx.http(), reply).await?;
+
+    Ok(())
+}
+
+pub(crate) async fn confirm_message_snipe_modal() -> Result<(), AppError> {
+    // write the snipe to the db
+    Ok(())
+}
+
 
 #[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
 pub(crate) async fn spotting(ctx: Context<'_>) -> Result<(), AppError> {

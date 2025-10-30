@@ -3,8 +3,8 @@ use crate::matchy::opt_in::MatchyMeetupOptIn;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
 use serenity::all::{
-    ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse,
-    CreateInteractionResponseMessage, EventHandler, Interaction, OnlineStatus, Permissions, Ready,
+    ActivityData, ActivityType, Context,
+    EventHandler, Interaction, OnlineStatus, Permissions, Ready,
 };
 use serenity::async_trait;
 use std::time::Duration;
@@ -79,6 +79,9 @@ impl EventHandler for LaikaEventHandler {
                     MatchyMeetupOptIn::new(&ctx, &self.data)
                         .check(&interaction)
                         .await
+                }
+                "spotting_modal_confirm" => {
+                    // ...
                 }
                 _ => (),
             };
