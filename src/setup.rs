@@ -89,7 +89,8 @@ fn handle_framework_error(error: FrameworkError<AppVars, AppError>) -> BoxFuture
 
 fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
     vec![
-        attendance::checkin::check_in(),
+        attendance::checkin::attended(),
+        attendance::checkin::checkin(),
         matchy::create_pairing::create_pairing(),
         matchy::send_pairing::send_pairing(),
         matchy::dump_pairings::dump_pairings(),

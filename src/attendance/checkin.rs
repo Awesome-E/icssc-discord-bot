@@ -1,4 +1,6 @@
 use anyhow::{Error, Result, bail};
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use itertools::Itertools;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -29,9 +31,15 @@ struct SheetsRow {
 }
 
 #[derive(Debug, Deserialize)]
-struct SheetsResp {
+struct RosterSheetsResp {
     values: Vec<[String; 3]>,
 }
+
+#[derive(Debug, Deserialize)]
+struct FlexibleSheetsResp {
+    values: Vec<Vec<String>>,
+}
+
 
 async fn get_gsheets_token() -> Result<TokenResponse, AppError> {
     let key_id =
@@ -95,7 +103,7 @@ async fn get_user_from_discord(
         .bearer_auth(access_token)
         .send()
         .await?
-        .json::<SheetsResp>()
+        .json::<RosterSheetsResp>()
         .await?;
 
     let user = resp
@@ -141,7 +149,7 @@ async fn check_in_with_email(email: String) -> Result<(), AppError> {
 
 /// Check into today's ICSSC event!
 #[poise::command(slash_command, hide_in_help)]
-pub(crate) async fn check_in(ctx: Context<'_>) -> Result<(), Error> {
+pub(crate) async fn checkin(ctx: Context<'_>) -> Result<(), Error> {
     let Ok(TokenResponse { access_token }) = get_gsheets_token().await else {
         ctx.reply_ephemeral("Unable to find who you are :(").await?;
         return Ok(());
@@ -168,5 +176,71 @@ Discord username on the internal roster is correct.",
 
     ctx.reply_ephemeral(format!("Successfully checked in as {}", user.name))
         .await?;
+    Ok(())
+}
+
+async fn get_events_attended_text(access_token: &String, email: &String) -> Result<Vec<String>, AppError> {
+    let spreadsheet_id =
+        std::env::var("ICSSC_ATTENDANCE_SHEET_ID").expect("Spreadsheet ID not defined");
+    let spreadsheet_range =
+        std::env::var("ICSSC_ATTENDANCE_SHEET_CHECKINS_RANGE").expect("Spreadsheet Range not defined");
+
+    let resp = reqwest::Client::new()
+        .get(format!("https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{spreadsheet_range}"))
+        .bearer_auth(access_token)
+        .send()
+        .await?
+        .json::<FlexibleSheetsResp>()
+        .await?;
+
+    let events = resp.values.into_iter().filter_map(|row| {
+        if row.len() != 4 { return None; };
+        let Some(row ) = row.into_iter().collect_array() else {
+            return None;
+        };
+        let [time, row_email, _, name] = row;
+
+        if row_email != *email { return None; };
+
+        let noon = NaiveTime::parse_from_str("20:00:00", "%H:%M:%S").expect("parse noon");
+        let mut datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%Y %H:%M:%S");
+        if let Err(_) = datetime { datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%y %H:%M:%S"); };
+        if let Err(_) = datetime {
+            datetime = NaiveDate::parse_from_str(&time, "%m/%d/%y").and_then(|res| Ok(res.and_time(noon)))
+        };
+        if let Err(_) = datetime {
+            datetime = NaiveDate::parse_from_str(&time, "%m/%d/%Y").and_then(|res| Ok(res.and_time(noon)))
+        };
+        let Ok(datetime) = datetime else { return None; };
+
+        Some(format!("- <t:{}:d> {name}", datetime.and_utc().timestamp()))
+    }).collect_vec();
+
+    Ok(events)
+}
+
+#[poise::command(slash_command, hide_in_help)]
+pub(crate) async fn attended(ctx: Context<'_>) -> Result<(), Error> {
+    let Ok(TokenResponse { access_token }) = get_gsheets_token().await else {
+        ctx.reply_ephemeral("Unable to find who you are :(").await?;
+        return Ok(());
+    };
+
+    ctx.defer_ephemeral().await?;
+
+    let username = &ctx.author().name;
+    let Ok(Some(user)) = get_user_from_discord(&access_token, username.to_string()).await else {
+        ctx.reply_ephemeral(
+            "\
+Cannot find a matching internal member. Double check that your \
+Discord username on the internal roster is correct.",
+        )
+        .await?;
+        return Ok(());
+    };
+
+    let events = get_events_attended_text(&access_token, &user.email).await?;
+
+    ctx.reply_ephemeral(format!("Events you attended:\n{}", events.join("\n"))).await?;
     Ok(())
 }
