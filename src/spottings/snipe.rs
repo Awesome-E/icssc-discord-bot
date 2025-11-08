@@ -1,27 +1,207 @@
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
 use crate::util::{ContextExtras, spottings_embed};
-use crate::{AppError, Context};
-use anyhow::Context as _;
+use crate::{AppError, AppVars, Context};
+use anyhow::{Context as _, bail};
 use entity::{message, opt_out, snipe};
 use itertools::Itertools;
 use poise::{ChoiceParameter, CreateReply};
-use sea_orm::QueryFilter;
 use sea_orm::{
     ActiveValue, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryOrder, TransactionTrait,
 };
+use sea_orm::{DatabaseConnection, QueryFilter, TransactionError};
 use serenity::all::{
-    CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage,
-    Mentionable, ReactionType, User, UserId,
+    CacheHttp, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,
+    CreateInteractionResponseMessage, CreateModal, GuildId, InputText, InputTextStyle, Mentionable,
+    Message, MessageId, ModalInteraction, ReactionType, User, UserId,
 };
 use std::collections::HashSet;
 use std::num::NonZeroUsize;
+use std::str::FromStr;
 use std::time::Duration;
 
 #[derive(ChoiceParameter)]
 enum SpottingType {
     Social,
     Snipe,
+}
+
+async fn add_spottings_to_db(
+    conn: &DatabaseConnection,
+    r#type: SpottingType,
+    guild_id: GuildId,
+    message: serenity::all::Message,
+    victims: impl IntoIterator<Item = UserId>,
+) -> Result<(), TransactionError<sea_orm::DbErr>> {
+    let message_sql = message::ActiveModel {
+        // command is guild_only
+        guild_id: ActiveValue::Set(guild_id.into()),
+        channel_id: ActiveValue::Set(message.channel_id.into()),
+        message_id: ActiveValue::Set(message.id.into()),
+        author_id: ActiveValue::Set(message.author.id.into()),
+        time_posted: ActiveValue::NotSet,
+        is_social: ActiveValue::Set(match r#type {
+            SpottingType::Social => true,
+            SpottingType::Snipe => false,
+        }),
+    };
+
+    let snipes_sql = victims
+        .into_iter()
+        .map(|victim| snipe::ActiveModel {
+            message_id: ActiveValue::Set(message.id.into()),
+            victim_id: ActiveValue::Set(victim.into()),
+            latitude: ActiveValue::Set(None),
+            longitude: ActiveValue::Set(None),
+            notes: ActiveValue::Set(None),
+        })
+        .collect_vec();
+
+    conn.transaction::<_, (), DbErr>(move |txn| {
+        Box::pin(async move {
+            message::Entity::insert(message_sql).exec(txn).await?;
+            snipe::Entity::insert_many(snipes_sql).exec(txn).await?;
+
+            txn.execute_unprepared("REFRESH MATERIALIZED VIEW user_stat")
+                .await?;
+
+            Ok(())
+        })
+    })
+    .await?;
+
+    Ok(())
+}
+
+#[poise::command(context_menu_command = "Log Snipe")]
+pub(crate) async fn log_message_snipe(
+    ctx: Context<'_>,
+    message: serenity::all::Message,
+) -> Result<(), AppError> {
+    let spotted = message
+        .mentions
+        .into_iter()
+        .map(|user| user.id.to_string())
+        .collect_vec();
+
+    // TODO update when labels are supported
+    // let spotter_input = CreateActionRow::InputText(
+    //     CreateSelectMenu::new("spotting_modal_spotter", CreateSelectMenuKind::User {
+    //         default_users: Some(vec![message.author.id])
+    //     })
+    // );
+    // let spotted_input = CreateActionRow::SelectMenu(
+    //     CreateSelectMenu::new("spotting_modal_spotted", CreateSelectMenuKind::User {
+    //         default_users: Some(spotted)
+    //     })
+    // );
+    let msg_input = CreateActionRow::InputText(
+        CreateInputText::new(InputTextStyle::Short, "Message ID", "spotting_modal_msg")
+            .value(message.id.to_string())
+            .required(true),
+    );
+
+    let input = CreateActionRow::InputText(
+        CreateInputText::new(
+            InputTextStyle::Short,
+            "Who was spotted?",
+            "spotting_modal_spotted",
+        )
+        .value(spotted.join(", "))
+        .required(true),
+    );
+
+    let modal = CreateModal::new("spotting_modal_confirm", "Confirm Snipe")
+        .components(vec![msg_input, input]);
+
+    let reply = CreateInteractionResponse::Modal(modal);
+    let Context::Application(ctx) = ctx else {
+        bail!("unexpected context type")
+    };
+
+    ctx.interaction.create_response(ctx.http(), reply).await?;
+
+    Ok(())
+}
+
+pub(crate) async fn confirm_message_snipe_modal(
+    ctx: serenity::prelude::Context,
+    data: &'_ AppVars,
+    ixn: ModalInteraction,
+) -> Result<(), AppError> {
+    let inputs = ixn
+        .data
+        .components
+        .iter()
+        .filter_map(|row| {
+            let item = row.components[0].clone();
+            match item {
+                serenity::all::ActionRowComponent::InputText(item) => Some(item),
+                _ => None,
+            }
+        })
+        .collect_vec();
+
+    let Some(message_id) = inputs
+        .iter()
+        .find(|input| input.custom_id == "spotting_modal_msg")
+    else {
+        bail!("unexpected missing input")
+    };
+
+    let Ok(message_id) = message_id.value.clone().map_or(Ok(0 as u64), |s| s.parse()) else {
+        bail!("unexpected non-numerical message ID")
+    };
+
+    let message = ixn
+        .channel_id
+        .message(ctx.http(), MessageId::new(message_id))
+        .await?;
+
+    let Some(spotted_input) = inputs
+        .iter()
+        .find(|input| input.custom_id == "spotting_modal_spotted")
+    else {
+        bail!("unexpected missing input")
+    };
+
+    let Some(value) = &spotted_input.value else {
+        bail!("unexpected empty input")
+    };
+    let spotted_uids = value
+        .split(",")
+        .filter_map(|s| {
+            // TODO validate that user ids are actually in the server
+            UserId::from_str(s.trim()).ok()
+        })
+        .collect_vec();
+
+    // command only available from guild
+    let response = match add_spottings_to_db(
+        &data.db,
+        SpottingType::Snipe,
+        ixn.guild_id.unwrap(),
+        message,
+        spotted_uids,
+    )
+    .await
+    {
+        Ok(_) => "ok, logged",
+        _ => "couldn't insert; has this message been logged before?",
+    };
+
+    // write the snipe to the db
+    ixn.create_response(
+        ctx.http(),
+        CreateInteractionResponse::Message(
+            CreateInteractionResponseMessage::new()
+                .content(response)
+                .ephemeral(true),
+        ),
+    )
+    .await?;
+
+    Ok(())
 }
 
 #[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
@@ -140,44 +320,11 @@ pub(crate) async fn post(
         }
     };
 
-    let message_sql = message::ActiveModel {
-        // command is guild_only
-        guild_id: ActiveValue::Set(ctx.guild_id().unwrap().into()),
-        channel_id: ActiveValue::Set(message.channel_id.into()),
-        message_id: ActiveValue::Set(message.id.into()),
-        author_id: ActiveValue::Set(message.author.id.into()),
-        time_posted: ActiveValue::NotSet,
-        is_social: ActiveValue::Set(match r#type {
-            SpottingType::Social => true,
-            SpottingType::Snipe => false,
-        }),
-    };
+    // command is guild_only
 
-    let snipes_sql = victims
-        .into_iter()
-        .map(|victim| snipe::ActiveModel {
-            message_id: ActiveValue::Set(message.id.into()),
-            victim_id: ActiveValue::Set(victim.id.into()),
-            latitude: ActiveValue::Set(None),
-            longitude: ActiveValue::Set(None),
-            notes: ActiveValue::Set(None),
-        })
-        .collect_vec();
+    let victims = victims.into_iter().map(|user| user.id).collect_vec();
 
-    let Ok(_) = conn
-        .transaction::<_, (), DbErr>(move |txn| {
-            Box::pin(async move {
-                message::Entity::insert(message_sql).exec(txn).await?;
-
-                snipe::Entity::insert_many(snipes_sql).exec(txn).await?;
-
-                txn.execute_unprepared("REFRESH MATERIALIZED VIEW user_stat")
-                    .await?;
-
-                Ok(())
-            })
-        })
-        .await
+    let Ok(_) = add_spottings_to_db(conn, r#type, ctx.guild_id().unwrap(), message, victims).await
     else {
         ctx.reply_ephemeral("couldn't insert; has this message been logged before?")
             .await?;
