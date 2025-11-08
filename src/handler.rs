@@ -63,8 +63,8 @@ impl EventHandler for LaikaEventHandler {
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Component(interaction) = interaction {
-            match interaction.data.custom_id.as_str() {
+        match interaction {
+            Interaction::Component(interaction) => match interaction.data.custom_id.as_str() {
                 // TODO consider creating enums for custom IDs to avoid magic strings
                 "matchy_opt_in" => {
                     MatchyMeetupOptIn::new(&ctx, &self.data)
@@ -82,16 +82,14 @@ impl EventHandler for LaikaEventHandler {
                         .await
                 }
                 _ => (),
-            };
-            return;
-        }
-        if let Interaction::Modal(interaction) = interaction {
-            match interaction.data.custom_id.as_str() {
+            },
+            Interaction::Modal(interaction) => match interaction.data.custom_id.as_str() {
                 "spotting_modal_confirm" => {
                     let _ = confirm_message_snipe_modal(ctx, &self.data, interaction).await;
                 },
                 _ => ()
-            }
+            },
+            _ => ()
         }
     }
 }

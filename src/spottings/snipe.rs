@@ -29,7 +29,7 @@ async fn add_spottings_to_db(
     r#type: SpottingType,
     guild_id: GuildId,
     message: serenity::all::Message,
-    victims: Vec<UserId>
+    victims: impl IntoIterator<Item = UserId>
 ) -> Result<(), TransactionError<sea_orm::DbErr>> {
     let message_sql = message::ActiveModel {
         // command is guild_only
@@ -67,7 +67,9 @@ async fn add_spottings_to_db(
                 Ok(())
             })
         })
-        .await
+        .await?;
+    
+    Ok(())
 }
 
 #[poise::command(context_menu_command = "Log Snipe")]
@@ -137,7 +139,7 @@ pub(crate) async fn confirm_message_snipe_modal(ctx: serenity::prelude::Context,
     let spotted_uids = value.split(",")
         .filter_map(|s| {
             // TODO validate that user ids are actually in the server
-            match UserId::from_str(s.trim()) { Ok(uid) => Some(uid), _ => None }
+            UserId::from_str(s.trim()).ok()
         })
         .collect_vec();
 
