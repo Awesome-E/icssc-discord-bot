@@ -219,6 +219,7 @@ async fn get_events_attended_text(access_token: &String, email: &String) -> Resu
     Ok(events)
 }
 
+/// See what ICSSC events you have checked in for!
 #[poise::command(slash_command, hide_in_help)]
 pub(crate) async fn attended(ctx: Context<'_>) -> Result<(), Error> {
     let Ok(TokenResponse { access_token }) = get_gsheets_token().await else {
