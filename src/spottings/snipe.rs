@@ -6,15 +6,17 @@ use anyhow::{Context as _, bail};
 use entity::{message, opt_out, snipe};
 use itertools::Itertools;
 use poise::{ChoiceParameter, CreateReply};
-use sea_orm::{DatabaseConnection, QueryFilter, TransactionError};
 use sea_orm::{
     ActiveValue, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryOrder, TransactionTrait,
 };
+use sea_orm::{DatabaseConnection, QueryFilter, TransactionError};
 use serenity::all::{
-    CacheHttp, Channel, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse, CreateInteractionResponseMessage, CreateModal, GuildId, InputText, InputTextStyle, Mentionable, Message, MessageId, ModalInteraction, ReactionType, User, UserId
+    CacheHttp, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,
+    CreateInteractionResponseMessage, CreateModal, GuildId, InputText, InputTextStyle, Mentionable,
+    Message, MessageId, ModalInteraction, ReactionType, User, UserId,
 };
 use std::collections::HashSet;
-use std::num::{NonZeroUsize, ParseIntError};
+use std::num::NonZeroUsize;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -29,7 +31,7 @@ async fn add_spottings_to_db(
     r#type: SpottingType,
     guild_id: GuildId,
     message: serenity::all::Message,
-    victims: impl IntoIterator<Item = UserId>
+    victims: impl IntoIterator<Item = UserId>,
 ) -> Result<(), TransactionError<sea_orm::DbErr>> {
     let message_sql = message::ActiveModel {
         // command is guild_only
@@ -55,26 +57,32 @@ async fn add_spottings_to_db(
         })
         .collect_vec();
 
-    conn
-        .transaction::<_, (), DbErr>(move |txn| {
-            Box::pin(async move {
-                message::Entity::insert(message_sql).exec(txn).await?;
-                snipe::Entity::insert_many(snipes_sql).exec(txn).await?;
+    conn.transaction::<_, (), DbErr>(move |txn| {
+        Box::pin(async move {
+            message::Entity::insert(message_sql).exec(txn).await?;
+            snipe::Entity::insert_many(snipes_sql).exec(txn).await?;
 
-                txn.execute_unprepared("REFRESH MATERIALIZED VIEW user_stat")
-                    .await?;
+            txn.execute_unprepared("REFRESH MATERIALIZED VIEW user_stat")
+                .await?;
 
-                Ok(())
-            })
+            Ok(())
         })
-        .await?;
-    
+    })
+    .await?;
+
     Ok(())
 }
 
 #[poise::command(context_menu_command = "Log Snipe")]
-pub(crate) async fn log_message_snipe(ctx: Context<'_>, message: serenity::all::Message) -> Result<(), AppError> {
-    let spotted = message.mentions.into_iter().map(|user| user.id.to_string()).collect_vec();
+pub(crate) async fn log_message_snipe(
+    ctx: Context<'_>,
+    message: serenity::all::Message,
+) -> Result<(), AppError> {
+    let spotted = message
+        .mentions
+        .into_iter()
+        .map(|user| user.id.to_string())
+        .collect_vec();
 
     // TODO update when labels are supported
     // let spotter_input = CreateActionRow::InputText(
@@ -90,53 +98,78 @@ pub(crate) async fn log_message_snipe(ctx: Context<'_>, message: serenity::all::
     let msg_input = CreateActionRow::InputText(
         CreateInputText::new(InputTextStyle::Short, "Message ID", "spotting_modal_msg")
             .value(message.id.to_string())
-            .required(true)
+            .required(true),
     );
 
     let input = CreateActionRow::InputText(
-        CreateInputText::new(InputTextStyle::Short, "Who was spotted?", "spotting_modal_spotted")
-            .value(spotted.join(", "))
-            .required(true)
+        CreateInputText::new(
+            InputTextStyle::Short,
+            "Who was spotted?",
+            "spotting_modal_spotted",
+        )
+        .value(spotted.join(", "))
+        .required(true),
     );
 
     let modal = CreateModal::new("spotting_modal_confirm", "Confirm Snipe")
         .components(vec![msg_input, input]);
-    
+
     let reply = CreateInteractionResponse::Modal(modal);
-    let Context::Application(ctx) = ctx else { bail!("unexpected context type") };
+    let Context::Application(ctx) = ctx else {
+        bail!("unexpected context type")
+    };
 
     ctx.interaction.create_response(ctx.http(), reply).await?;
 
     Ok(())
 }
 
-pub(crate) async fn confirm_message_snipe_modal(ctx: serenity::prelude::Context, data: &'_ AppVars, ixn: ModalInteraction) -> Result<(), AppError> {
-    let inputs = ixn.data.components
+pub(crate) async fn confirm_message_snipe_modal(
+    ctx: serenity::prelude::Context,
+    data: &'_ AppVars,
+    ixn: ModalInteraction,
+) -> Result<(), AppError> {
+    let inputs = ixn
+        .data
+        .components
         .iter()
         .filter_map(|row| {
             let item = row.components[0].clone();
             match item {
                 serenity::all::ActionRowComponent::InputText(item) => Some(item),
-                _ => None
+                _ => None,
             }
         })
         .collect_vec();
 
-    let Some(message_id) = inputs.iter()
+    let Some(message_id) = inputs
+        .iter()
         .find(|input| input.custom_id == "spotting_modal_msg")
-        else { bail!("unexpected missing input") };
+    else {
+        bail!("unexpected missing input")
+    };
 
-    let Ok(message_id) = message_id.value.clone().map_or(Ok(0 as u64), |s| s.parse())
-        else { bail!("unexpected non-numerical message ID") };
+    let Ok(message_id) = message_id.value.clone().map_or(Ok(0 as u64), |s| s.parse()) else {
+        bail!("unexpected non-numerical message ID")
+    };
 
-    let message = ixn.channel_id.message(ctx.http(), MessageId::new(message_id)).await?;
+    let message = ixn
+        .channel_id
+        .message(ctx.http(), MessageId::new(message_id))
+        .await?;
 
-    let Some(spotted_input) = inputs.iter()
+    let Some(spotted_input) = inputs
+        .iter()
         .find(|input| input.custom_id == "spotting_modal_spotted")
-        else { bail!("unexpected missing input") };
+    else {
+        bail!("unexpected missing input")
+    };
 
-    let Some(value) = &spotted_input.value else { bail!("unexpected empty input") };
-    let spotted_uids = value.split(",")
+    let Some(value) = &spotted_input.value else {
+        bail!("unexpected empty input")
+    };
+    let spotted_uids = value
+        .split(",")
         .filter_map(|s| {
             // TODO validate that user ids are actually in the server
             UserId::from_str(s.trim()).ok()
@@ -144,26 +177,32 @@ pub(crate) async fn confirm_message_snipe_modal(ctx: serenity::prelude::Context,
         .collect_vec();
 
     // command only available from guild
-    let response = match add_spottings_to_db(&data.db,
+    let response = match add_spottings_to_db(
+        &data.db,
         SpottingType::Snipe,
         ixn.guild_id.unwrap(),
         message,
-        spotted_uids
-    ).await {
+        spotted_uids,
+    )
+    .await
+    {
         Ok(_) => "ok, logged",
-        _ => "couldn't insert; has this message been logged before?"
+        _ => "couldn't insert; has this message been logged before?",
     };
 
     // write the snipe to the db
-    ixn.create_response(ctx.http(), CreateInteractionResponse::Message(
-        CreateInteractionResponseMessage::new()
-            .content(response)
-            .ephemeral(true)
-    )).await?;
+    ixn.create_response(
+        ctx.http(),
+        CreateInteractionResponse::Message(
+            CreateInteractionResponseMessage::new()
+                .content(response)
+                .ephemeral(true),
+        ),
+    )
+    .await?;
 
     Ok(())
 }
-
 
 #[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
 pub(crate) async fn spotting(ctx: Context<'_>) -> Result<(), AppError> {
