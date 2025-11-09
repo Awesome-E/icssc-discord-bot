@@ -12,8 +12,8 @@ use sea_orm::{
 use sea_orm::{DatabaseConnection, QueryFilter, TransactionError};
 use serenity::all::{
     CacheHttp, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,
-    CreateInteractionResponseMessage, CreateModal, GuildId, InputText, InputTextStyle, Mentionable,
-    Message, MessageId, ModalInteraction, ReactionType, User, UserId,
+    CreateInteractionResponseMessage, CreateModal, GuildId, InputTextStyle, Mentionable,
+    MessageId, ModalInteraction, ReactionType, User, UserId,
 };
 use std::collections::HashSet;
 use std::num::NonZeroUsize;
@@ -30,7 +30,7 @@ async fn add_spottings_to_db(
     conn: &DatabaseConnection,
     r#type: SpottingType,
     guild_id: GuildId,
-    message: serenity::all::Message,
+    message: &serenity::all::Message,
     victims: impl IntoIterator<Item = UserId>,
 ) -> Result<(), TransactionError<sea_orm::DbErr>> {
     let message_sql = message::ActiveModel {
@@ -181,7 +181,7 @@ pub(crate) async fn confirm_message_snipe_modal(
         &data.db,
         SpottingType::Snipe,
         ixn.guild_id.unwrap(),
-        message,
+        &message,
         spotted_uids,
     )
     .await
@@ -200,6 +200,10 @@ pub(crate) async fn confirm_message_snipe_modal(
         ),
     )
     .await?;
+
+    let _ = message
+        .react(ctx.http(), ReactionType::Unicode("👏".to_string()))
+        .await;
 
     Ok(())
 }
@@ -324,7 +328,7 @@ pub(crate) async fn post(
 
     let victims = victims.into_iter().map(|user| user.id).collect_vec();
 
-    let Ok(_) = add_spottings_to_db(conn, r#type, ctx.guild_id().unwrap(), message, victims).await
+    let Ok(_) = add_spottings_to_db(conn, r#type, ctx.guild_id().unwrap(), &message, victims).await
     else {
         ctx.reply_ephemeral("couldn't insert; has this message been logged before?")
             .await?;
@@ -342,6 +346,10 @@ pub(crate) async fn post(
             ),
         )
         .await?;
+
+    let _ = message
+        .react(ctx.http(), ReactionType::Unicode("👏".to_string()))
+        .await;
 
     ctx.reply_ephemeral("ok, logged").await?;
     Ok(())
