@@ -1,5 +1,5 @@
 use crate::util::ContextExtras;
-use crate::{AppError, AppVars};
+use crate::{AppError, AppVars, AppVarsInner};
 use crate::{attendance, internal_commands, matchy, spottings};
 use clap::ArgMatches;
 use itertools::Itertools;
@@ -9,6 +9,7 @@ use serenity::FutureExt;
 use serenity::all::{Context, GuildId};
 use std::env;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 pub(crate) fn load_env(args: &ArgMatches) {
     dotenv::from_filename(
@@ -19,16 +20,16 @@ pub(crate) fn load_env(args: &ArgMatches) {
 }
 
 pub(crate) async fn register_commands(
+    data: Arc<AppVarsInner>,
     ctx: &Context,
     framework: &Framework<AppVars, AppError>,
 ) -> Result<(), AppError> {
-    let is_global = env::var("ICSSC_REGISTER_GLOBAL").is_ok();
+    let is_global = data.env.bot.commands.register_globally != "";
     let no_commands = &[] as &[Command<AppVars, AppError>];
     let commands = &framework.options().commands;
     let global_registration = if is_global { commands } else { no_commands };
     let local_registration = if is_global { no_commands } else { commands };
-    let guilds = env::var("ICSSC_GUILDS")
-        .unwrap_or(String::from(""))
+    let guilds = data.env.bot.commands.guilds
         .split(",")
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
