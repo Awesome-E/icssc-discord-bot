@@ -1,5 +1,5 @@
-use crate::AppError;
-use crate::server::ExtractedAppData;
+use crate::{AppError, AppVars};
+use crate::server::{AppData, ExtractedAppData};
 use anyhow::{Context, bail};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use itertools::Itertools;
@@ -29,10 +29,11 @@ pub(crate) struct AddCalendarInteractionTrigger {
 }
 
 pub(crate) fn generate_add_calendar_link(
+    data: &AppVars,
     ixn: &CommandInteraction,
     calendar_id: String,
 ) -> Result<String, AppError> {
-    let root_url = std::env::var("RAILWAY_PUBLIC_DOMAIN").context("Missing Domain")?;
+    let root_url = &data.env.app.origin;
 
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -51,9 +52,7 @@ pub(crate) fn generate_add_calendar_link(
     };
 
     let encoding_key = jsonwebtoken::EncodingKey::from_secret(
-        std::env::var_os("JWT_SECRET")
-            .context("Missing JWT_SECRET")?
-            .as_encoded_bytes(),
+        data.env.app.jwt_secret.as_bytes(),
     );
 
     let encoded = jsonwebtoken::encode(&Header::default(), &jwt, &encoding_key)
@@ -163,13 +162,13 @@ struct CreateWebhookResponse {
 
 /// Creates a Google Calendar webhook and returns its Resource ID
 pub(crate) async fn create_webhook(
-    client: &reqwest::Client,
+    data: &AppData,
     calendar_id: String,
     webhook_id: String,
     access_token: String,
 ) -> anyhow::Result<String> {
-    let app_url = std::env::var("RAILWAY_PUBLIC_DOMAIN").context("Missing webhook target url")?;
-
+    let app_url = &data.env.app.origin;
+    let client = &data.client;
     let resp = client
         .post(format!(
             "https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events/watch"

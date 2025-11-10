@@ -284,7 +284,7 @@ pub(crate) mod cb {
 
         // Create the Google Calendar Webhook
         let resource_id = create_webhook(
-            &data.client,
+            &data,
             interaction.calendar_id.clone(),
             webhook_id.clone(),
             exchange_response.access_token.clone(),
