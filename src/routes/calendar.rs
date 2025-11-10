@@ -2,7 +2,7 @@ pub(crate) mod webhook {
     use crate::routes::oauth::cb::GoogleExchangeResponse;
     use crate::server::ExtractedAppData;
     use crate::util::calendar::{get_calendar_events, update_discord_events};
-    use actix_web::{HttpRequest, HttpResponse, Responder, post, web};
+    use actix_web::{HttpResponse, Responder, post, web};
     use anyhow::{Context, anyhow};
     use chrono::{Duration, Utc};
     use entity::server_calendar;
@@ -25,13 +25,12 @@ pub(crate) mod webhook {
         if calendar.access_expires > chrono::Utc::now().naive_utc() {
             return Ok(calendar.access_token.clone());
         }
-        let resp = data
-            .client
+        let resp = data.vars.http.client
             .get("https://oauth2.googleapis.com/token")
             .form(&[
                 ("grant_type", "refresh_token"),
-                ("client_id", data.oauth.google.client_id.as_str()),
-                ("client_secret", data.oauth.google.client_secret.as_str()),
+                ("client_id", data.vars.env.google_oauth_client.id.as_str()),
+                ("client_secret", data.vars.env.google_oauth_client.secret.as_str()),
                 ("refresh_token", calendar.refresh_token.as_str()),
             ])
             .send()
@@ -58,20 +57,16 @@ pub(crate) mod webhook {
     async fn update_calendar(
         info: web::Query<UpdateCalendarQuery>,
         data: ExtractedAppData,
-        req: HttpRequest,
+        // req: HttpRequest,
     ) -> crate::server::Result<impl Responder> {
-        let conn = {
-            // DO NOT ACTUALLY DO THIS HERE LMAO
-            let db_url = std::env::var("DATABASE_URL").expect("need postgres URL!");
-            sea_orm::Database::connect(&db_url).await?
-        };
+        let conn = &data.vars.db;
 
         let webhook_id = info.id.clone();
         println!("[update] calendar with webhook id: {}", &webhook_id);
 
         let calendar = entity::server_calendar::Entity::find()
             .filter(entity::server_calendar::Column::WebhookId.eq(webhook_id))
-            .one(&conn)
+            .one(conn)
             .await?;
 
         let Some(calendar) = calendar else {
@@ -79,7 +74,7 @@ pub(crate) mod webhook {
         };
 
         // get access token (may need to refresh)
-        let access_token = refresh_access_token(&data, &calendar, &conn)
+        let access_token = refresh_access_token(&data, &calendar, conn)
             .await
             .context("Refresh access token")?;
 
@@ -92,7 +87,7 @@ pub(crate) mod webhook {
 
         // handle each event... something like that...
         let update_resp =
-            update_discord_events(&calendar, &conn, data.http_action.clone(), events).await;
+            update_discord_events(&calendar, &conn, data.discord_http.clone(), events).await;
         if let Err(why) = update_resp {
             dbg!(&why);
         }
@@ -101,7 +96,7 @@ pub(crate) mod webhook {
         let mut cal_update = calendar.into_active_model();
         cal_update.webhook_last_updated = ActiveValue::set(Utc::now().naive_utc().into());
         server_calendar::Entity::update(cal_update)
-            .exec(&conn)
+            .exec(conn)
             .await?;
 
         println!("[update] Done updating");

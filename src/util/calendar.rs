@@ -1,5 +1,5 @@
 use crate::{AppError, AppVars};
-use crate::server::{AppData, ExtractedAppData};
+use crate::server::{ActixData, ExtractedAppData};
 use anyhow::{Context, bail};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use itertools::Itertools;
@@ -127,8 +127,7 @@ pub(crate) async fn get_calendar_events(
     let now = Utc::now();
     let max_ahead = now + Duration::weeks(2);
 
-    let result = data
-        .client
+    let result = data.vars.http.client
         .get(format!(
             "https://www.googleapis.com/calendar/v3/calendars/{}/events",
             calendar_id
@@ -162,14 +161,13 @@ struct CreateWebhookResponse {
 
 /// Creates a Google Calendar webhook and returns its Resource ID
 pub(crate) async fn create_webhook(
-    data: &AppData,
+    data: &ActixData,
     calendar_id: String,
     webhook_id: String,
     access_token: String,
 ) -> anyhow::Result<String> {
-    let app_url = &data.env.app.origin;
-    let client = &data.client;
-    let resp = client
+    let app_url = &data.vars.env.app.origin;
+    let resp = data.vars.http.client
         .post(format!(
             "https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events/watch"
         ))

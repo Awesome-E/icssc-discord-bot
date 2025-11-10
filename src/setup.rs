@@ -1,5 +1,5 @@
 use crate::util::ContextExtras;
-use crate::{AppError, AppVars, AppVarsInner};
+use crate::{AppError, AppVars, AppVarsInner, Vars};
 use crate::{attendance, internal_commands, matchy, spottings};
 use clap::ArgMatches;
 use itertools::Itertools;
@@ -7,7 +7,6 @@ use pluralizer::pluralize;
 use poise::{BoxFuture, Command, Framework, FrameworkError, FrameworkOptions};
 use serenity::FutureExt;
 use serenity::all::{Context, GuildId};
-use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -18,6 +17,36 @@ pub(crate) fn load_env(args: &ArgMatches) {
     )
     .ok();
 }
+
+// Env Setup
+#[derive(Clone)]
+pub(crate) struct HttpVars {
+    pub(crate) port: u16,
+    pub(crate) client: reqwest::Client,
+    pub(crate) jwt_keys: (jsonwebtoken::EncodingKey, jsonwebtoken::DecodingKey),
+}
+
+impl HttpVars {
+    pub(crate) fn new (env: &Vars) -> Self {
+        let port = env.app.port
+            .parse::<u16>()
+            .expect("$PORT not valid u16 port");
+
+        let jwt_secret = env.app.jwt_secret.as_bytes();
+
+        Self {
+            port,
+            client: reqwest::Client::new(),
+            jwt_keys: (
+                jsonwebtoken::EncodingKey::from_secret(jwt_secret),
+                jsonwebtoken::DecodingKey::from_secret(jwt_secret),
+            ),
+        }
+    }
+}
+
+
+// Bot setup
 
 pub(crate) async fn register_commands(
     data: Arc<AppVarsInner>,

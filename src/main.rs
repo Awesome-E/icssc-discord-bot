@@ -8,13 +8,13 @@ mod setup;
 mod spottings;
 mod util;
 
-use crate::setup::{create_bot_framework_options, register_commands};
-use anyhow::Context as _;
+use crate::setup::{HttpVars, create_bot_framework_options, register_commands};
+use anyhow::{Context as _};
 use clap::ValueHint;
 use env_vars_struct::env_vars_struct;
 use migration::{Migrator, MigratorTrait};
 use serenity::Client;
-use serenity::all::GatewayIntents;
+use serenity::all::{GatewayIntents};
 use std::env;
 use std::ops::{BitAnd, Deref};
 use std::path::PathBuf;
@@ -43,11 +43,18 @@ env_vars_struct!(
     "SERVICE_ACCOUNT_KEY.PEM",
 );
 
-struct AppVarsInner {
-    db: sea_orm::DatabaseConnection,
+struct ChannelVars {
     icssc_guild_id: u64,
     matchy_channel_id: u64,
+}
+
+struct AppVarsInner {
     env: Vars,
+    db: sea_orm::DatabaseConnection,
+    // channels: ChannelVars,
+    http: HttpVars,
+    icssc_guild_id: u64,
+    matchy_channel_id: u64,
 }
 
 #[derive(Clone)]
@@ -81,6 +88,7 @@ impl AppVars {
                 matchy_channel_id: env.bot.channels.matchy
                     .parse::<_>()
                     .expect("ICSSC_MATCHY_CHANNEL_ID must be valid u64"),
+                http: HttpVars::new(&env),
                 env,
             }),
         }
