@@ -8,7 +8,7 @@ mod setup;
 mod spottings;
 mod util;
 
-use crate::setup::{HttpVars, create_bot_framework_options, register_commands};
+use crate::setup::{ChannelVars, HttpVars, create_bot_framework_options, register_commands};
 use anyhow::{Context as _};
 use clap::ValueHint;
 use env_vars_struct::env_vars_struct;
@@ -43,18 +43,11 @@ env_vars_struct!(
     "SERVICE_ACCOUNT_KEY.PEM",
 );
 
-struct ChannelVars {
-    icssc_guild_id: u64,
-    matchy_channel_id: u64,
-}
-
 struct AppVarsInner {
     env: Vars,
     db: sea_orm::DatabaseConnection,
-    // channels: ChannelVars,
+    channels: ChannelVars,
     http: HttpVars,
-    icssc_guild_id: u64,
-    matchy_channel_id: u64,
 }
 
 #[derive(Clone)]
@@ -82,12 +75,7 @@ impl AppVars {
         Self {
             inner: std::sync::Arc::new(AppVarsInner {
                 db: connection,
-                icssc_guild_id: env.bot.channels.icssc_guild_id
-                    .parse::<_>()
-                    .expect("ICSSC_GUILD_ID must be valid u64"),
-                matchy_channel_id: env.bot.channels.matchy
-                    .parse::<_>()
-                    .expect("ICSSC_MATCHY_CHANNEL_ID must be valid u64"),
+                channels: ChannelVars::new(&env),
                 http: HttpVars::new(&env),
                 env,
             }),

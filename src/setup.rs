@@ -19,7 +19,24 @@ pub(crate) fn load_env(args: &ArgMatches) {
 }
 
 // Env Setup
-#[derive(Clone)]
+pub(crate) struct ChannelVars {
+    pub(crate) icssc_guild_id: u64,
+    pub(crate) matchy_channel_id: u64,
+}
+
+impl ChannelVars {
+    pub(crate) fn new (env: &Vars) -> Self {
+        Self {
+            icssc_guild_id: env.bot.channels.icssc_guild_id
+                .parse::<_>()
+                .expect("ICSSC_GUILD_ID must be valid u64"),
+            matchy_channel_id: env.bot.channels.matchy
+                .parse::<_>()
+                .expect("ICSSC_MATCHY_CHANNEL_ID must be valid u64"),
+        }
+    }
+}
+
 pub(crate) struct HttpVars {
     pub(crate) port: u16,
     pub(crate) client: reqwest::Client,
