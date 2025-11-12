@@ -904,9 +904,9 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crypto-common"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bfb12502f3fc46cca1bb51ac28df9d618d813cdc3d2f25b9fe775a34af26bb3"
+checksum = "78c8292055d1c1df0cce5d180393dc8cce0abec0a7102adb6c7b1eef6016d60a"
 dependencies = [
  "generic-array",
  "typenum",
@@ -1157,7 +1157,7 @@ dependencies = [
 [[package]]
 name = "env_vars_struct"
 version = "0.2.0"
-source = "git+https://github.com/laggycomputer/env_vars_struct#0d26304932e57cb11e85732731513154c96113e6"
+source = "git+https://github.com/laggycomputer/env_vars_struct#b55e077d4a945dee3f0dc3eecfac9be92a040aee"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1437,9 +1437,9 @@ dependencies = [
 
 [[package]]
 name = "generic-array"
-version = "0.14.9"
+version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bb6743198531e02858aeaea5398fcc883e71851fcbcb5a2f773e2fb6cb1edf2"
+checksum = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
 dependencies = [
  "typenum",
  "version_check",
@@ -1712,9 +1712,9 @@ dependencies = [
 
 [[package]]
 name = "hyper"
-version = "1.7.0"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb3aa54a13a0dfe7fbe3a59e0c76093041720fdc77b110cc0fc260fafb4dc51e"
+checksum = "1744436df46f0bde35af3eda22aeaba453aada65d8f1c171cd8a5f59030bd69f"
 dependencies = [
  "atomic-waker",
  "bytes",
@@ -1753,7 +1753,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3c93eb611681b207e1fe55d5a71ecf91572ec8a6705cdb6857f7d8d5242cf58"
 dependencies = [
  "http 1.3.1",
- "hyper 1.7.0",
+ "hyper 1.8.0",
  "hyper-util",
  "rustls 0.23.35",
  "rustls-pki-types",
@@ -1770,7 +1770,7 @@ checksum = "70206fc6890eaca9fde8a0bf71caa2ddfc9fe045ac9e5c70df101a7dbde866e0"
 dependencies = [
  "bytes",
  "http-body-util",
- "hyper 1.7.0",
+ "hyper 1.8.0",
  "hyper-util",
  "native-tls",
  "tokio",
@@ -1791,7 +1791,7 @@ dependencies = [
  "futures-util",
  "http 1.3.1",
  "http-body 1.0.1",
- "hyper 1.7.0",
+ "hyper 1.8.0",
  "ipnet",
  "libc",
  "percent-encoding",
@@ -2306,9 +2306,9 @@ dependencies = [
 
 [[package]]
 name = "num-bigint-dig"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82c79c15c05d4bf82b6f5ef163104cc81a760d8e874d38ac50ab67c8877b647b"
+checksum = "e661dda6640fad38e827a6d4a310ff4763082116fe217f279885c97f511bb0b7"
 dependencies = [
  "lazy_static",
  "libm",
@@ -2922,7 +2922,7 @@ dependencies = [
  "http 1.3.1",
  "http-body 1.0.1",
  "http-body-util",
- "hyper 1.7.0",
+ "hyper 1.8.0",
  "hyper-rustls 0.27.7",
  "hyper-tls",
  "hyper-util",
@@ -3200,9 +3200,9 @@ dependencies = [
 
 [[package]]
 name = "sea-orm"
-version = "1.1.17"
+version = "1.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "699b1ec145a6530c8f862eed7529d8a6068392e628d81cc70182934001e9c2a3"
+checksum = "6d945f62558fac19e5988680d2fdf747b734c2dbc6ce2cb81ba33ed8dde5b103"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -3230,9 +3230,9 @@ dependencies = [
 
 [[package]]
 name = "sea-orm-cli"
-version = "1.1.17"
+version = "1.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "500cd31ebb07814d4c7b73796708bfab6c13d22f8db072cdb5115f967f4d5d2c"
+checksum = "c94492e2ab6c045b4cc38013809ce255d14c3d352c9f0d11e6b920e2adc948ad"
 dependencies = [
  "chrono",
  "clap",
@@ -3249,9 +3249,9 @@ dependencies = [
 
 [[package]]
 name = "sea-orm-macros"
-version = "1.1.17"
+version = "1.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0c964f4b7f34f53decf381bc88f03187b9355e07f356ce65544626e781a9585"
+checksum = "84c2e64a50a9cc8339f10a27577e10062c7f995488e469f2c95762c5ee847832"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -3263,9 +3263,9 @@ dependencies = [
 
 [[package]]
 name = "sea-orm-migration"
-version = "1.1.17"
+version = "1.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "977e3f71486b04371026d1ecd899f49cf437f832cd11d463f8948ee02e47ed9e"
+checksum = "7315c0cadb7e60fb17ee2bb282aa27d01911fc2a7e5836ec1d4ac37d19250bb4"
 dependencies = [
  "async-trait",
  "clap",
