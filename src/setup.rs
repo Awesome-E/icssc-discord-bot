@@ -1,5 +1,5 @@
 use crate::util::ContextExtras;
-use crate::{AppError, AppVars};
+use crate::{AppError, AppVars, AppVarsInner, Vars};
 use crate::{attendance, internal_commands, matchy, spottings};
 use clap::ArgMatches;
 use itertools::Itertools;
@@ -7,8 +7,8 @@ use pluralizer::pluralize;
 use poise::{BoxFuture, Command, Framework, FrameworkError, FrameworkOptions};
 use serenity::FutureExt;
 use serenity::all::{Context, GuildId};
-use std::env;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 pub(crate) fn load_env(args: &ArgMatches) {
     dotenv::from_filename(
@@ -18,17 +18,64 @@ pub(crate) fn load_env(args: &ArgMatches) {
     .ok();
 }
 
+// Env Setup
+pub(crate) struct ChannelVars {
+    pub(crate) icssc_guild_id: u64,
+    pub(crate) matchy_channel_id: u64,
+}
+
+impl ChannelVars {
+    pub(crate) fn new (env: &Vars) -> Self {
+        Self {
+            icssc_guild_id: env.bot.channels.icssc_guild_id
+                .parse::<_>()
+                .expect("ICSSC_GUILD_ID must be valid u64"),
+            matchy_channel_id: env.bot.channels.matchy
+                .parse::<_>()
+                .expect("ICSSC_MATCHY_CHANNEL_ID must be valid u64"),
+        }
+    }
+}
+
+pub(crate) struct HttpVars {
+    pub(crate) port: u16,
+    pub(crate) client: reqwest::Client,
+    pub(crate) jwt_keys: (jsonwebtoken::EncodingKey, jsonwebtoken::DecodingKey),
+}
+
+impl HttpVars {
+    pub(crate) fn new (env: &Vars) -> Self {
+        let port = env.app.port
+            .parse::<u16>()
+            .expect("$PORT not valid u16 port");
+
+        let jwt_secret = env.app.jwt_secret.as_bytes();
+
+        Self {
+            port,
+            client: reqwest::Client::new(),
+            jwt_keys: (
+                jsonwebtoken::EncodingKey::from_secret(jwt_secret),
+                jsonwebtoken::DecodingKey::from_secret(jwt_secret),
+            ),
+        }
+    }
+}
+
+
+// Bot setup
+
 pub(crate) async fn register_commands(
+    data: Arc<AppVarsInner>,
     ctx: &Context,
     framework: &Framework<AppVars, AppError>,
 ) -> Result<(), AppError> {
-    let is_global = env::var("ICSSC_REGISTER_GLOBAL").is_ok();
+    let is_global = data.env.bot.commands.register_globally != "";
     let no_commands = &[] as &[Command<AppVars, AppError>];
     let commands = &framework.options().commands;
     let global_registration = if is_global { commands } else { no_commands };
     let local_registration = if is_global { no_commands } else { commands };
-    let guilds = env::var("ICSSC_GUILDS")
-        .unwrap_or(String::from(""))
+    let guilds = data.env.bot.commands.guilds
         .split(",")
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())

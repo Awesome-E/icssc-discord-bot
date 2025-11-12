@@ -16,11 +16,13 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
         bail!("Invalid key. Please make sure you only use keys returned by /create_pairing.")
     };
 
-    let channel_map = GuildId::from(ctx.data().icssc_guild_id)
+    let channels = &ctx.data().channels;
+
+    let channel_map = GuildId::from(channels.icssc_guild_id)
         .channels(ctx.http())
         .await
         .context("get channel map in ICSSC_GUILD_ID")?;
-    let Some(notification_channel) = channel_map.get(&ctx.data().matchy_channel_id.into()) else {
+    let Some(notification_channel) = channel_map.get(&channels.matchy_channel_id.into()) else {
         bail!("Could not find notification channel");
     };
 

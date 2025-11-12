@@ -15,7 +15,7 @@ pub(crate) mod add_event_test {
         )
         .location("Bad")
         .end_time(Timestamp::from_str("2025-10-10T02:00:00Z").unwrap());
-        data.http_action
+        data.discord_http
             .create_scheduled_event(GuildId::from(957408720088891473), &event, None)
             .await?;
 

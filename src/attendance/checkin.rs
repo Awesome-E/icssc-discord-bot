@@ -5,7 +5,7 @@ use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{AppError, Context, util::ContextExtras};
+use crate::{AppError, AppVars, Context, util::ContextExtras};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -41,13 +41,8 @@ struct FlexibleSheetsResp {
 }
 
 
-async fn get_gsheets_token() -> Result<TokenResponse, AppError> {
-    let key_id =
-        std::env::var("ICSSC_SERVICE_ACC_KEY_ID").expect("Need ICSSC Service Account Key ID");
-    let key_email =
-        std::env::var("ICSSC_SERVICE_ACC_KEY_EMAIL").expect("Need ICSSC Service Account Key Email");
-    let key_pem =
-        std::env::var("ICSSC_SERVICE_ACC_KEY_PEM").expect("Need ICSSC Service Account Key PEM");
+async fn get_gsheets_token(data: &AppVars) -> Result<TokenResponse, AppError> {
+    let key = &data.env.service_account_key;
 
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -55,8 +50,8 @@ async fn get_gsheets_token() -> Result<TokenResponse, AppError> {
     let now = now.as_secs();
 
     let claims = Claims {
-        iss: key_email.clone(),
-        sub: key_email,
+        iss: key.email.clone(),
+        sub: key.email.clone(),
         scope: "https://www.googleapis.com/auth/spreadsheets.readonly".to_owned(),
         aud: "https://oauth2.googleapis.com/token".to_owned(),
         exp: now + 3600,
@@ -64,12 +59,12 @@ async fn get_gsheets_token() -> Result<TokenResponse, AppError> {
     };
 
     let mut header = Header::new(jsonwebtoken::Algorithm::RS256);
-    header.kid = Some(key_id.to_owned());
+    header.kid = Some(key.id.to_owned());
 
     let token = encode(
         &header,
         &claims,
-        &EncodingKey::from_rsa_pem(key_pem.as_bytes())?,
+        &EncodingKey::from_rsa_pem(key.pem.as_bytes())?,
     )
     .unwrap();
 
@@ -88,17 +83,17 @@ async fn get_gsheets_token() -> Result<TokenResponse, AppError> {
 }
 
 async fn get_user_from_discord(
+    data: &AppVars,
     access_token: &String,
     username: String,
 ) -> Result<Option<SheetsRow>, AppError> {
-    let spreadsheet_id =
-        std::env::var("ICSSC_ROSTER_SPREADSHEET_ID").expect("Spreadsheet ID not defined");
-    let spreadsheet_range =
-        std::env::var("ICSSC_ROSTER_SPREADSHEET_RANGE").expect("Spreadsheet Range not defined");
+    let spreadsheet = &data.env.roster_spreadsheet;
 
     let resp = reqwest::Client::new()
         .get(format!(
-            "https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{spreadsheet_range}"
+            "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}",
+            spreadsheet.id,
+            spreadsheet.range
         ))
         .bearer_auth(access_token)
         .send()
@@ -122,19 +117,17 @@ async fn get_user_from_discord(
     Ok(user)
 }
 
-async fn check_in_with_email(email: String) -> Result<(), AppError> {
-    let form_id = std::env::var("ICSSC_ROSTER_FORM_ID").expect("ICSSC Roster Form ID Missing");
+async fn check_in_with_email(data: &AppVars, email: String) -> Result<(), AppError> {
+    let form_id = &data.env.attendance_form.id;
     let submission_url = format!("https://docs.google.com/forms/d/{form_id}/formResponse");
-    let form_token_input_id = std::env::var("ICSSC_ROSTER_FORM_TOK_INPUT_ID")
-        .expect("ICSSC Roster Form Input ID Missing");
-    let form_token_input =
-        std::env::var("ICSSC_ROSTER_FORM_TOKEN").expect("ICSSC Roster Form Token Missing");
+    let form_token_input_id = &data.env.attendance_form.token_input_id;
+    let form_token_input = &data.env.attendance_form.token_input_value;
 
     let status = reqwest::Client::new()
         .post(&submission_url)
         .form(&[
             ("emailAddress", email),
-            (form_token_input_id.as_str(), form_token_input),
+            (form_token_input_id.as_str(), form_token_input.to_string()),
         ])
         .send()
         .await?
@@ -150,7 +143,7 @@ async fn check_in_with_email(email: String) -> Result<(), AppError> {
 /// Check into today's ICSSC event!
 #[poise::command(slash_command, hide_in_help)]
 pub(crate) async fn checkin(ctx: Context<'_>) -> Result<(), Error> {
-    let Ok(TokenResponse { access_token }) = get_gsheets_token().await else {
+    let Ok(TokenResponse { access_token }) = get_gsheets_token(ctx.data()).await else {
         ctx.reply_ephemeral("Unable to find who you are :(").await?;
         return Ok(());
     };
@@ -158,7 +151,7 @@ pub(crate) async fn checkin(ctx: Context<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
 
     let username = &ctx.author().name;
-    let Ok(Some(user)) = get_user_from_discord(&access_token, username.to_string()).await else {
+    let Ok(Some(user)) = get_user_from_discord(ctx.data(), &access_token, username.to_string()).await else {
         ctx.reply_ephemeral(
             "\
 Cannot find a matching internal member. Double check that your \
@@ -168,7 +161,7 @@ Discord username on the internal roster is correct.",
         return Ok(());
     };
 
-    let success = check_in_with_email(user.email).await.is_ok();
+    let success = check_in_with_email(ctx.data(), user.email).await.is_ok();
     if !success {
         ctx.reply_ephemeral("Unable to check in").await?;
         return Ok(());
@@ -179,11 +172,9 @@ Discord username on the internal roster is correct.",
     Ok(())
 }
 
-async fn get_events_attended_text(access_token: &String, email: &String) -> Result<Vec<String>, AppError> {
-    let spreadsheet_id =
-        std::env::var("ICSSC_ATTENDANCE_SHEET_ID").expect("Spreadsheet ID not defined");
-    let spreadsheet_range =
-        std::env::var("ICSSC_ATTENDANCE_SHEET_CHECKINS_RANGE").expect("Spreadsheet Range not defined");
+async fn get_events_attended_text(data: &AppVars, access_token: &String, email: &String) -> Result<Vec<String>, AppError> {
+    let spreadsheet_id = &data.env.attendance_sheet.id;
+    let spreadsheet_range = &data.env.attendance_sheet.ranges.checkin;
 
     let resp = reqwest::Client::new()
         .get(format!("https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{spreadsheet_range}"))
@@ -222,7 +213,7 @@ async fn get_events_attended_text(access_token: &String, email: &String) -> Resu
 /// See what ICSSC events you have checked in for!
 #[poise::command(slash_command, hide_in_help)]
 pub(crate) async fn attended(ctx: Context<'_>) -> Result<(), Error> {
-    let Ok(TokenResponse { access_token }) = get_gsheets_token().await else {
+    let Ok(TokenResponse { access_token }) = get_gsheets_token(ctx.data()).await else {
         ctx.reply_ephemeral("Unable to find who you are :(").await?;
         return Ok(());
     };
@@ -230,7 +221,7 @@ pub(crate) async fn attended(ctx: Context<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
 
     let username = &ctx.author().name;
-    let Ok(Some(user)) = get_user_from_discord(&access_token, username.to_string()).await else {
+    let Ok(Some(user)) = get_user_from_discord(ctx.data(), &access_token, username.to_string()).await else {
         ctx.reply_ephemeral(
             "\
 Cannot find a matching internal member. Double check that your \
@@ -240,7 +231,7 @@ Discord username on the internal roster is correct.",
         return Ok(());
     };
 
-    let events = get_events_attended_text(&access_token, &user.email).await?;
+    let events = get_events_attended_text(ctx.data(), &access_token, &user.email).await?;
 
     ctx.reply_ephemeral(format!("Events you attended:\n{}", events.join("\n"))).await?;
     Ok(())

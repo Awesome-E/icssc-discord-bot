@@ -7,20 +7,16 @@ use actix_web::{App, HttpServer, ResponseError, web};
 use anyhow::Context;
 use serenity::all::Http;
 
-use crate::routes::{
-    self,
-    oauth::{self, GoogleOAuthConfig, OAuth},
-};
+use crate::{AppVarsInner, routes::{
+    self, oauth::{self},
+}};
 
 #[derive(Clone)]
-pub(crate) struct AppData {
-    pub(crate) client: reqwest::Client,
-    pub(crate) oauth: OAuth,
-    pub(crate) jwt_keys: (jsonwebtoken::EncodingKey, jsonwebtoken::DecodingKey),
-    pub(crate) http_action: Arc<Http>,
-    // db: sea_orm::DatabaseConnection,
+pub(crate) struct ActixData {
+    pub(crate) discord_http: Arc<Http>,
+    pub(crate) vars: Arc<AppVarsInner>,
 }
-pub(crate) type ExtractedAppData = web::Data<AppData>;
+pub(crate) type ExtractedAppData = web::Data<ActixData>;
 
 #[repr(transparent)]
 #[derive(Debug)]
@@ -45,35 +41,9 @@ pub(crate) type Result<T> = std::result::Result<T, AnyhowBridge>;
 
 impl ResponseError for AnyhowBridge {}
 
-pub(crate) async fn run(http_action: Arc<Http>) -> anyhow::Result<()> {
-    let port = std::env::var("PORT")
-        .unwrap_or(String::from("2509"))
-        .parse::<u16>()
-        .context("$PORT not valid u16 port")?;
-
-    let jwt_secret = std::env::var_os("JWT_SECRET").context("Missing JWT_SECRET")?;
-    let server_url =
-        std::env::var("RAILWAY_PUBLIC_DOMAIN").context("Missing RAILWAY_PUBLIC_DOMAIN")?;
-    let oauth_client_id =
-        std::env::var("GOOGLE_OAUTH_CLIENT_ID").context("Missing GOOGLE_OAUTH_CLIENT_ID")?;
-    let oauth_secret = std::env::var("GOOGLE_OAUTH_CLIENT_SECRET")
-        .context("Missing GOOGLE_OAUTH_CLIENT_SECRET")?;
-
-    let app_data = AppData {
-        client: reqwest::Client::new(),
-        oauth: OAuth {
-            frontend_url: server_url,
-            google: GoogleOAuthConfig {
-                client_id: oauth_client_id,
-                client_secret: oauth_secret,
-            },
-        },
-        jwt_keys: (
-            jsonwebtoken::EncodingKey::from_secret(jwt_secret.as_encoded_bytes()),
-            jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_encoded_bytes()),
-        ),
-        http_action,
-    };
+pub(crate) async fn run(vars: Arc<AppVarsInner>, http_action: Arc<Http>) -> anyhow::Result<()> {
+    let port = vars.http.port;
+    let app_data = ActixData { discord_http: http_action, vars };
 
     let server = {
         HttpServer::new(move || {

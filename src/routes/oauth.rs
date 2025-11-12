@@ -1,17 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
-pub(crate) struct OAuth {
-    pub(crate) frontend_url: String,
-    pub(crate) google: GoogleOAuthConfig,
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct GoogleOAuthConfig {
-    pub(crate) client_id: String,
-    pub(crate) client_secret: String,
-}
-
 #[derive(Serialize, Deserialize)]
 struct GoogleOAuthJWT {
     // this is supposed to be a UUIDv4
@@ -42,13 +30,12 @@ pub(crate) mod start {
     async fn google(info: web::Query<Query>, data: ExtractedAppData) -> Result<impl Responder> {
         let state = uuid::Uuid::new_v4();
 
-        let redirect_uri = format!("{}/oauth/cb/google", data.oauth.frontend_url);
+        let redirect_uri = format!("{}/oauth/cb/google", data.vars.env.app.origin);
 
-        let goog_request = data
-            .client
+        let goog_request = data.vars.http.client
             .get("https://accounts.google.com/o/oauth2/v2/auth")
             .query(&[
-                ("client_id", &*data.oauth.google.client_id),
+                ("client_id", &*data.vars.env.google_oauth_client.id),
                 ("redirect_uri", &*redirect_uri),
                 ("response_type", "code"),
                 ("state", state.to_string().as_str()),
@@ -68,7 +55,7 @@ pub(crate) mod start {
                 .unix_timestamp() as usize,
         };
 
-        let encoded = jsonwebtoken::encode(&Header::default(), &jwt, &data.jwt_keys.0)
+        let encoded = jsonwebtoken::encode(&Header::default(), &jwt, &data.vars.http.jwt_keys.0)
             .context("build JWT token")?;
 
         Ok(HttpResponse::Found()
@@ -156,7 +143,7 @@ pub(crate) mod cb {
 
         let token = jsonwebtoken::decode::<super::GoogleOAuthJWT>(
             &cookie_value,
-            &data.jwt_keys.1,
+            &data.vars.http.jwt_keys.1,
             &Validation::default(),
         )?;
 
@@ -164,13 +151,12 @@ pub(crate) mod cb {
             return Err(anyhow!("OAuth state mismatch"));
         }
 
-        let redirect_uri = format!("{}/oauth/cb/google", data.oauth.frontend_url);
-        let exchange_response = match data
-            .client
+        let redirect_uri = format!("{}/oauth/cb/google", data.vars.env.app.origin);
+        let exchange_response = match data.vars.http.client
             .post("https://oauth2.googleapis.com/token")
             .query(&[
-                ("client_id", &*data.oauth.google.client_id),
-                ("client_secret", &*data.oauth.google.client_secret),
+                ("client_id", &*data.vars.env.google_oauth_client.id),
+                ("client_secret", &*data.vars.env.google_oauth_client.secret),
                 ("code", &*code),
                 ("grant_type", "authorization_code"),
                 ("redirect_uri", &*redirect_uri),
@@ -201,7 +187,7 @@ pub(crate) mod cb {
 
         let decoded = jsonwebtoken::decode::<AddCalendarInteractionTrigger>(
             ixn_cookie.value(),
-            &data.jwt_keys.1,
+            &data.vars.http.jwt_keys.1,
             &Validation::default(),
         );
 
@@ -256,15 +242,11 @@ pub(crate) mod cb {
         //         .body("You do not have permission to create events"));
         // }
 
-        let conn = {
-            // DO NOT ACTUALLY DO THIS HERE LMAO
-            let db_url = std::env::var("DATABASE_URL").expect("need postgres URL!");
-            sea_orm::Database::connect(&db_url).await?
-        };
+        let conn = &data.vars.db;
 
         let None = entity::server_calendar::Entity::find()
             .filter(entity::server_calendar::Column::CalendarId.eq(interaction.calendar_id.clone()))
-            .one(&conn)
+            .one(conn)
             .await
             .context("Search calendars")?
         else {
@@ -284,7 +266,7 @@ pub(crate) mod cb {
 
         // Create the Google Calendar Webhook
         let resource_id = create_webhook(
-            &data.client,
+            &data,
             interaction.calendar_id.clone(),
             webhook_id.clone(),
             exchange_response.access_token.clone(),
@@ -306,13 +288,13 @@ pub(crate) mod cb {
         };
 
         entity::server_calendar::Entity::insert(server_cal_model)
-            .exec(&conn)
+            .exec(conn)
             .await?;
 
         // let ixn_token = ixn_data.claims.interaction_token;
         let interaction_update = serenity::all::EditInteractionResponse::new()
             .content(format!("Added new calendar: `{}`", events.summary));
-        data.http_action
+        data.discord_http
             .edit_original_interaction_response(
                 &interaction.interaction_token,
                 &interaction_update,

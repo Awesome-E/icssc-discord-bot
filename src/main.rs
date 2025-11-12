@@ -8,21 +8,46 @@ mod setup;
 mod spottings;
 mod util;
 
-use crate::setup::{create_bot_framework_options, register_commands};
-use anyhow::Context as _;
+use crate::setup::{ChannelVars, HttpVars, create_bot_framework_options, register_commands};
+use anyhow::{Context as _};
 use clap::ValueHint;
+use env_vars_struct::env_vars_struct;
 use migration::{Migrator, MigratorTrait};
-use sea_orm::DatabaseConnection;
 use serenity::Client;
-use serenity::all::GatewayIntents;
+use serenity::all::{GatewayIntents};
 use std::env;
 use std::ops::{BitAnd, Deref};
 use std::path::PathBuf;
 
+env_vars_struct!(
+    "APP.DATABASE_URL",
+    "APP.JWT_SECRET",
+    "APP.ORIGIN",
+    "APP.PORT",
+    "ATTENDANCE_FORM.ID",
+    "ATTENDANCE_FORM.TOKEN_INPUT_ID",
+    "ATTENDANCE_FORM.TOKEN_INPUT_VALUE",
+    "ATTENDANCE_SHEET.ID",
+    "ATTENDANCE_SHEET.RANGES.CHECKIN",
+    "BOT.COMMANDS.REGISTER_GLOBALLY",
+    "BOT.COMMANDS.GUILDS",
+    "BOT.CHANNELS.ICSSC_GUILD_ID",
+    "BOT.CHANNELS.MATCHY",
+    "BOT.DISCORD_TOKEN",
+    "GOOGLE_OAUTH_CLIENT.ID",
+    "GOOGLE_OAUTH_CLIENT.SECRET",
+    "ROSTER_SPREADSHEET.ID",
+    "ROSTER_SPREADSHEET.RANGE",
+    "SERVICE_ACCOUNT_KEY.ID",
+    "SERVICE_ACCOUNT_KEY.EMAIL",
+    "SERVICE_ACCOUNT_KEY.PEM",
+);
+
 struct AppVarsInner {
+    env: Vars,
     db: sea_orm::DatabaseConnection,
-    icssc_guild_id: u64,
-    matchy_channel_id: u64,
+    channels: ChannelVars,
+    http: HttpVars,
 }
 
 #[derive(Clone)]
@@ -39,18 +64,20 @@ impl Deref for AppVars {
 }
 
 impl AppVars {
-    async fn new(connection: DatabaseConnection) -> Self {
+    async fn new() -> Self {
+        let env = Vars::new();
+
+        let connection = {
+            let db_url = &env.app.database_url;
+            sea_orm::Database::connect(db_url).await.unwrap()
+        };
+        
         Self {
             inner: std::sync::Arc::new(AppVarsInner {
                 db: connection,
-                icssc_guild_id: env::var("ICSSC_GUILD_ID")
-                    .expect("need ICSSC_GUILD_ID")
-                    .parse::<_>()
-                    .expect("ICSSC_GUILD_ID must be valid u64"),
-                matchy_channel_id: env::var("ICSSC_MATCHY_CHANNEL_ID")
-                    .expect("need ICSSC_MATCHY_CHANNEL_ID")
-                    .parse::<_>()
-                    .expect("ICSSC_MATCHY_CHANNEL_ID must be valid u64"),
+                channels: ChannelVars::new(&env),
+                http: HttpVars::new(&env),
+                env,
             }),
         }
     }
@@ -71,19 +98,15 @@ async fn main() {
     let args = cmd.get_matches();
     setup::load_env(&args);
 
-    let connection = {
-        let db_url = env::var("DATABASE_URL").expect("need postgres URL!");
-        sea_orm::Database::connect(&db_url).await.unwrap()
-    };
+    let data = AppVars::new().await;
+    let inner_vars = data.inner.clone();
 
     if args.get_flag("migrate") {
-        Migrator::up(&connection, None)
+        Migrator::up(&data.db, None)
             .await
             .expect("Migration failed");
         return;
     }
-
-    let data = AppVars::new(connection).await;
 
     let framework = poise::Framework::<AppVars, AppError>::builder()
         .options(create_bot_framework_options())
@@ -91,16 +114,15 @@ async fn main() {
             let data = data.clone();
             |ctx, _ready, framework| {
                 Box::pin(async move {
-                    register_commands(ctx, framework).await?;
+                    register_commands(data.inner.clone(), ctx, framework).await?;
                     Ok(data)
                 })
             }
         })
         .build();
 
-    let token = env::var("ICSSC_DISCORD_TOKEN").expect("no discord token set");
     let mut client = Client::builder(
-        &token,
+        &data.env.bot.discord_token,
         GatewayIntents::non_privileged()
             .bitand(GatewayIntents::GUILD_MEMBERS)
             .bitand(GatewayIntents::MESSAGE_CONTENT),
@@ -118,7 +140,7 @@ async fn main() {
     };
 
     let actix_task = async move {
-        crate::server::run(http_action)
+        crate::server::run(inner_vars, http_action)
             .await
             .context("start actix")?;
         anyhow::Result::<()>::Ok(())
