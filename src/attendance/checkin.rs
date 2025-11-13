@@ -1,143 +1,16 @@
-use anyhow::{Error, Result, bail};
+use std::{collections::HashSet, str::FromStr};
+
+use anyhow::{Context as _, Error, Result, bail};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use itertools::Itertools;
-use jsonwebtoken::{EncodingKey, Header, encode};
-use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
+use serde::{Deserialize};
+use serenity::{all::{CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateInteractionResponseMessage, CreateModal, InputTextStyle, MessageId, ModalInteraction, ReactionType, UserId}, futures::future};
 
-use crate::{AppError, AppVars, Context, util::ContextExtras};
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    iss: String,
-    sub: String,
-    scope: String,
-    aud: String,
-    iat: u64,
-    exp: u64,
-}
-
-#[derive(Debug, Deserialize)]
-pub(crate) struct TokenResponse {
-    access_token: String,
-    // Can also read token_type: String and expires_in: u64
-}
-
-#[derive(Debug, Deserialize)]
-struct SheetsRow {
-    name: String,
-    email: String,
-    discord: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct RosterSheetsResp {
-    values: Vec<[String; 3]>,
-}
+use crate::{AppError, AppVars, Context, attendance::roster_helpers::{TokenResponse, check_in_with_email, get_gsheets_token, get_user_from_discord}, util::ContextExtras};
 
 #[derive(Debug, Deserialize)]
 struct FlexibleSheetsResp {
     values: Vec<Vec<String>>,
-}
-
-
-async fn get_gsheets_token(data: &AppVars) -> Result<TokenResponse, AppError> {
-    let key = &data.env.service_account_key;
-
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
-    let now = now.as_secs();
-
-    let claims = Claims {
-        iss: key.email.clone(),
-        sub: key.email.clone(),
-        scope: "https://www.googleapis.com/auth/spreadsheets.readonly".to_owned(),
-        aud: "https://oauth2.googleapis.com/token".to_owned(),
-        exp: now + 3600,
-        iat: now,
-    };
-
-    let mut header = Header::new(jsonwebtoken::Algorithm::RS256);
-    header.kid = Some(key.id.to_owned());
-
-    let token = encode(
-        &header,
-        &claims,
-        &EncodingKey::from_rsa_pem(key.pem.as_bytes())?,
-    )
-    .unwrap();
-
-    let token_resp = reqwest::Client::new()
-        .post("https://oauth2.googleapis.com/token")
-        .form(&[
-            ("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
-            ("assertion", &token),
-        ])
-        .send()
-        .await?
-        .json::<TokenResponse>()
-        .await?;
-
-    Ok(token_resp)
-}
-
-async fn get_user_from_discord(
-    data: &AppVars,
-    access_token: &String,
-    username: String,
-) -> Result<Option<SheetsRow>, AppError> {
-    let spreadsheet = &data.env.roster_spreadsheet;
-
-    let resp = reqwest::Client::new()
-        .get(format!(
-            "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}",
-            spreadsheet.id,
-            spreadsheet.range
-        ))
-        .bearer_auth(access_token)
-        .send()
-        .await?
-        .json::<RosterSheetsResp>()
-        .await?;
-
-    let user = resp
-        .values
-        .iter()
-        .map(|row| {
-            let [name, email, discord] = row;
-            SheetsRow {
-                name: name.to_string(),
-                email: email.to_string(),
-                discord: discord.to_string(),
-            }
-        })
-        .find(|row| row.discord.to_lowercase() == username);
-
-    Ok(user)
-}
-
-async fn check_in_with_email(data: &AppVars, email: String) -> Result<(), AppError> {
-    let form_id = &data.env.attendance_form.id;
-    let submission_url = format!("https://docs.google.com/forms/d/{form_id}/formResponse");
-    let form_token_input_id = &data.env.attendance_form.token_input_id;
-    let form_token_input = &data.env.attendance_form.token_input_value;
-
-    let status = reqwest::Client::new()
-        .post(&submission_url)
-        .form(&[
-            ("emailAddress", email),
-            (form_token_input_id.as_str(), form_token_input.to_string()),
-        ])
-        .send()
-        .await?
-        .status();
-
-    if status.is_success() {
-        Ok(())
-    } else {
-        bail!("Submission failed")
-    }
 }
 
 /// Check into today's ICSSC event!
@@ -161,7 +34,7 @@ Discord username on the internal roster is correct.",
         return Ok(());
     };
 
-    let success = check_in_with_email(ctx.data(), user.email).await.is_ok();
+    let success = check_in_with_email(ctx.data(), user.email, None).await.is_ok();
     if !success {
         ctx.reply_ephemeral("Unable to check in").await?;
         return Ok(());
@@ -169,6 +42,148 @@ Discord username on the internal roster is correct.",
 
     ctx.reply_ephemeral(format!("Successfully checked in as {}", user.name))
         .await?;
+    Ok(())
+}
+
+/// Count a message as attendance for an ICSSC event
+#[poise::command(context_menu_command = "Log Attendance")]
+pub(crate) async fn log_attedance (ctx: Context<'_>, message: serenity::all::Message) -> Result<(), Error> {
+    let Context::Application(ctx) = ctx else {
+        bail!("unexpected context type")
+    };
+
+    let mut members: HashSet<String> = message
+        .mentions
+        .iter().map(|member| member.id.to_string())
+        .collect();
+    members.insert(message.author.id.to_string());
+
+    // create inputs
+    let msg_input: CreateActionRow = CreateActionRow::InputText(
+        CreateInputText::new(InputTextStyle::Short, "Message ID", "message_id")
+            .value(message.id.to_string())
+            .required(true),
+    );
+    let event_name_input = CreateActionRow::InputText(
+        CreateInputText::new(InputTextStyle::Short, "Name of Event", "event_name")
+            .value("")
+            .required(false),
+    );
+    let members_input = CreateActionRow::InputText(
+        CreateInputText::new(
+            InputTextStyle::Paragraph,
+            "Who was at this event?",
+            "participants",
+        )
+        .value(members.iter().join("\n"))
+        .required(true),
+    );
+
+    let modal = CreateModal::new("attendance_log_modal_confirm", "Confirm Attendance")
+        .components(vec![msg_input, event_name_input, members_input]);
+
+    let reply = CreateInteractionResponse::Modal(modal);
+    ctx.interaction.create_response(ctx.http(), reply).await?;
+
+    Ok(())
+}
+
+pub(crate) async fn confirm_attendance_log_modal(
+    ctx: serenity::prelude::Context,
+    data: &'_ AppVars,
+    ixn: ModalInteraction,
+) -> Result<(), AppError> {
+    let inputs = ixn
+        .data
+        .components
+        .iter()
+        .filter_map(|row| {
+            let item = row.components[0].clone();
+            match item {
+                serenity::all::ActionRowComponent::InputText(item) => Some(item),
+                _ => None,
+            }
+        })
+        .collect_vec();
+
+    let Some(message_id) = inputs
+        .iter()
+        .find(|input| input.custom_id == "message_id")
+    else {
+        bail!("unexpected missing input")
+    };
+
+    let Ok(message_id) = message_id.value.clone().map_or(Ok(0 as u64), |s| s.parse()) else {
+        bail!("unexpected non-numerical message ID")
+    };
+
+    let message = ixn
+        .channel_id
+        .message(ctx.http(), MessageId::new(message_id))
+        .await?;
+
+    let Some(attendees) = inputs
+        .iter()
+        .find(|input| input.custom_id == "participants")
+    else {
+        bail!("unexpected missing input")
+    };
+    let Some(attendees_value) = &attendees.value else { bail!("unexpected empty input") };
+
+    let Some(event_name) = inputs
+        .iter()
+        .find(|input| input.custom_id == "event_name")
+        .map(|input| &input.value)
+    else {
+        bail!("unexpected missing input")
+    };
+
+    let participant_ids = attendees_value.split("\n");
+    let participants = future::join_all(
+        participant_ids.clone()
+        .filter_map(|s| {
+            let uid = UserId::from_str(s.trim()).ok()?;
+            Some(ixn.guild_id?.member(ctx.http(), uid))
+        }))
+        .await
+        .into_iter()
+        .filter_map(|item| item.ok())
+        .collect_vec();
+
+    if participant_ids.collect_vec().len() != participants.len() {
+        bail!("Some user IDs not found");
+    }
+
+    let access_token = get_gsheets_token(data).await?.access_token;
+    let mut emails: Vec<String> = Vec::new();
+    let mut user_texts: Vec<String> = Vec::new();
+    for member in participants {
+        let user = get_user_from_discord(data, &access_token, member.user.name)
+            .await?
+            .context(format!("cannot find email for <@{}>", member.user.id.to_string()))?;
+        emails.push(user.email.clone());
+        user_texts.push(format!("- {} ({})", user.name, user.email));
+    }
+
+    for email in emails { check_in_with_email(data, email, event_name.clone()).await?; };
+
+    let content = String::from("Successfully logged attendance for the following users:\n") +
+        &user_texts.join("\n");
+
+    ixn.create_response(
+        ctx.http(),
+        CreateInteractionResponse::Message(
+            CreateInteractionResponseMessage::new()
+                .content(content)
+                .ephemeral(true),
+        ),
+    )
+    .await?;
+
+    let _ = message
+        .react(ctx.http(), ReactionType::Unicode("👋".to_string()))
+        .await;
+
     Ok(())
 }
 

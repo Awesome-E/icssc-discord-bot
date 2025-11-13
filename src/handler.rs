@@ -1,4 +1,5 @@
 use crate::AppVars;
+use crate::attendance::checkin::confirm_attendance_log_modal;
 use crate::matchy::opt_in::MatchyMeetupOptIn;
 use crate::spottings::snipe::confirm_message_snipe_modal;
 use crate::util::text::bot_invite_url;
@@ -86,6 +87,11 @@ impl EventHandler for LaikaEventHandler {
             Interaction::Modal(interaction) => match interaction.data.custom_id.as_str() {
                 "spotting_modal_confirm" => {
                     let _ = confirm_message_snipe_modal(ctx, &self.data, interaction).await;
+                }
+                "attendance_log_modal_confirm" => {
+                    let res = confirm_attendance_log_modal(ctx, &self.data, interaction).await;
+                    // TODO potentially make it reply with the error
+                    if let Err(why) = res { dbg!(why); }
                 }
                 _ => (),
             },

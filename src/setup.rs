@@ -138,6 +138,7 @@ fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
     vec![
         attendance::checkin::attended(),
         attendance::checkin::checkin(),
+        attendance::checkin::log_attedance(),
         matchy::create_pairing::create_pairing(),
         matchy::send_pairing::send_pairing(),
         matchy::dump_pairings::dump_pairings(),
