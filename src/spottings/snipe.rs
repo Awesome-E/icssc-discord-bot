@@ -146,7 +146,7 @@ pub(crate) async fn confirm_message_snipe_modal(
 
     // TODO fail if the user is opted out
 
-    // write snipe to db 
+    // write snipe to db
     let response = match add_spottings_to_db(
         &data.db,
         SpottingType::Snipe,

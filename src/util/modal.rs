@@ -7,7 +7,7 @@ pub(crate) struct ModalInputTexts {
 }
 
 impl ModalInputTexts {
-    pub(crate) fn new (ixn: &ModalInteraction) -> Self {
+    pub(crate) fn new(ixn: &ModalInteraction) -> Self {
         let inputs = ixn
             .data
             .components
@@ -23,7 +23,7 @@ impl ModalInputTexts {
         Self { inputs }
     }
 
-    pub(crate) fn get_value(self: &Self, input_id: &str) -> Result<Option<String>, anyhow::Error> {
+    pub(crate) fn get_value(&self, input_id: &str) -> Result<Option<String>, anyhow::Error> {
         self.inputs
             .iter()
             .find(|input| input.custom_id == input_id)
@@ -31,7 +31,7 @@ impl ModalInputTexts {
             .map(|input| input.value.clone())
     }
 
-    pub(crate) fn get_required_value(self: &Self, input_id: &str) -> Result<String, anyhow::Error> {
+    pub(crate) fn get_required_value(&self, input_id: &str) -> Result<String, anyhow::Error> {
         let value = self.get_value(input_id)?;
         value.ok_or(anyhow!("Expected value for {input_id} was missing"))
     }

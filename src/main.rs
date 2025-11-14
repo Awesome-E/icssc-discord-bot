@@ -9,12 +9,12 @@ mod spottings;
 mod util;
 
 use crate::setup::{ChannelVars, HttpVars, create_bot_framework_options, register_commands};
-use anyhow::{Context as _};
+use anyhow::Context as _;
 use clap::ValueHint;
 use env_vars_struct::env_vars_struct;
 use migration::{Migrator, MigratorTrait};
 use serenity::Client;
-use serenity::all::{GatewayIntents};
+use serenity::all::GatewayIntents;
 use std::env;
 use std::ops::{BitAnd, Deref};
 use std::path::PathBuf;
@@ -72,7 +72,7 @@ impl AppVars {
             let db_url = &env.app.database_url;
             sea_orm::Database::connect(db_url).await.unwrap()
         };
-        
+
         Self {
             inner: std::sync::Arc::new(AppVarsInner {
                 db: connection,

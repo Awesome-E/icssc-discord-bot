@@ -3,10 +3,23 @@ use std::{collections::HashSet, str::FromStr};
 use anyhow::{Context as _, Error, Result, bail};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use itertools::Itertools;
-use serde::{Deserialize};
-use serenity::{all::{CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal, EditInteractionResponse, InputTextStyle, ModalInteraction, ReactionType, UserId}, futures::future};
+use serde::Deserialize;
+use serenity::{
+    all::{
+        CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
+        EditInteractionResponse, InputTextStyle, ModalInteraction, ReactionType, UserId,
+    },
+    futures::future,
+};
 
-use crate::{AppError, AppVars, Context, attendance::roster_helpers::{TokenResponse, check_in_with_email, get_bulk_members_from_roster, get_gsheets_token, get_user_from_discord}, util::{ContextExtras, message::get_members, modal::ModalInputTexts}};
+use crate::{
+    AppError, AppVars, Context,
+    attendance::roster_helpers::{
+        TokenResponse, check_in_with_email, get_bulk_members_from_roster, get_gsheets_token,
+        get_user_from_discord,
+    },
+    util::{ContextExtras, message::get_members, modal::ModalInputTexts},
+};
 
 #[derive(Debug, Deserialize)]
 struct FlexibleSheetsResp {
@@ -24,7 +37,9 @@ pub(crate) async fn checkin(ctx: Context<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
 
     let username = &ctx.author().name;
-    let Ok(Some(user)) = get_user_from_discord(ctx.data(), &access_token, username.to_string()).await else {
+    let Ok(Some(user)) =
+        get_user_from_discord(ctx.data(), &access_token, username.to_string()).await
+    else {
         ctx.reply_ephemeral(
             "\
 Cannot find a matching internal member. Double check that your \
@@ -34,7 +49,9 @@ Discord username on the internal roster is correct.",
         return Ok(());
     };
 
-    let success = check_in_with_email(ctx.data(), &user.email, None).await.is_ok();
+    let success = check_in_with_email(ctx.data(), &user.email, None)
+        .await
+        .is_ok();
     if !success {
         ctx.reply_ephemeral("Unable to check in").await?;
         return Ok(());
@@ -47,7 +64,10 @@ Discord username on the internal roster is correct.",
 
 /// Count a message as attendance for an ICSSC event
 #[poise::command(context_menu_command = "Log Attendance")]
-pub(crate) async fn log_attedance (ctx: Context<'_>, message: serenity::all::Message) -> Result<(), Error> {
+pub(crate) async fn log_attendance(
+    ctx: Context<'_>,
+    message: serenity::all::Message,
+) -> Result<(), Error> {
     let Context::Application(ctx) = ctx else {
         bail!("unexpected context type")
     };
@@ -101,16 +121,14 @@ pub(crate) async fn confirm_attendance_log_modal(
     let event_name = inputs.get_value("event_name")?;
 
     let participant_ids = attendees.split("\n");
-    let participants = future::join_all(
-        participant_ids.clone()
-        .filter_map(|s| {
-            let uid = UserId::from_str(s.trim()).ok()?;
-            Some(ixn.guild_id?.member(ctx.http(), uid))
-        }))
-        .await
-        .into_iter()
-        .filter_map(|item| item.ok())
-        .collect_vec();
+    let participants = future::join_all(participant_ids.clone().filter_map(|s| {
+        let uid = UserId::from_str(s.trim()).ok()?;
+        Some(ixn.guild_id?.member(ctx.http(), uid))
+    }))
+    .await
+    .into_iter()
+    .filter_map(|item| item.ok())
+    .collect_vec();
 
     if participant_ids.collect_vec().len() != participants.len() {
         bail!("Some user IDs not found");
@@ -123,25 +141,30 @@ pub(crate) async fn confirm_attendance_log_modal(
 
     let members = get_bulk_members_from_roster(data, &usernames).await?;
     let is_missing = members.len() != usernames.len();
-    if is_missing { bail!("user lookup failed"); };
+    if is_missing {
+        bail!("user lookup failed");
+    };
 
     ixn.defer_ephemeral(ctx.http()).await?;
 
     let mut response_lines: Vec<String> = Vec::new();
     for member in members {
-        let success = check_in_with_email(data, &member.email, event_name.clone()).await.is_ok();
-        let emoji = match success { true => "☑️", false => "❌" };
+        let success = check_in_with_email(data, &member.email, event_name.clone())
+            .await
+            .is_ok();
+        let emoji = match success {
+            true => "☑️",
+            false => "❌",
+        };
         let line = format!("{} {} ({})", emoji, member.name, member.email);
         response_lines.push(line);
     }
 
-    let content = String::from("Submitted attendance for the following users:\n") +
-        &response_lines.join("\n");
+    let content = String::from("Submitted attendance for the following users:\n")
+        + &response_lines.join("\n");
 
-    ixn.edit_response(
-        ctx.http(),
-        EditInteractionResponse::new().content(content)
-    ).await?;
+    ixn.edit_response(ctx.http(), EditInteractionResponse::new().content(content))
+        .await?;
 
     let _ = message
         .react(ctx.http(), ReactionType::Unicode("👋".to_string()))
@@ -150,7 +173,11 @@ pub(crate) async fn confirm_attendance_log_modal(
     Ok(())
 }
 
-async fn get_events_attended_text(data: &AppVars, access_token: &String, email: &String) -> Result<Vec<String>, AppError> {
+async fn get_events_attended_text(
+    data: &AppVars,
+    access_token: &String,
+    email: &String,
+) -> Result<Vec<String>, AppError> {
     let spreadsheet_id = &data.env.attendance_sheet.id;
     let spreadsheet_range = &data.env.attendance_sheet.ranges.checkin;
 
@@ -162,28 +189,38 @@ async fn get_events_attended_text(data: &AppVars, access_token: &String, email: 
         .json::<FlexibleSheetsResp>()
         .await?;
 
-    let events = resp.values.into_iter().filter_map(|row| {
-        if row.len() != 4 { return None; };
-        let Some(row ) = row.into_iter().collect_array() else {
-            return None;
-        };
-        let [time, row_email, _, name] = row;
+    let events = resp
+        .values
+        .into_iter()
+        .filter_map(|row| {
+            if row.len() != 4 {
+                return None;
+            };
+            let row = row.into_iter().collect_array()?;
+            let [time, row_email, _, name] = row;
 
-        if row_email != *email { return None; };
+            if row_email != *email {
+                return None;
+            };
 
-        let noon = NaiveTime::parse_from_str("20:00:00", "%H:%M:%S").expect("parse noon");
-        let mut datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%Y %H:%M:%S");
-        if let Err(_) = datetime { datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%y %H:%M:%S"); };
-        if let Err(_) = datetime {
-            datetime = NaiveDate::parse_from_str(&time, "%m/%d/%y").and_then(|res| Ok(res.and_time(noon)))
-        };
-        if let Err(_) = datetime {
-            datetime = NaiveDate::parse_from_str(&time, "%m/%d/%Y").and_then(|res| Ok(res.and_time(noon)))
-        };
-        let Ok(datetime) = datetime else { return None; };
+            let noon = NaiveTime::parse_from_str("20:00:00", "%H:%M:%S").expect("parse noon");
+            let mut datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%Y %H:%M:%S");
+            if datetime.is_err() {
+                datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%y %H:%M:%S");
+            };
+            if datetime.is_err() {
+                datetime = NaiveDate::parse_from_str(&time, "%m/%d/%y")
+                    .map(|res| res.and_time(noon))
+            };
+            if datetime.is_err() {
+                datetime = NaiveDate::parse_from_str(&time, "%m/%d/%Y")
+                    .map(|res| res.and_time(noon))
+            };
+            let datetime = datetime.ok()?;
 
-        Some(format!("- <t:{}:d> {name}", datetime.and_utc().timestamp()))
-    }).collect_vec();
+            Some(format!("- <t:{}:d> {name}", datetime.and_utc().timestamp()))
+        })
+        .collect_vec();
 
     Ok(events)
 }
@@ -199,7 +236,9 @@ pub(crate) async fn attended(ctx: Context<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
 
     let username = &ctx.author().name;
-    let Ok(Some(user)) = get_user_from_discord(ctx.data(), &access_token, username.to_string()).await else {
+    let Ok(Some(user)) =
+        get_user_from_discord(ctx.data(), &access_token, username.to_string()).await
+    else {
         ctx.reply_ephemeral(
             "\
 Cannot find a matching internal member. Double check that your \
@@ -211,6 +250,7 @@ Discord username on the internal roster is correct.",
 
     let events = get_events_attended_text(ctx.data(), &access_token, &user.email).await?;
 
-    ctx.reply_ephemeral(format!("Events you attended:\n{}", events.join("\n"))).await?;
+    ctx.reply_ephemeral(format!("Events you attended:\n{}", events.join("\n")))
+        .await?;
     Ok(())
 }

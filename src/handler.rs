@@ -91,7 +91,9 @@ impl EventHandler for LaikaEventHandler {
                 "attendance_log_modal_confirm" => {
                     let res = confirm_attendance_log_modal(ctx, &self.data, interaction).await;
                     // TODO potentially make it reply with the error
-                    if let Err(why) = res { dbg!(why); }
+                    if let Err(why) = res {
+                        dbg!(why);
+                    }
                 }
                 _ => (),
             },

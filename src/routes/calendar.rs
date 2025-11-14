@@ -25,12 +25,18 @@ pub(crate) mod webhook {
         if calendar.access_expires > chrono::Utc::now().naive_utc() {
             return Ok(calendar.access_token.clone());
         }
-        let resp = data.vars.http.client
+        let resp = data
+            .vars
+            .http
+            .client
             .get("https://oauth2.googleapis.com/token")
             .form(&[
                 ("grant_type", "refresh_token"),
                 ("client_id", data.vars.env.google_oauth_client.id.as_str()),
-                ("client_secret", data.vars.env.google_oauth_client.secret.as_str()),
+                (
+                    "client_secret",
+                    data.vars.env.google_oauth_client.secret.as_str(),
+                ),
                 ("refresh_token", calendar.refresh_token.as_str()),
             ])
             .send()

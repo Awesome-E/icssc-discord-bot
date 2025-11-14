@@ -1,5 +1,5 @@
-use crate::{AppError, AppVars};
 use crate::server::{ActixData, ExtractedAppData};
+use crate::{AppError, AppVars};
 use anyhow::{Context, bail};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use itertools::Itertools;
@@ -51,9 +51,7 @@ pub(crate) fn generate_add_calendar_link(
         exp: now + 60 * 10,
     };
 
-    let encoding_key = jsonwebtoken::EncodingKey::from_secret(
-        data.env.app.jwt_secret.as_bytes(),
-    );
+    let encoding_key = jsonwebtoken::EncodingKey::from_secret(data.env.app.jwt_secret.as_bytes());
 
     let encoded = jsonwebtoken::encode(&Header::default(), &jwt, &encoding_key)
         .context("Generate oauth link => encode interaction")?;
@@ -127,7 +125,10 @@ pub(crate) async fn get_calendar_events(
     let now = Utc::now();
     let max_ahead = now + Duration::weeks(2);
 
-    let result = data.vars.http.client
+    let result = data
+        .vars
+        .http
+        .client
         .get(format!(
             "https://www.googleapis.com/calendar/v3/calendars/{}/events",
             calendar_id
@@ -167,7 +168,10 @@ pub(crate) async fn create_webhook(
     access_token: String,
 ) -> anyhow::Result<String> {
     let app_url = &data.vars.env.app.origin;
-    let resp = data.vars.http.client
+    let resp = data
+        .vars
+        .http
+        .client
         .post(format!(
             "https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events/watch"
         ))

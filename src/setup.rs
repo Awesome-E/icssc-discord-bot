@@ -25,12 +25,18 @@ pub(crate) struct ChannelVars {
 }
 
 impl ChannelVars {
-    pub(crate) fn new (env: &Vars) -> Self {
+    pub(crate) fn new(env: &Vars) -> Self {
         Self {
-            icssc_guild_id: env.bot.channels.icssc_guild_id
+            icssc_guild_id: env
+                .bot
+                .channels
+                .icssc_guild_id
                 .parse::<_>()
                 .expect("ICSSC_GUILD_ID must be valid u64"),
-            matchy_channel_id: env.bot.channels.matchy
+            matchy_channel_id: env
+                .bot
+                .channels
+                .matchy
                 .parse::<_>()
                 .expect("ICSSC_MATCHY_CHANNEL_ID must be valid u64"),
         }
@@ -44,8 +50,10 @@ pub(crate) struct HttpVars {
 }
 
 impl HttpVars {
-    pub(crate) fn new (env: &Vars) -> Self {
-        let port = env.app.port
+    pub(crate) fn new(env: &Vars) -> Self {
+        let port = env
+            .app
+            .port
             .parse::<u16>()
             .expect("$PORT not valid u16 port");
 
@@ -62,7 +70,6 @@ impl HttpVars {
     }
 }
 
-
 // Bot setup
 
 pub(crate) async fn register_commands(
@@ -75,7 +82,11 @@ pub(crate) async fn register_commands(
     let commands = &framework.options().commands;
     let global_registration = if is_global { commands } else { no_commands };
     let local_registration = if is_global { no_commands } else { commands };
-    let guilds = data.env.bot.commands.guilds
+    let guilds = data
+        .env
+        .bot
+        .commands
+        .guilds
         .split(",")
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
@@ -138,7 +149,7 @@ fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
     vec![
         attendance::checkin::attended(),
         attendance::checkin::checkin(),
-        attendance::checkin::log_attedance(),
+        attendance::checkin::log_attendance(),
         matchy::create_pairing::create_pairing(),
         matchy::send_pairing::send_pairing(),
         matchy::dump_pairings::dump_pairings(),
