@@ -4,9 +4,9 @@ use anyhow::{Context as _, Error, Result, bail};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use itertools::Itertools;
 use serde::{Deserialize};
-use serenity::{all::{CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateInteractionResponseMessage, CreateModal, InputTextStyle, MessageId, ModalInteraction, ReactionType, UserId}, futures::future};
+use serenity::{all::{CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateInteractionResponseMessage, CreateModal, InputTextStyle, ModalInteraction, ReactionType, UserId}, futures::future};
 
-use crate::{AppError, AppVars, Context, attendance::roster_helpers::{TokenResponse, check_in_with_email, get_gsheets_token, get_user_from_discord}, util::ContextExtras};
+use crate::{AppError, AppVars, Context, attendance::roster_helpers::{TokenResponse, check_in_with_email, get_gsheets_token, get_user_from_discord}, util::{ContextExtras, message::get_members, modal::ModalInputTexts}};
 
 #[derive(Debug, Deserialize)]
 struct FlexibleSheetsResp {
@@ -52,11 +52,7 @@ pub(crate) async fn log_attedance (ctx: Context<'_>, message: serenity::all::Mes
         bail!("unexpected context type")
     };
 
-    let mut members: HashSet<String> = message
-        .mentions
-        .iter().map(|member| member.id.to_string())
-        .collect();
-    members.insert(message.author.id.to_string());
+    let members: HashSet<String> = get_members(&message, true);
 
     // create inputs
     let msg_input: CreateActionRow = CreateActionRow::InputText(
@@ -93,52 +89,18 @@ pub(crate) async fn confirm_attendance_log_modal(
     data: &'_ AppVars,
     ixn: ModalInteraction,
 ) -> Result<(), AppError> {
-    let inputs = ixn
-        .data
-        .components
-        .iter()
-        .filter_map(|row| {
-            let item = row.components[0].clone();
-            match item {
-                serenity::all::ActionRowComponent::InputText(item) => Some(item),
-                _ => None,
-            }
-        })
-        .collect_vec();
-
-    let Some(message_id) = inputs
-        .iter()
-        .find(|input| input.custom_id == "message_id")
-    else {
-        bail!("unexpected missing input")
-    };
-
-    let Ok(message_id) = message_id.value.clone().map_or(Ok(0 as u64), |s| s.parse()) else {
-        bail!("unexpected non-numerical message ID")
-    };
-
-    let message = ixn
-        .channel_id
-        .message(ctx.http(), MessageId::new(message_id))
+    let inputs = ModalInputTexts::new(&ixn);
+    let message = inputs
+        .get_required_value("message_id")?
+        .parse::<u64>()
+        .context("unexpected non-numerical message ID")
+        .map(|id| ixn.channel_id.message(ctx.http(), id))?
         .await?;
 
-    let Some(attendees) = inputs
-        .iter()
-        .find(|input| input.custom_id == "participants")
-    else {
-        bail!("unexpected missing input")
-    };
-    let Some(attendees_value) = &attendees.value else { bail!("unexpected empty input") };
+    let attendees = inputs.get_required_value("participants")?;
+    let event_name = inputs.get_value("event_name")?;
 
-    let Some(event_name) = inputs
-        .iter()
-        .find(|input| input.custom_id == "event_name")
-        .map(|input| &input.value)
-    else {
-        bail!("unexpected missing input")
-    };
-
-    let participant_ids = attendees_value.split("\n");
+    let participant_ids = attendees.split("\n");
     let participants = future::join_all(
         participant_ids.clone()
         .filter_map(|s| {
