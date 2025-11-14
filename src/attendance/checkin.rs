@@ -4,9 +4,9 @@ use anyhow::{Context as _, Error, Result, bail};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use itertools::Itertools;
 use serde::{Deserialize};
-use serenity::{all::{CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateInteractionResponseMessage, CreateModal, InputTextStyle, ModalInteraction, ReactionType, UserId}, futures::future};
+use serenity::{all::{CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal, EditInteractionResponse, InputTextStyle, ModalInteraction, ReactionType, UserId}, futures::future};
 
-use crate::{AppError, AppVars, Context, attendance::roster_helpers::{TokenResponse, check_in_with_email, get_gsheets_token, get_user_from_discord}, util::{ContextExtras, message::get_members, modal::ModalInputTexts}};
+use crate::{AppError, AppVars, Context, attendance::roster_helpers::{TokenResponse, check_in_with_email, get_bulk_members_from_roster, get_gsheets_token, get_user_from_discord}, util::{ContextExtras, message::get_members, modal::ModalInputTexts}};
 
 #[derive(Debug, Deserialize)]
 struct FlexibleSheetsResp {
@@ -34,7 +34,7 @@ Discord username on the internal roster is correct.",
         return Ok(());
     };
 
-    let success = check_in_with_email(ctx.data(), user.email, None).await.is_ok();
+    let success = check_in_with_email(ctx.data(), &user.email, None).await.is_ok();
     if !success {
         ctx.reply_ephemeral("Unable to check in").await?;
         return Ok(());
@@ -116,31 +116,32 @@ pub(crate) async fn confirm_attendance_log_modal(
         bail!("Some user IDs not found");
     }
 
-    let access_token = get_gsheets_token(data).await?.access_token;
-    let mut emails: Vec<String> = Vec::new();
-    let mut user_texts: Vec<String> = Vec::new();
-    for member in participants {
-        let user = get_user_from_discord(data, &access_token, member.user.name)
-            .await?
-            .context(format!("cannot find email for <@{}>", member.user.id.to_string()))?;
-        emails.push(user.email.clone());
-        user_texts.push(format!("- {} ({})", user.name, user.email));
+    let usernames = participants
+        .iter()
+        .map(|member| member.user.name.clone())
+        .collect_vec();
+
+    let members = get_bulk_members_from_roster(data, &usernames).await?;
+    let is_missing = members.len() != usernames.len();
+    if is_missing { bail!("user lookup failed"); };
+
+    ixn.defer_ephemeral(ctx.http()).await?;
+
+    let mut response_lines: Vec<String> = Vec::new();
+    for member in members {
+        let success = check_in_with_email(data, &member.email, event_name.clone()).await.is_ok();
+        let emoji = match success { true => "☑️", false => "❌" };
+        let line = format!("{} {} ({})", emoji, member.name, member.email);
+        response_lines.push(line);
     }
 
-    for email in emails { check_in_with_email(data, email, event_name.clone()).await?; };
+    let content = String::from("Submitted attendance for the following users:\n") +
+        &response_lines.join("\n");
 
-    let content = String::from("Successfully logged attendance for the following users:\n") +
-        &user_texts.join("\n");
-
-    ixn.create_response(
+    ixn.edit_response(
         ctx.http(),
-        CreateInteractionResponse::Message(
-            CreateInteractionResponseMessage::new()
-                .content(content)
-                .ephemeral(true),
-        ),
-    )
-    .await?;
+        EditInteractionResponse::new().content(content)
+    ).await?;
 
     let _ = message
         .react(ctx.http(), ReactionType::Unicode("👋".to_string()))
