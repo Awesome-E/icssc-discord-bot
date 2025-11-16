@@ -23,7 +23,7 @@ impl ModalInputTexts {
         Self { inputs }
     }
 
-    pub(crate) fn get_value(&self, input_id: &str) -> Result<Option<String>, anyhow::Error> {
+    pub(crate) fn get_value(&self, input_id: &str) -> anyhow::Result<Option<String>> {
         self.inputs
             .iter()
             .find(|input| input.custom_id == input_id)
@@ -31,7 +31,7 @@ impl ModalInputTexts {
             .map(|input| input.value.clone())
     }
 
-    pub(crate) fn get_required_value(&self, input_id: &str) -> Result<String, anyhow::Error> {
+    pub(crate) fn get_required_value(&self, input_id: &str) -> anyhow::Result<String> {
         let value = self.get_value(input_id)?;
         value.ok_or(anyhow!("Expected value for {input_id} was missing"))
     }

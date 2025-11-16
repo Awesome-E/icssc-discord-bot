@@ -104,14 +104,15 @@ async fn get_roster_rows(
 
 pub(crate) async fn get_user_from_discord(
     data: &AppVars,
-    access_token: &String,
+    access_token: &str,
     username: String,
 ) -> Result<Option<SheetsRow>, AppError> {
-    let resp = get_roster_rows(data, Some(access_token)).await?;
+    // TODO rework or remove taking in access token altogether
+    let resp = get_roster_rows(data, Some(&access_token.to_string())).await?;
 
     let user = resp
         .values
-        .iter()
+        .into_iter()
         .map(|row| {
             let [name, email, discord] = row;
             SheetsRow {
@@ -133,7 +134,7 @@ pub(crate) async fn get_bulk_members_from_roster(
     let resp = get_roster_rows(data, None).await?;
     let rows = resp
         .values
-        .iter()
+        .into_iter()
         .filter_map(|row| {
             let [name, email, discord] = row;
 
@@ -142,11 +143,7 @@ pub(crate) async fn get_bulk_members_from_roster(
                 return None;
             }
 
-            Some(SheetsRow {
-                name: name.to_string(),
-                email: email.to_string(),
-                discord: discord.to_string(),
-            })
+            Some(SheetsRow { name, email, discord })
         })
         .collect_vec();
 

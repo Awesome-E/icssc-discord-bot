@@ -147,7 +147,7 @@ pub(crate) async fn confirm_attendance_log_modal(
 
     ixn.defer_ephemeral(ctx.http()).await?;
 
-    let mut response_lines: Vec<String> = Vec::new();
+    let mut response_lines = Vec::new();
     for member in members {
         let success = check_in_with_email(data, &member.email, event_name.clone())
             .await
