@@ -1,6 +1,6 @@
 use crate::util::ContextExtras;
 use crate::{AppError, AppVars, AppVarsInner, Vars};
-use crate::{attendance, internal_commands, matchy, spottings};
+use crate::{attendance, bitsnbytes, internal_commands, matchy, spottings};
 use clap::ArgMatches;
 use itertools::Itertools;
 use pluralizer::pluralize;
@@ -150,6 +150,7 @@ fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
         attendance::checkin::attended(),
         attendance::checkin::checkin(),
         attendance::checkin::log_attendance(),
+        bitsnbytes::meetup::log_bnb_meetup_message(),
         matchy::create_pairing::create_pairing(),
         matchy::send_pairing::send_pairing(),
         matchy::dump_pairings::dump_pairings(),

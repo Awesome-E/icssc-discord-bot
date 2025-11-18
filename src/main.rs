@@ -1,4 +1,5 @@
 mod attendance;
+mod bitsnbytes;
 mod handler;
 mod internal_commands;
 mod matchy;
@@ -30,6 +31,12 @@ env_vars_struct!(
     "ATTENDANCE_FORM__EVENT_INPUT_ID",
     "ATTENDANCE_SHEET__ID",
     "ATTENDANCE_SHEET__RANGES__CHECKIN",
+    "BNB_FORM__ID",
+    "BNB_FORM__INPUT_IDS__FAM_NAME",
+    "BNB_FORM__INPUT_IDS__MSG_LINK",
+    "BNB_FORM__INPUT_IDS__MEETUP_TYPE",
+    "BNB_SHEET__ID",
+    "BNB_SHEET__LOOKUP_RANGE",
     "BOT__COMMANDS__REGISTER_GLOBALLY",
     "BOT__COMMANDS__GUILDS",
     "BOT__CHANNELS__ICSSC_GUILD_ID",
