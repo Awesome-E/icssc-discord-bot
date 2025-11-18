@@ -1,3 +1,5 @@
+use crate::util::message::get_members;
+use crate::util::modal::ModalInputTexts;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
 use crate::util::{ContextExtras, spottings_embed};
@@ -13,7 +15,7 @@ use sea_orm::{DatabaseConnection, QueryFilter, TransactionError};
 use serenity::all::{
     CacheHttp, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,
     CreateInteractionResponseMessage, CreateModal, GuildId, InputTextStyle, Mentionable,
-    MessageId, ModalInteraction, ReactionType, User, UserId,
+    ModalInteraction, ReactionType, User, UserId,
 };
 use std::collections::HashSet;
 use std::num::NonZeroUsize;
@@ -78,11 +80,7 @@ pub(crate) async fn log_message_snipe(
     ctx: Context<'_>,
     message: serenity::all::Message,
 ) -> Result<(), AppError> {
-    let spotted = message
-        .mentions
-        .into_iter()
-        .map(|user| user.id.to_string())
-        .collect_vec();
+    let spotted = get_members(&message, false);
 
     // TODO update when labels are supported
     // let spotter_input = CreateActionRow::InputText(
@@ -107,7 +105,7 @@ pub(crate) async fn log_message_snipe(
             "Who was spotted?",
             "spotting_modal_spotted",
         )
-        .value(spotted.join(", "))
+        .value(spotted.iter().join(", "))
         .required(true),
     );
 
@@ -129,46 +127,16 @@ pub(crate) async fn confirm_message_snipe_modal(
     data: &'_ AppVars,
     ixn: ModalInteraction,
 ) -> Result<(), AppError> {
-    let inputs = ixn
-        .data
-        .components
-        .iter()
-        .filter_map(|row| {
-            let item = row.components[0].clone();
-            match item {
-                serenity::all::ActionRowComponent::InputText(item) => Some(item),
-                _ => None,
-            }
-        })
-        .collect_vec();
-
-    let Some(message_id) = inputs
-        .iter()
-        .find(|input| input.custom_id == "spotting_modal_msg")
-    else {
-        bail!("unexpected missing input")
-    };
-
-    let Ok(message_id) = message_id.value.clone().map_or(Ok(0 as u64), |s| s.parse()) else {
-        bail!("unexpected non-numerical message ID")
-    };
-
-    let message = ixn
-        .channel_id
-        .message(ctx.http(), MessageId::new(message_id))
+    let inputs = ModalInputTexts::new(&ixn);
+    let message = inputs
+        .get_required_value("spotting_modal_msg")?
+        .parse::<u64>()
+        .context("unexpected non-numerical message ID")
+        .map(|id| ixn.channel_id.message(ctx.http(), id))?
         .await?;
 
-    let Some(spotted_input) = inputs
-        .iter()
-        .find(|input| input.custom_id == "spotting_modal_spotted")
-    else {
-        bail!("unexpected missing input")
-    };
-
-    let Some(value) = &spotted_input.value else {
-        bail!("unexpected empty input")
-    };
-    let spotted_uids = value
+    let spotted_uids = inputs
+        .get_required_value("spotting_modal_spotted")?
         .split(",")
         .filter_map(|s| {
             // TODO validate that user ids are actually in the server
@@ -176,7 +144,9 @@ pub(crate) async fn confirm_message_snipe_modal(
         })
         .collect_vec();
 
-    // command only available from guild
+    // TODO fail if the user is opted out
+
+    // write snipe to db
     let response = match add_spottings_to_db(
         &data.db,
         SpottingType::Snipe,

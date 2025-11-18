@@ -7,9 +7,13 @@ use actix_web::{App, HttpServer, ResponseError, web};
 use anyhow::Context;
 use serenity::all::Http;
 
-use crate::{AppVarsInner, routes::{
-    self, oauth::{self},
-}};
+use crate::{
+    AppVarsInner,
+    routes::{
+        self,
+        oauth::{self},
+    },
+};
 
 #[derive(Clone)]
 pub(crate) struct ActixData {
@@ -43,7 +47,10 @@ impl ResponseError for AnyhowBridge {}
 
 pub(crate) async fn run(vars: Arc<AppVarsInner>, http_action: Arc<Http>) -> anyhow::Result<()> {
     let port = vars.http.port;
-    let app_data = ActixData { discord_http: http_action, vars };
+    let app_data = ActixData {
+        discord_http: http_action,
+        vars,
+    };
 
     let server = {
         HttpServer::new(move || {

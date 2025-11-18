@@ -1,6 +1,10 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    collections::HashSet,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use anyhow::bail;
+use itertools::Itertools;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::{Deserialize, Serialize};
 
@@ -58,8 +62,7 @@ pub(crate) async fn get_gsheets_token(data: &AppVars) -> Result<TokenResponse, A
         &header,
         &claims,
         &EncodingKey::from_rsa_pem(key.pem.as_bytes())?,
-    )
-    .unwrap();
+    )?;
 
     let token_resp = reqwest::Client::new()
         .post("https://oauth2.googleapis.com/token")
@@ -75,18 +78,20 @@ pub(crate) async fn get_gsheets_token(data: &AppVars) -> Result<TokenResponse, A
     Ok(token_resp)
 }
 
-pub(crate) async fn get_user_from_discord(
+async fn get_roster_rows(
     data: &AppVars,
-    access_token: &String,
-    username: String,
-) -> Result<Option<SheetsRow>, AppError> {
+    access_token: Option<&String>,
+) -> Result<RosterSheetsResp, AppError> {
     let spreadsheet = &data.env.roster_spreadsheet;
+    let access_token = match access_token {
+        Some(tok) => tok,
+        None => &get_gsheets_token(data).await?.access_token,
+    };
 
     let resp = reqwest::Client::new()
         .get(format!(
             "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}",
-            spreadsheet.id,
-            spreadsheet.range
+            spreadsheet.id, spreadsheet.range
         ))
         .bearer_auth(access_token)
         .send()
@@ -94,9 +99,20 @@ pub(crate) async fn get_user_from_discord(
         .json::<RosterSheetsResp>()
         .await?;
 
+    Ok(resp)
+}
+
+pub(crate) async fn get_user_from_discord(
+    data: &AppVars,
+    access_token: &str,
+    username: String,
+) -> Result<Option<SheetsRow>, AppError> {
+    // TODO rework or remove taking in access token altogether
+    let resp = get_roster_rows(data, Some(&access_token.to_string())).await?;
+
     let user = resp
         .values
-        .iter()
+        .into_iter()
         .map(|row| {
             let [name, email, discord] = row;
             SheetsRow {
@@ -110,7 +126,35 @@ pub(crate) async fn get_user_from_discord(
     Ok(user)
 }
 
-pub(crate) async fn check_in_with_email(data: &AppVars, email: String, reason: Option<String>) -> Result<(), AppError> {
+pub(crate) async fn get_bulk_members_from_roster(
+    data: &AppVars,
+    usernames: &[String],
+) -> Result<Vec<SheetsRow>, AppError> {
+    let usernames: HashSet<&String> = usernames.iter().collect();
+    let resp = get_roster_rows(data, None).await?;
+    let rows = resp
+        .values
+        .into_iter()
+        .filter_map(|row| {
+            let [name, email, discord] = row;
+
+            let found = usernames.contains(&discord.to_lowercase());
+            if !found {
+                return None;
+            }
+
+            Some(SheetsRow { name, email, discord })
+        })
+        .collect_vec();
+
+    Ok(rows)
+}
+
+pub(crate) async fn check_in_with_email(
+    data: &AppVars,
+    email: &str,
+    reason: Option<String>,
+) -> Result<(), AppError> {
     let form_id = &data.env.attendance_form.id;
     let submission_url = format!("https://docs.google.com/forms/d/{form_id}/formResponse");
     let form_token_input_id = &data.env.attendance_form.token_input_id;
@@ -118,9 +162,10 @@ pub(crate) async fn check_in_with_email(data: &AppVars, email: String, reason: O
     let form_event_input_id = &data.env.attendance_form.event_input_id;
 
     let mut payload = vec![
-        ("emailAddress", email),
-        (form_token_input_id.as_str(), form_token_input.to_string()),
+        ("emailAddress", email.to_string()),
+        (form_token_input_id.as_str(), form_token_input.clone()),
     ];
+
     if let Some(reason) = reason {
         payload.push((form_event_input_id.as_str(), reason));
     };
@@ -138,4 +183,3 @@ pub(crate) async fn check_in_with_email(data: &AppVars, email: String, reason: O
         bail!("Submission failed")
     }
 }
-

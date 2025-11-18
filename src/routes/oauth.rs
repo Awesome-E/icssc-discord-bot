@@ -32,7 +32,10 @@ pub(crate) mod start {
 
         let redirect_uri = format!("{}/oauth/cb/google", data.vars.env.app.origin);
 
-        let goog_request = data.vars.http.client
+        let goog_request = data
+            .vars
+            .http
+            .client
             .get("https://accounts.google.com/o/oauth2/v2/auth")
             .query(&[
                 ("client_id", &*data.vars.env.google_oauth_client.id),
@@ -152,7 +155,10 @@ pub(crate) mod cb {
         }
 
         let redirect_uri = format!("{}/oauth/cb/google", data.vars.env.app.origin);
-        let exchange_response = match data.vars.http.client
+        let exchange_response = match data
+            .vars
+            .http
+            .client
             .post("https://oauth2.googleapis.com/token")
             .query(&[
                 ("client_id", &*data.vars.env.google_oauth_client.id),
