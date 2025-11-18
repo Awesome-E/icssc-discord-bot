@@ -1,7 +1,7 @@
 use std::{collections::HashSet, str::FromStr};
 
 use anyhow::{Context as _, Error, Result, bail};
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use chrono::{NaiveDate, NaiveDateTime, Utc};
 use itertools::Itertools;
 use serde::Deserialize;
 use serenity::{
@@ -203,20 +203,17 @@ async fn get_events_attended_text(
                 return None;
             };
 
-            let noon = NaiveTime::parse_from_str("20:00:00", "%H:%M:%S").expect("parse noon");
-            let mut datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%Y %H:%M:%S");
-            if datetime.is_err() {
-                datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%y %H:%M:%S");
-            };
-            if datetime.is_err() {
-                datetime = NaiveDate::parse_from_str(&time, "%m/%d/%y")
-                    .map(|res| res.and_time(noon))
-            };
-            if datetime.is_err() {
-                datetime = NaiveDate::parse_from_str(&time, "%m/%d/%Y")
-                    .map(|res| res.and_time(noon))
-            };
-            let datetime = datetime.ok()?;
+            let current_time = Utc::now().time();
+            let datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%Y %H:%M:%S")
+                .or_else(|_| NaiveDateTime::parse_from_str(&time, "%m/%d/%y %H:%M:%S"))
+                .or_else(|_| {
+                    NaiveDate::parse_from_str(&time, "%m/%d/%y")
+                        .map(|res| res.and_time(current_time))
+                })
+                .or_else(|_| {
+                    NaiveDate::parse_from_str(&time, "%m/%d/%Y")
+                        .map(|res| res.and_time(current_time))
+                }).ok()?;
 
             Some(format!("- <t:{}:d> {name}", datetime.and_utc().timestamp()))
         })
