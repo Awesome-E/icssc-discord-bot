@@ -1,16 +1,29 @@
 // Log a Bits & Bytes Meetup using a context menu command
 
+use crate::{
+    AppError, AppVars, Context, attendance::roster_helpers::get_gsheets_token,
+    util::modal::ModalInputTexts,
+};
 use anyhow::{Context as _, anyhow, bail};
 use serde::Deserialize;
-use serenity::all::{CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal, EditInteractionResponse, InputTextStyle, ModalInteraction, ReactionType};
-use crate::{AppError, AppVars, Context, attendance::roster_helpers::get_gsheets_token, util::modal::ModalInputTexts};
+use serenity::all::{
+    CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
+    EditInteractionResponse, InputTextStyle, ModalInteraction, ReactionType,
+};
 
-async fn submit_bnb_gform(data: &AppVars, fam_name: &str, msg_link: &str, meetup_type: &str) -> anyhow::Result<()> {
+async fn submit_bnb_gform(
+    data: &AppVars,
+    fam_name: &str,
+    msg_link: &str,
+    meetup_type: &str,
+) -> anyhow::Result<()> {
     let form_id = &data.env.bnb_form.id;
     let inputs = &data.env.bnb_form.input_ids;
 
     let status = reqwest::Client::new()
-        .post(format!("https://docs.google.com/forms/d/{form_id}/formResponse"))
+        .post(format!(
+            "https://docs.google.com/forms/d/{form_id}/formResponse"
+        ))
         .form(&vec![
             (&inputs.fam_name, fam_name),
             (&inputs.msg_link, msg_link),
@@ -27,7 +40,6 @@ async fn submit_bnb_gform(data: &AppVars, fam_name: &str, msg_link: &str, meetup
         bail!("Google Form submission failed. Please check your inputs.")
     }
 }
-
 
 // TODO consolidate all google sheets helpers
 #[derive(Debug, Deserialize)]
@@ -51,7 +63,6 @@ async fn get_overview_range(data: &AppVars) -> anyhow::Result<FlexibleSheetsResp
     Ok(resp)
 }
 
-
 #[poise::command(context_menu_command = "Log B&B Meetup")]
 pub(crate) async fn log_bnb_meetup_message(
     ctx: Context<'_>,
@@ -61,16 +72,21 @@ pub(crate) async fn log_bnb_meetup_message(
 
     // get fam name from submitter
     let range = get_overview_range(ctx.data()).await?;
-    let fam_name = range.values.into_iter().find(|row| {
-        if row.len() != 9 { return false; }
+    let fam_name = range
+        .values
+        .into_iter()
+        .find(|row| {
+            if row.len() != 9 {
+                return false;
+            }
 
-        let byte1 = &row[7];
-        let byte2 = &row[8];
+            let byte1 = &row[7];
+            let byte2 = &row[8];
 
-        submitter == byte1 || submitter == byte2
-    })
-    .map(|row| row[0].clone())
-    .unwrap_or(String::from(""));
+            submitter == byte1 || submitter == byte2
+        })
+        .map(|row| row[0].clone())
+        .unwrap_or(String::from(""));
 
     let msg_input = CreateActionRow::InputText(
         CreateInputText::new(InputTextStyle::Short, "Message Link", "message_link")
@@ -89,9 +105,13 @@ pub(crate) async fn log_bnb_meetup_message(
     );
 
     let meetup_type_input = CreateActionRow::InputText(
-        CreateInputText::new(InputTextStyle::Short, "Type (Hangout | Joint | Official B&B)", "meetup_type")
+        CreateInputText::new(
+            InputTextStyle::Short,
+            "Type (Hangout | Joint | Official B&B)",
+            "meetup_type",
+        )
         .value("Hangout")
-        .required(true)
+        .required(true),
     );
 
     let modal = CreateModal::new("bnb_meetup_log_modal", "Log Bits & Bytes Meetup")
@@ -125,8 +145,10 @@ pub(crate) async fn confirm_bnb_meetup_modal(
         .split("/")
         .last()
         .ok_or(anyhow!("Invalid link"))
-        .map(|id| id.parse::<u64>().context("unexpected non-numerical message ID"))
-        .flatten()
+        .and_then(|id| {
+            id.parse::<u64>()
+                .context("unexpected non-numerical message ID")
+        })
         .map(|id| ixn.channel_id.message(ctx.http(), id))
         .context("Cannnot find the original message")?
         .await?;
@@ -137,12 +159,8 @@ pub(crate) async fn confirm_bnb_meetup_modal(
         Err(why) => &why.to_string(),
     };
 
-    ixn.edit_response(
-        ctx.http(),
-        EditInteractionResponse::new()
-            .content(response)
-    )
-    .await?;
+    ixn.edit_response(ctx.http(), EditInteractionResponse::new().content(response))
+        .await?;
 
     let _ = message
         .react(ctx.http(), ReactionType::Unicode("👫".to_string()))

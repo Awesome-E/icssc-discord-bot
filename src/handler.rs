@@ -95,7 +95,7 @@ impl EventHandler for LaikaEventHandler {
                     if let Err(why) = res {
                         dbg!(why);
                     }
-                },
+                }
                 "bnb_meetup_log_modal" => {
                     let res = confirm_bnb_meetup_modal(ctx, &self.data, interaction).await;
                     // TODO potentially make it reply with the error

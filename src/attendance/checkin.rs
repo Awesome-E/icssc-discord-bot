@@ -213,7 +213,8 @@ async fn get_events_attended_text(
                 .or_else(|_| {
                     NaiveDate::parse_from_str(&time, "%m/%d/%Y")
                         .map(|res| res.and_time(current_time))
-                }).ok()?;
+                })
+                .ok()?;
 
             Some(format!("- <t:{}:d> {name}", datetime.and_utc().timestamp()))
         })

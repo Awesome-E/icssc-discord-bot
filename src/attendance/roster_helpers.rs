@@ -143,7 +143,11 @@ pub(crate) async fn get_bulk_members_from_roster(
                 return None;
             }
 
-            Some(SheetsRow { name, email, discord })
+            Some(SheetsRow {
+                name,
+                email,
+                discord,
+            })
         })
         .collect_vec();
 
