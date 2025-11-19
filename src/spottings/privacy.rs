@@ -6,15 +6,9 @@ use poise::ChoiceParameter;
 use sea_orm::ActiveValue;
 use sea_orm::EntityTrait;
 
-#[poise::command(prefix_command, slash_command, subcommands("status", "set"))]
-pub(crate) async fn opt_out(ctx: Context<'_>) -> Result<(), AppError> {
-    ctx.reply("base command is a noop").await?;
-    Ok(())
-}
-
 /// See whether you're opted out of being sniped
 #[poise::command(prefix_command, slash_command)]
-pub(crate) async fn status(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn check_snipes_participation(ctx: Context<'_>) -> Result<(), AppError> {
     let got = opt_out::Entity::find_by_id(ctx.author().id.get() as i64)
         .one(&ctx.data().db)
         .await
@@ -41,7 +35,7 @@ enum OptInStatus {
 
 /// Opt in or out of being sniped
 #[poise::command(prefix_command, slash_command)]
-pub(crate) async fn set(
+pub(crate) async fn set_snipes_participation(
     ctx: Context<'_>,
     #[description = "New value you want to set"] target: OptInStatus,
 ) -> Result<(), AppError> {

@@ -178,12 +178,6 @@ pub(crate) async fn confirm_message_snipe_modal(
     Ok(())
 }
 
-#[poise::command(prefix_command, slash_command, subcommands("post", "log"))]
-pub(crate) async fn spotting(ctx: Context<'_>) -> Result<(), AppError> {
-    ctx.reply("base command is a noop").await?;
-    Ok(())
-}
-
 /// Log a social or snipe
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub(crate) async fn post(
@@ -339,7 +333,7 @@ pub(crate) async fn post(
 
 /// Log past snipes
 #[poise::command(prefix_command, slash_command, guild_only)]
-pub(crate) async fn log(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn history(ctx: Context<'_>) -> Result<(), AppError> {
     let conn = &ctx.data().db;
 
     let got = message::Entity::find()

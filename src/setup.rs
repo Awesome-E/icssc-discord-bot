@@ -1,5 +1,5 @@
 use crate::util::ContextExtras;
-use crate::{AppError, AppVars, AppVarsInner, Vars};
+use crate::{AppError, AppVars, AppVarsInner, Vars, meta};
 use crate::{attendance, bitsnbytes, internal_commands, matchy, spottings};
 use clap::ArgMatches;
 use itertools::Itertools;
@@ -154,11 +154,9 @@ fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
         matchy::create_pairing::create_pairing(),
         matchy::send_pairing::send_pairing(),
         matchy::dump_pairings::dump_pairings(),
-        spottings::meta::ping(),
-        spottings::snipe::spotting(),
+        meta::ping::ping(),
+        spottings::command::spottings(),
         spottings::snipe::log_message_snipe(),
-        spottings::leaderboard::leaderboard(),
-        spottings::privacy::opt_out(),
         internal_commands::calendar::calendar_command(),
     ]
 }

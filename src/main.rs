@@ -3,6 +3,7 @@ mod bitsnbytes;
 mod handler;
 mod internal_commands;
 mod matchy;
+mod meta;
 mod routes;
 mod server;
 mod setup;
