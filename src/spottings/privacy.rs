@@ -130,7 +130,7 @@ impl<'a> SnipesOptOut<'a> {
     pub(crate) async fn check(&self, interaction: &ComponentInteraction) -> () {
         let response = match self.exists(interaction.user.id).await {
             Ok(true) => "You are currently opted out of snipes!",
-            Ok(false) => "You are currently opted into snipes!",
+            Ok(false) => "You are currently opted in to snipes!",
             Err(_) => "I couldn't check that for you :(",
         };
 
