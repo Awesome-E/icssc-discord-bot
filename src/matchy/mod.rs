@@ -1,3 +1,4 @@
+pub(crate) mod command;
 pub mod create_pairing;
 pub mod discord_helpers;
 pub mod dump_pairings;
