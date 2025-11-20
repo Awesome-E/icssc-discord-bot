@@ -2,6 +2,7 @@ use crate::AppVars;
 use crate::attendance::checkin::confirm_attendance_log_modal;
 use crate::bitsnbytes::meetup::confirm_bnb_meetup_modal;
 use crate::matchy::opt_in::MatchyMeetupOptIn;
+use crate::spottings::privacy::SnipesOptOut;
 use crate::spottings::snipe::confirm_message_snipe_modal;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
@@ -82,7 +83,23 @@ impl EventHandler for LaikaEventHandler {
                     MatchyMeetupOptIn::new(&ctx, &self.data)
                         .check(&interaction)
                         .await
-                }
+                },
+                // TODO make this better
+                "snipes_opt_in" => {
+                    SnipesOptOut::new(&ctx, &self.data)
+                        .opt_in(&interaction)
+                        .await
+                    },
+                "snipes_opt_out" => {
+                    SnipesOptOut::new(&ctx, &self.data)
+                        .opt_out(&interaction)
+                        .await
+                    },
+                "snipes_check_participation" => {
+                    SnipesOptOut::new(&ctx, &self.data)
+                        .check(&interaction)
+                        .await
+                },
                 _ => (),
             },
             Interaction::Modal(interaction) => match interaction.data.custom_id.as_str() {
