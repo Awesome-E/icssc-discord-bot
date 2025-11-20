@@ -86,15 +86,15 @@ impl EventHandler for LaikaEventHandler {
                 },
                 // TODO make this better
                 "snipes_opt_in" => {
-                    SnipesOptOut::new(&ctx, &self.data)
+                    let _ = SnipesOptOut::new(&ctx, &self.data)
                         .opt_in(&interaction)
-                        .await
-                    },
+                        .await;
+                },
                 "snipes_opt_out" => {
-                    SnipesOptOut::new(&ctx, &self.data)
+                    let _ = SnipesOptOut::new(&ctx, &self.data)
                         .opt_out(&interaction)
-                        .await
-                    },
+                        .await;
+                },
                 "snipes_check_participation" => {
                     SnipesOptOut::new(&ctx, &self.data)
                         .check(&interaction)

@@ -22,6 +22,7 @@ pub(crate) fn load_env(args: &ArgMatches) {
 pub(crate) struct ChannelVars {
     pub(crate) icssc_guild_id: u64,
     pub(crate) matchy_channel_id: u64,
+    pub(crate) spottings_channel_id: u64,
 }
 
 impl ChannelVars {
@@ -32,13 +33,19 @@ impl ChannelVars {
                 .channels
                 .icssc_guild_id
                 .parse::<_>()
-                .expect("ICSSC_GUILD_ID must be valid u64"),
+                .expect("BOT__CHANNELS__ICSSC_GUILD_ID must be valid u64"),
             matchy_channel_id: env
                 .bot
                 .channels
                 .matchy
                 .parse::<_>()
-                .expect("ICSSC_MATCHY_CHANNEL_ID must be valid u64"),
+                .expect("BOT__CHANNELS__MATCHY must be valid u64"),
+            spottings_channel_id: env
+                .bot
+                .channels
+                .spottings
+                .parse::<_>()
+                .expect("BOT__CHANNELS__SPOTTINGS must be valid u64"),
         }
     }
 }
