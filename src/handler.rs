@@ -83,23 +83,23 @@ impl EventHandler for LaikaEventHandler {
                     MatchyMeetupOptIn::new(&ctx, &self.data)
                         .check(&interaction)
                         .await
-                },
+                }
                 // TODO make this better
                 "snipes_opt_in" => {
                     let _ = SnipesOptOut::new(&ctx, &self.data)
                         .opt_in(&interaction)
                         .await;
-                },
+                }
                 "snipes_opt_out" => {
                     let _ = SnipesOptOut::new(&ctx, &self.data)
                         .opt_out(&interaction)
                         .await;
-                },
+                }
                 "snipes_check_participation" => {
                     SnipesOptOut::new(&ctx, &self.data)
                         .check(&interaction)
                         .await
-                },
+                }
                 _ => (),
             },
             Interaction::Modal(interaction) => match interaction.data.custom_id.as_str() {

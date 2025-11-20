@@ -103,7 +103,12 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
 }
 
 /// Send a message to each member of the pairing.
-#[poise::command(slash_command, hide_in_help, rename="send", required_permissions = "ADMINISTRATOR")]
+#[poise::command(
+    slash_command,
+    hide_in_help,
+    rename = "send",
+    required_permissions = "ADMINISTRATOR"
+)]
 pub async fn send_pairing(
     ctx: Context<'_>,
     #[description = "A pairing key returned by /create_pairing."] key: String,

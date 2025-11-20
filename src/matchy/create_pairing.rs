@@ -34,8 +34,8 @@ async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<Str
     slash_command,
     hide_in_help,
     ephemeral,
-    rename="create",
-    required_permissions = "ADMINISTRATOR",
+    rename = "create",
+    required_permissions = "ADMINISTRATOR"
 )]
 pub async fn create_pairing(
     ctx: Context<'_>,
