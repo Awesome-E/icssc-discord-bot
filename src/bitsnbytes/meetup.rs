@@ -1,11 +1,10 @@
 // Log a Bits & Bytes Meetup using a context menu command
 
 use crate::{
-    AppError, AppVars, Context, attendance::roster_helpers::get_gsheets_token,
-    util::modal::ModalInputTexts,
+    AppError, AppVars, Context,
+    util::{gsheets::{SheetsResponse, get_spreadsheet_range}, modal::ModalInputTexts},
 };
 use anyhow::{Context as _, anyhow, bail};
-use serde::Deserialize;
 use serenity::all::{
     CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
     EditInteractionResponse, InputTextStyle, ModalInteraction, ReactionType,
@@ -41,24 +40,11 @@ async fn submit_bnb_gform(
     }
 }
 
-// TODO consolidate all google sheets helpers
-#[derive(Debug, Deserialize)]
-struct FlexibleSheetsResp {
-    values: Vec<Vec<String>>,
-}
+async fn get_overview_range(data: &AppVars) -> anyhow::Result<SheetsResponse> {
+    let sheet_id = &data.env.bnb_sheet.id;
+    let range = &data.env.bnb_sheet.lookup_range;
 
-async fn get_overview_range(data: &AppVars) -> anyhow::Result<FlexibleSheetsResp> {
-    let access_token = get_gsheets_token(data).await?.access_token;
-    let spreadsheet_id = &data.env.bnb_sheet.id;
-    let spreadsheet_range = &data.env.bnb_sheet.lookup_range;
-
-    let resp = reqwest::Client::new()
-        .get(format!("https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{spreadsheet_range}"))
-        .bearer_auth(access_token)
-        .send()
-        .await?
-        .json::<FlexibleSheetsResp>()
-        .await?;
+    let resp = get_spreadsheet_range(data, sheet_id, range, None).await?;
 
     Ok(resp)
 }

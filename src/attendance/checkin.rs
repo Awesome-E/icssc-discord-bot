@@ -15,10 +15,10 @@ use serenity::{
 use crate::{
     AppError, AppVars, Context,
     attendance::roster_helpers::{
-        TokenResponse, check_in_with_email, get_bulk_members_from_roster, get_gsheets_token,
+        check_in_with_email, get_bulk_members_from_roster,
         get_user_from_discord,
     },
-    util::{ContextExtras, message::get_members, modal::ModalInputTexts},
+    util::{ContextExtras, gsheets::{TokenResponse, get_gsheets_token, get_spreadsheet_range}, message::get_members, modal::ModalInputTexts},
 };
 
 #[derive(Debug, Deserialize)]
@@ -38,7 +38,7 @@ pub(crate) async fn checkin(ctx: Context<'_>) -> Result<(), Error> {
 
     let username = &ctx.author().name;
     let Ok(Some(user)) =
-        get_user_from_discord(ctx.data(), &access_token, username.to_string()).await
+        get_user_from_discord(ctx.data(), Some(&access_token), username.to_string()).await
     else {
         ctx.reply_ephemeral(
             "\
@@ -175,28 +175,18 @@ pub(crate) async fn confirm_attendance_log_modal(
 
 async fn get_events_attended_text(
     data: &AppVars,
-    access_token: &String,
+    access_token: Option<&str>,
     email: &String,
 ) -> Result<Vec<String>, AppError> {
-    let spreadsheet_id = &data.env.attendance_sheet.id;
-    let spreadsheet_range = &data.env.attendance_sheet.ranges.checkin;
-
-    let resp = reqwest::Client::new()
-        .get(format!("https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{spreadsheet_range}"))
-        .bearer_auth(access_token)
-        .send()
-        .await?
-        .json::<FlexibleSheetsResp>()
-        .await?;
+    let sheet_id = &data.env.attendance_sheet.id;
+    let range = &data.env.attendance_sheet.ranges.checkin;
+    let resp = get_spreadsheet_range(data, sheet_id, range, access_token).await?;
 
     let events = resp
         .values
         .into_iter()
         .filter_map(|row| {
-            if row.len() != 4 {
-                return None;
-            };
-            let row = row.into_iter().collect_array()?;
+            let row = row.into_iter().collect_array::<4>()?;
             let [time, row_email, _, name] = row;
 
             if row_email != *email {
@@ -235,7 +225,7 @@ pub(crate) async fn attended(ctx: Context<'_>) -> Result<(), Error> {
 
     let username = &ctx.author().name;
     let Ok(Some(user)) =
-        get_user_from_discord(ctx.data(), &access_token, username.to_string()).await
+        get_user_from_discord(ctx.data(), Some(&access_token), username.to_string()).await
     else {
         ctx.reply_ephemeral(
             "\
@@ -246,7 +236,7 @@ Discord username on the internal roster is correct.",
         return Ok(());
     };
 
-    let events = get_events_attended_text(ctx.data(), &access_token, &user.email).await?;
+    let events = get_events_attended_text(ctx.data(), Some(&access_token), &user.email).await?;
 
     ctx.reply_ephemeral(format!("Events you attended:\n{}", events.join("\n")))
         .await?;

@@ -56,12 +56,8 @@ impl<'a> SnipesOptOut<'a> {
             },
         };
 
-        // TODO don't make this suck
         let success = response.is_ok();
-        let response = match response {
-            Ok(v) => v,
-            Err(v) => v,
-        };
+        let response = response.unwrap_or_else(|err| err);
 
         let _ = interaction
             .create_response(
@@ -98,12 +94,8 @@ impl<'a> SnipesOptOut<'a> {
             },
         };
 
-        // TODO don't make this suck
         let success = response.is_ok();
-        let response = match response {
-            Ok(v) => v,
-            Err(v) => v,
-        };
+        let response = response.unwrap_or_else(|err| err);
 
         let _ = interaction
             .create_response(
