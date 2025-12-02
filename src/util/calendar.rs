@@ -363,7 +363,7 @@ pub(crate) async fn update_discord_events(
     let pending_db_entries = futures::future::join_all(pending_db_entries)
         .await
         .into_iter()
-        .filter_map(|e| e)
+        .flatten()
         .collect_vec();
 
     dbg!(&pending_db_entries);

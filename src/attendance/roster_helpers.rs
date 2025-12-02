@@ -2,9 +2,15 @@ use std::collections::HashSet;
 
 use anyhow::anyhow;
 use itertools::Itertools;
-use serde::{Deserialize};
+use serde::Deserialize;
 
-use crate::{AppError, AppVars, util::{gforms::submit_google_form, gsheets::{SheetsResponse, get_gsheets_token, get_spreadsheet_range}}};
+use crate::{
+    AppError, AppVars,
+    util::{
+        gforms::submit_google_form,
+        gsheets::{SheetsResponse, get_gsheets_token, get_spreadsheet_range},
+    },
+};
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct RosterSheetRow {
@@ -23,7 +29,13 @@ async fn get_roster_rows(
         None => &get_gsheets_token(data).await?.access_token,
     };
 
-    let resp = get_spreadsheet_range(data, &spreadsheet.id, &spreadsheet.range, Some(access_token)).await?;
+    let resp = get_spreadsheet_range(
+        data,
+        &spreadsheet.id,
+        &spreadsheet.range,
+        Some(access_token),
+    )
+    .await?;
 
     Ok(resp)
 }
@@ -58,7 +70,6 @@ pub(crate) async fn get_bulk_members_from_roster(
 ) -> Result<Vec<RosterSheetRow>, AppError> {
     let usernames: HashSet<&String> = usernames.iter().collect();
     let resp = get_roster_rows(data, None).await?;
-
 
     let rows = resp
         .values

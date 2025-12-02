@@ -14,10 +14,14 @@ use serenity::{
 use crate::{
     AppError, AppVars, Context,
     attendance::roster_helpers::{
-        check_in_with_email, get_bulk_members_from_roster,
-        get_user_from_discord,
+        check_in_with_email, get_bulk_members_from_roster, get_user_from_discord,
     },
-    util::{ContextExtras, gsheets::{TokenResponse, get_gsheets_token, get_spreadsheet_range}, message::get_members, modal::ModalInputTexts},
+    util::{
+        ContextExtras,
+        gsheets::{TokenResponse, get_gsheets_token, get_spreadsheet_range},
+        message::get_members,
+        modal::ModalInputTexts,
+    },
 };
 
 /// Check into today's ICSSC event!
@@ -103,7 +107,7 @@ pub(crate) async fn confirm_attendance_log_modal(
     data: &'_ AppVars,
     ixn: &ModalInteraction,
 ) -> Result<(), AppError> {
-    let inputs = ModalInputTexts::new(&ixn);
+    let inputs = ModalInputTexts::new(ixn);
     let message = inputs
         .get_required_value("message_id")?
         .parse::<u64>()

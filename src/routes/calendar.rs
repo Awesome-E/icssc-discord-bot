@@ -93,7 +93,7 @@ pub(crate) mod webhook {
 
         // handle each event... something like that...
         let update_resp =
-            update_discord_events(&calendar, &conn, data.discord_http.clone(), events).await;
+            update_discord_events(&calendar, conn, data.discord_http.clone(), events).await;
         if let Err(why) = update_resp {
             dbg!(&why);
         }

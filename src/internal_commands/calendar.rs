@@ -22,7 +22,7 @@ pub(crate) async fn add_calendar(
         return Err(anyhow!("receive application command"));
     };
 
-    let link = generate_add_calendar_link(ctx.data(), &app_ctx.interaction, calendar_id)
+    let link = generate_add_calendar_link(ctx.data(), app_ctx.interaction, calendar_id)
         .context("generate add calendar link")?;
 
     let content =

@@ -7,7 +7,9 @@ use crate::spottings::snipe::confirm_message_spotting_modal;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
 use serenity::all::{
-    ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse, CreateInteractionResponseMessage, EditInteractionResponse, EditMessage, EventHandler, Interaction, OnlineStatus, Permissions, Ready
+    ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse,
+    CreateInteractionResponseMessage, EditInteractionResponse, EventHandler,
+    Interaction, OnlineStatus, Permissions, Ready,
 };
 use serenity::async_trait;
 use std::time::Duration;
@@ -70,47 +72,55 @@ impl EventHandler for LaikaEventHandler {
                 // TODO consider creating enums for custom IDs to avoid magic strings
                 "matchy_opt_in" => {
                     MatchyMeetupOptIn::new(&ctx, &self.data)
-                        .join(&interaction)
+                        .join(interaction)
                         .await
                 }
                 "matchy_opt_out" => {
                     MatchyMeetupOptIn::new(&ctx, &self.data)
-                        .leave(&interaction)
+                        .leave(interaction)
                         .await
                 }
                 "matchy_check_participation" => {
                     MatchyMeetupOptIn::new(&ctx, &self.data)
-                        .check(&interaction)
+                        .check(interaction)
                         .await
                 }
                 // TODO make this better
                 "snipes_opt_in" => {
                     SnipesOptOut::new(&ctx, &self.data)
-                        .opt_in(&interaction)
+                        .opt_in(interaction)
                         .await
                 }
                 "snipes_opt_out" => {
                     SnipesOptOut::new(&ctx, &self.data)
-                        .opt_out(&interaction)
+                        .opt_out(interaction)
                         .await
                 }
                 "snipes_check_participation" => {
                     SnipesOptOut::new(&ctx, &self.data)
-                        .check(&interaction)
+                        .check(interaction)
                         .await
                 }
                 _ => Ok(()),
             },
             Interaction::Modal(interaction) => match interaction.data.custom_id.as_str() {
-                "spotting_modal_confirm" => confirm_message_spotting_modal(&ctx, &self.data, &interaction).await,
-                "attendance_log_modal_confirm" => confirm_attendance_log_modal(&ctx, &self.data, &interaction).await,
-                "bnb_meetup_log_modal" => confirm_bnb_meetup_modal(&ctx, &self.data, &interaction).await,
+                "spotting_modal_confirm" => {
+                    confirm_message_spotting_modal(&ctx, &self.data, interaction).await
+                }
+                "attendance_log_modal_confirm" => {
+                    confirm_attendance_log_modal(&ctx, &self.data, interaction).await
+                }
+                "bnb_meetup_log_modal" => {
+                    confirm_bnb_meetup_modal(&ctx, &self.data, interaction).await
+                }
                 _ => Ok(()),
             },
             _ => Ok(()),
         };
 
-        let Err(error) = response else { return; };
+        let Err(error) = response else {
+            return;
+        };
 
         let http = ctx.http();
 
@@ -125,11 +135,12 @@ impl EventHandler for LaikaEventHandler {
             Interaction::Component(ixn) => ixn.create_response(ctx.http(), new_response).await,
             Interaction::Modal(ixn) => ixn.create_response(ctx.http(), new_response).await,
             _ => return,
-        }.is_ok();
+        }
+        .is_ok();
 
         let edit_response = match did_create {
             true => return,
-            false => EditInteractionResponse::new().content(error.to_string())
+            false => EditInteractionResponse::new().content(error.to_string()),
         };
 
         let _ = match interaction {
@@ -137,7 +148,7 @@ impl EventHandler for LaikaEventHandler {
             Interaction::Autocomplete(ixn) => ixn.edit_response(http, edit_response).await,
             Interaction::Component(ixn) => ixn.edit_response(http, edit_response).await,
             Interaction::Modal(ixn) => ixn.edit_response(http, edit_response).await,
-            _ => return
+            _ => return,
         };
     }
 }

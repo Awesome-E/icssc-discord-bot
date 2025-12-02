@@ -2,7 +2,11 @@
 
 use crate::{
     AppError, AppVars, Context,
-    util::{gforms::submit_google_form, gsheets::{SheetsResponse, get_spreadsheet_range}, modal::ModalInputTexts},
+    util::{
+        gforms::submit_google_form,
+        gsheets::{SheetsResponse, get_spreadsheet_range},
+        modal::ModalInputTexts,
+    },
 };
 use anyhow::{Context as _, anyhow, bail};
 use serenity::all::{
@@ -19,17 +23,21 @@ async fn submit_bnb_gform(
     let form_id = &data.env.bnb_form.id;
     let inputs = &data.env.bnb_form.input_ids;
 
-    submit_google_form(&data.http.client, form_id, &vec![
-        (&inputs.fam_name, fam_name),
-        (&inputs.msg_link, msg_link),
-        (&inputs.meetup_type, meetup_type),
-    ])
+    submit_google_form(
+        &data.http.client,
+        form_id,
+        &vec![
+            (&inputs.fam_name, fam_name),
+            (&inputs.msg_link, msg_link),
+            (&inputs.meetup_type, meetup_type),
+        ],
+    )
     .await
     .map_err(|err| {
         dbg!(err);
         anyhow!("Google Form submission failed. Please check your inputs.")
     })?;
-    
+
     Ok(())
 }
 
@@ -112,7 +120,7 @@ pub(crate) async fn confirm_bnb_meetup_modal(
     data: &'_ AppVars,
     ixn: &ModalInteraction,
 ) -> Result<(), AppError> {
-    let inputs = ModalInputTexts::new(&ixn);
+    let inputs = ModalInputTexts::new(ixn);
 
     let message_link = inputs.get_required_value("message_link")?;
     let fam_name = inputs.get_required_value("fam_name")?;

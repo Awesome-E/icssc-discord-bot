@@ -84,7 +84,7 @@ pub(crate) async fn register_commands(
     ctx: &Context,
     framework: &Framework<AppVars, AppError>,
 ) -> Result<(), AppError> {
-    let is_global = data.env.bot.commands.register_globally != "";
+    let is_global = !data.env.bot.commands.register_globally.is_empty();
     let no_commands = &[] as &[Command<AppVars, AppError>];
     let commands = &framework.options().commands;
     let global_registration = if is_global { commands } else { no_commands };

@@ -3,9 +3,9 @@ use crate::util::message::get_members;
 use crate::util::modal::ModalInputTexts;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
-use crate::util::{spottings_embed, ContextExtras};
+use crate::util::{ContextExtras, spottings_embed};
 use crate::{AppError, AppVars, Context};
-use anyhow::{bail, Context as _};
+use anyhow::{Context as _, bail};
 use entity::{message, snipe};
 use itertools::Itertools;
 use poise::{ChoiceParameter, CreateReply};
@@ -139,7 +139,7 @@ pub(crate) async fn confirm_message_spotting_modal(
     data: &'_ AppVars,
     ixn: &ModalInteraction,
 ) -> Result<(), AppError> {
-    let inputs = ModalInputTexts::new(&ixn);
+    let inputs = ModalInputTexts::new(ixn);
     let message = inputs
         .get_required_value("spotting_modal_msg")?
         .parse::<u64>()

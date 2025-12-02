@@ -1,9 +1,8 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
 use jsonwebtoken::{EncodingKey, Header, encode};
+use serde::{Deserialize, Serialize};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{AppError, AppVars};
-
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -67,14 +66,21 @@ pub(crate) async fn get_gsheets_token(data: &AppVars) -> Result<TokenResponse, A
     Ok(token_resp)
 }
 
-pub(crate) async fn get_spreadsheet_range(data: &AppVars, sheet_id: &str, range: &str, access_token: Option<&str>) -> anyhow::Result<SheetsResponse> {
+pub(crate) async fn get_spreadsheet_range(
+    data: &AppVars,
+    sheet_id: &str,
+    range: &str,
+    access_token: Option<&str>,
+) -> anyhow::Result<SheetsResponse> {
     let access_token = match access_token {
         Some(tok) => tok,
         None => &get_gsheets_token(data).await?.access_token,
     };
 
     let resp = reqwest::Client::new()
-        .get(format!("https://sheets.googleapis.com/v4/spreadsheets/{sheet_id}/values/{range}"))
+        .get(format!(
+            "https://sheets.googleapis.com/v4/spreadsheets/{sheet_id}/values/{range}"
+        ))
         .bearer_auth(access_token)
         .send()
         .await?
