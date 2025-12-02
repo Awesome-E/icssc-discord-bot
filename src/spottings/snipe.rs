@@ -3,9 +3,9 @@ use crate::util::message::get_members;
 use crate::util::modal::ModalInputTexts;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
-use crate::util::{ContextExtras, spottings_embed};
+use crate::util::{spottings_embed, ContextExtras};
 use crate::{AppError, AppVars, Context};
-use anyhow::{Context as _, bail};
+use anyhow::{bail, Context as _};
 use entity::{message, snipe};
 use itertools::Itertools;
 use poise::{ChoiceParameter, CreateReply};
@@ -21,7 +21,7 @@ use std::num::NonZeroUsize;
 use std::str::FromStr;
 use std::time::Duration;
 
-#[derive(ChoiceParameter)]
+#[derive(PartialEq, Eq, ChoiceParameter)]
 enum SpottingType {
     Social,
     Snipe,
@@ -112,14 +112,17 @@ pub(crate) async fn log_message_spotting(
         CreateInputText::new(
             InputTextStyle::Short,
             "Type of Spotting (snipe | social)",
-            "spotting_type"
+            "spotting_type",
         )
         .value("snipe")
-        .required(true)
+        .required(true),
     );
 
-    let modal = CreateModal::new("spotting_modal_confirm", "Confirm Spotting")
-        .components(vec![msg_input, spotted_input, spotting_type_input]);
+    let modal = CreateModal::new("spotting_modal_confirm", "Confirm Spotting").components(vec![
+        msg_input,
+        spotted_input,
+        spotting_type_input,
+    ]);
 
     let reply = CreateInteractionResponse::Modal(modal);
     let Context::Application(ctx) = ctx else {
@@ -157,16 +160,41 @@ pub(crate) async fn confirm_message_spotting_modal(
     let spotting_type = match inputs.get_required_value("spotting_type")?.as_str() {
         "snipe" => SpottingType::Snipe,
         "social" => SpottingType::Social,
-        _ => bail!("unexpected spotting type")
+        _ => bail!("unexpected spotting type"),
     };
-    
-    // TODO fail if the user is opted out
 
+    if spotting_type == SpottingType::Snipe
+        && let opted_out = opted_out_among(
+            &data.db,
+            std::iter::chain(std::iter::once(ixn.user.id), spotted_uids.iter().copied()),
+        )
+        .await?
+        .collect_vec()
+        && !opted_out.is_empty()
+    {
+        ixn.create_response(
+            ctx.http(),
+            CreateInteractionResponse::Message(
+                CreateInteractionResponseMessage::new()
+                    .content(format!(
+                        "Can't proceed, the following users are opted out:\n{}",
+                        opted_out.into_iter().map(|uid| uid.mention()).join("\n")
+                    ))
+                    .ephemeral(true),
+            ),
+        )
+        .await?;
 
-    let reaction = ReactionType::Unicode(match spotting_type {
-        SpottingType::Snipe => "👏",
-        SpottingType::Social => "🙌",
-    }.to_string());
+        return Ok(());
+    }
+
+    let reaction = ReactionType::Unicode(
+        match spotting_type {
+            SpottingType::Snipe => "👏",
+            SpottingType::Social => "🙌",
+        }
+        .to_string(),
+    );
 
     // write snipe to db
     let response = match add_spottings_to_db(
@@ -193,9 +221,7 @@ pub(crate) async fn confirm_message_spotting_modal(
     )
     .await?;
 
-    let _ = message
-        .react(ctx.http(), reaction)
-        .await;
+    let _ = message.react(ctx.http(), reaction).await;
 
     Ok(())
 }
@@ -257,7 +283,9 @@ pub(crate) async fn post(
     let conn = &ctx.data().db;
 
     if matches!(r#type, SpottingType::Snipe)
-        && let opted_out = opted_out_among(conn, victims.iter().map(|u| u.id)).await?.collect_vec()
+        && let opted_out = opted_out_among(conn, victims.iter().map(|u| u.id))
+            .await?
+            .collect_vec()
         && !opted_out.is_empty()
     {
         ctx.send(CreateReply::default().embed(spottings_embed().description(format!(
