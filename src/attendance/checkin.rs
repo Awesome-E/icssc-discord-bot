@@ -3,7 +3,6 @@ use std::{collections::HashSet, str::FromStr};
 use anyhow::{Context as _, Error, Result, bail};
 use chrono::{NaiveDate, NaiveDateTime, Utc};
 use itertools::Itertools;
-use serde::Deserialize;
 use serenity::{
     all::{
         CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
@@ -20,11 +19,6 @@ use crate::{
     },
     util::{ContextExtras, gsheets::{TokenResponse, get_gsheets_token, get_spreadsheet_range}, message::get_members, modal::ModalInputTexts},
 };
-
-#[derive(Debug, Deserialize)]
-struct FlexibleSheetsResp {
-    values: Vec<Vec<String>>,
-}
 
 /// Check into today's ICSSC event!
 #[poise::command(slash_command, hide_in_help)]
@@ -147,9 +141,10 @@ pub(crate) async fn confirm_attendance_log_modal(
 
     ixn.defer_ephemeral(ctx.http()).await?;
 
+    let event_name = event_name.as_deref();
     let mut response_lines = Vec::new();
     for member in members {
-        let success = check_in_with_email(data, &member.email, event_name.clone())
+        let success = check_in_with_email(data, &member.email, event_name)
             .await
             .is_ok();
         let emoji = match success {

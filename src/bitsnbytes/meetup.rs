@@ -2,7 +2,7 @@
 
 use crate::{
     AppError, AppVars, Context,
-    util::{gsheets::{SheetsResponse, get_spreadsheet_range}, modal::ModalInputTexts},
+    util::{gforms::submit_google_form, gsheets::{SheetsResponse, get_spreadsheet_range}, modal::ModalInputTexts},
 };
 use anyhow::{Context as _, anyhow, bail};
 use serenity::all::{
@@ -19,25 +19,18 @@ async fn submit_bnb_gform(
     let form_id = &data.env.bnb_form.id;
     let inputs = &data.env.bnb_form.input_ids;
 
-    let status = reqwest::Client::new()
-        .post(format!(
-            "https://docs.google.com/forms/d/{form_id}/formResponse"
-        ))
-        .form(&vec![
-            (&inputs.fam_name, fam_name),
-            (&inputs.msg_link, msg_link),
-            (&inputs.meetup_type, meetup_type),
-        ])
-        .send()
-        .await?
-        .status();
-
-    if status.is_success() {
-        Ok(())
-    } else {
-        dbg!(status);
-        bail!("Google Form submission failed. Please check your inputs.")
-    }
+    submit_google_form(&data.http.client, form_id, &vec![
+        (&inputs.fam_name, fam_name),
+        (&inputs.msg_link, msg_link),
+        (&inputs.meetup_type, meetup_type),
+    ])
+    .await
+    .map_err(|err| {
+        dbg!(err);
+        anyhow!("Google Form submission failed. Please check your inputs.")
+    })?;
+    
+    Ok(())
 }
 
 async fn get_overview_range(data: &AppVars) -> anyhow::Result<SheetsResponse> {

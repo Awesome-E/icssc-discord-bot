@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
-use anyhow::bail;
+use anyhow::anyhow;
 use itertools::Itertools;
 use serde::{Deserialize};
 
-use crate::{AppError, AppVars, util::gsheets::{SheetsResponse, get_gsheets_token, get_spreadsheet_range}};
+use crate::{AppError, AppVars, util::{gforms::submit_google_form, gsheets::{SheetsResponse, get_gsheets_token, get_spreadsheet_range}}};
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct RosterSheetRow {
@@ -85,33 +85,25 @@ pub(crate) async fn get_bulk_members_from_roster(
 pub(crate) async fn check_in_with_email(
     data: &AppVars,
     email: &str,
-    reason: Option<String>,
+    reason: Option<&str>,
 ) -> Result<(), AppError> {
-    let form_id = &data.env.attendance_form.id;
-    let submission_url = format!("https://docs.google.com/forms/d/{form_id}/formResponse");
-    let form_token_input_id = &data.env.attendance_form.token_input_id;
-    let form_token_input = &data.env.attendance_form.token_input_value;
-    let form_event_input_id = &data.env.attendance_form.event_input_id;
+    let fields = &data.env.attendance_form;
 
     let mut payload = vec![
-        ("emailAddress", email.to_string()),
-        (form_token_input_id.as_str(), form_token_input.clone()),
+        ("emailAddress", email),
+        (&fields.token_input_id, &fields.token_input_value),
     ];
 
     if let Some(reason) = reason {
-        payload.push((form_event_input_id.as_str(), reason));
+        payload.push((&fields.event_input_id, reason));
     };
 
-    let status = reqwest::Client::new()
-        .post(&submission_url)
-        .form(&payload)
-        .send()
-        .await?
-        .status();
+    submit_google_form(&data.http.client, &fields.id, &payload)
+        .await
+        .map_err(|err| {
+            dbg!(err);
+            anyhow!("Google Form submission failed. Please check your inputs.")
+        })?;
 
-    if status.is_success() {
-        Ok(())
-    } else {
-        bail!("Submission failed")
-    }
+    Ok(())
 }
