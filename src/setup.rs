@@ -161,7 +161,7 @@ fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
         matchy::command::matchy(),
         meta::ping::ping(),
         spottings::command::spottings(),
-        spottings::snipe::log_message_snipe(),
+        spottings::snipe::log_message_spotting(),
         internal_commands::calendar::calendar_command(),
     ]
 }
