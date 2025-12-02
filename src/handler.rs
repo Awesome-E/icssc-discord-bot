@@ -7,7 +7,7 @@ use crate::spottings::snipe::confirm_message_spotting_modal;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
 use serenity::all::{
-    ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse, CreateInteractionResponseMessage, EditMessage, EventHandler, Interaction, OnlineStatus, Permissions, Ready
+    ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse, CreateInteractionResponseMessage, EditInteractionResponse, EditMessage, EventHandler, Interaction, OnlineStatus, Permissions, Ready
 };
 use serenity::async_trait;
 use std::time::Duration;
@@ -113,36 +113,31 @@ impl EventHandler for LaikaEventHandler {
         let Err(error) = response else { return; };
 
         let http = ctx.http();
-        let current_response = match &interaction {
-            Interaction::Command(ixn) => ixn.get_response(http).await,
-            Interaction::Autocomplete(ixn) => ixn.get_response(http).await,
-            Interaction::Component(ixn) => ixn.get_response(http).await,
-            Interaction::Modal(ixn) => ixn.get_response(http).await,
-            _ => return,
-        }.ok();
 
-        let new_response = match current_response {
-            Some(mut msg) => {
-                if let Err(err) = msg.edit(http, EditMessage::new().content(error.to_string())).await {
-                    dbg!(err);
-                }
-                return;
-            }
-            None => {
-                CreateInteractionResponse::Message(
-                    CreateInteractionResponseMessage::new()
-                        .content(error.to_string())
-                        .ephemeral(true),
-                )
-            }
-        };
-
-        let _ = match interaction {
+        let new_response = CreateInteractionResponse::Message(
+            CreateInteractionResponseMessage::new()
+                .content(error.to_string())
+                .ephemeral(true),
+        );
+        let did_create = match &interaction {
             Interaction::Command(ixn) => ixn.create_response(ctx.http(), new_response).await,
             Interaction::Autocomplete(ixn) => ixn.create_response(ctx.http(), new_response).await,
             Interaction::Component(ixn) => ixn.create_response(ctx.http(), new_response).await,
             Interaction::Modal(ixn) => ixn.create_response(ctx.http(), new_response).await,
             _ => return,
+        }.is_ok();
+
+        let edit_response = match did_create {
+            true => return,
+            false => EditInteractionResponse::new().content(error.to_string())
+        };
+
+        let _ = match interaction {
+            Interaction::Command(ixn) => ixn.edit_response(http, edit_response).await,
+            Interaction::Autocomplete(ixn) => ixn.edit_response(http, edit_response).await,
+            Interaction::Component(ixn) => ixn.edit_response(http, edit_response).await,
+            Interaction::Modal(ixn) => ixn.edit_response(http, edit_response).await,
+            _ => return
         };
     }
 }
