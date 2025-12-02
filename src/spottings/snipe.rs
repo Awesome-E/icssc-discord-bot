@@ -1,3 +1,4 @@
+use crate::spottings::util::opted_out_among;
 use crate::util::message::get_members;
 use crate::util::modal::ModalInputTexts;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
@@ -5,13 +6,11 @@ use crate::util::text::comma_join;
 use crate::util::{ContextExtras, spottings_embed};
 use crate::{AppError, AppVars, Context};
 use anyhow::{Context as _, bail};
-use entity::{message, opt_out, snipe};
+use entity::{message, snipe};
 use itertools::Itertools;
 use poise::{ChoiceParameter, CreateReply};
-use sea_orm::{
-    ActiveValue, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryOrder, TransactionTrait,
-};
-use sea_orm::{DatabaseConnection, QueryFilter, TransactionError};
+use sea_orm::{ActiveValue, ConnectionTrait, DbErr, EntityTrait, QueryOrder, TransactionTrait};
+use sea_orm::{DatabaseConnection, TransactionError};
 use serenity::all::{
     CacheHttp, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,
     CreateInteractionResponseMessage, CreateModal, GuildId, InputTextStyle, Mentionable,
@@ -234,16 +233,13 @@ pub(crate) async fn post(
 
     let conn = &ctx.data().db;
 
-    let got = opt_out::Entity::find()
-        .filter(opt_out::Column::Id.is_in(victims.iter().map(|v| v.id.get() as i64).collect_vec()))
-        .all(conn)
-        .await
-        .context("log snipe get opt out user id")?;
-
-    if !got.is_empty() && matches!(r#type, SpottingType::Snipe) {
+    if matches!(r#type, SpottingType::Snipe)
+        && let opted_out = opted_out_among(conn, victims.iter().map(|u| u.id)).await?.collect_vec()
+        && !opted_out.is_empty()
+    {
         ctx.send(CreateReply::default().embed(spottings_embed().description(format!(
             "**the following people in that post are opted out of sniping!**\n{}\n\nthis means they do not consent to being photographed!",
-            got.into_iter().map(|opted_out| UserId::new(opted_out.id as u64).mention()).join("\n"),
+            opted_out.into_iter().map(|uid| uid.mention()).join("\n"),
         ))).reply(true).ephemeral(true)).await?;
         return Ok(());
     }
