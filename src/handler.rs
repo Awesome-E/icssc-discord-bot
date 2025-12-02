@@ -7,8 +7,7 @@ use crate::spottings::snipe::confirm_message_spotting_modal;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
 use serenity::all::{
-    ActivityData, ActivityType, Context, EventHandler, Interaction, OnlineStatus, Permissions,
-    Ready,
+    ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse, CreateInteractionResponseMessage, EditMessage, EventHandler, Interaction, OnlineStatus, Permissions, Ready
 };
 use serenity::async_trait;
 use std::time::Duration;
@@ -66,7 +65,7 @@ impl EventHandler for LaikaEventHandler {
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        match interaction {
+        let response = match &interaction {
             Interaction::Component(interaction) => match interaction.data.custom_id.as_str() {
                 // TODO consider creating enums for custom IDs to avoid magic strings
                 "matchy_opt_in" => {
@@ -86,43 +85,64 @@ impl EventHandler for LaikaEventHandler {
                 }
                 // TODO make this better
                 "snipes_opt_in" => {
-                    let _ = SnipesOptOut::new(&ctx, &self.data)
+                    SnipesOptOut::new(&ctx, &self.data)
                         .opt_in(&interaction)
-                        .await;
+                        .await
                 }
                 "snipes_opt_out" => {
-                    let _ = SnipesOptOut::new(&ctx, &self.data)
+                    SnipesOptOut::new(&ctx, &self.data)
                         .opt_out(&interaction)
-                        .await;
+                        .await
                 }
                 "snipes_check_participation" => {
                     SnipesOptOut::new(&ctx, &self.data)
                         .check(&interaction)
                         .await
                 }
-                _ => (),
+                _ => Ok(()),
             },
             Interaction::Modal(interaction) => match interaction.data.custom_id.as_str() {
-                "spotting_modal_confirm" => {
-                    let _ = confirm_message_spotting_modal(ctx, &self.data, interaction).await;
-                }
-                "attendance_log_modal_confirm" => {
-                    let res = confirm_attendance_log_modal(ctx, &self.data, interaction).await;
-                    // TODO potentially make it reply with the error
-                    if let Err(why) = res {
-                        dbg!(why);
-                    }
-                }
-                "bnb_meetup_log_modal" => {
-                    let res = confirm_bnb_meetup_modal(ctx, &self.data, interaction).await;
-                    // TODO potentially make it reply with the error
-                    if let Err(why) = res {
-                        dbg!(why);
-                    }
-                }
-                _ => (),
+                "spotting_modal_confirm" => confirm_message_spotting_modal(&ctx, &self.data, &interaction).await,
+                "attendance_log_modal_confirm" => confirm_attendance_log_modal(&ctx, &self.data, &interaction).await,
+                "bnb_meetup_log_modal" => confirm_bnb_meetup_modal(&ctx, &self.data, &interaction).await,
+                _ => Ok(()),
             },
-            _ => (),
-        }
+            _ => Ok(()),
+        };
+
+        let Err(error) = response else { return; };
+
+        let http = ctx.http();
+        let current_response = match &interaction {
+            Interaction::Command(ixn) => ixn.get_response(http).await,
+            Interaction::Autocomplete(ixn) => ixn.get_response(http).await,
+            Interaction::Component(ixn) => ixn.get_response(http).await,
+            Interaction::Modal(ixn) => ixn.get_response(http).await,
+            _ => return,
+        }.ok();
+
+        let new_response = match current_response {
+            Some(mut msg) => {
+                if let Err(err) = msg.edit(http, EditMessage::new().content(error.to_string())).await {
+                    dbg!(err);
+                }
+                return;
+            }
+            None => {
+                CreateInteractionResponse::Message(
+                    CreateInteractionResponseMessage::new()
+                        .content(error.to_string())
+                        .ephemeral(true),
+                )
+            }
+        };
+
+        let _ = match interaction {
+            Interaction::Command(ixn) => ixn.create_response(ctx.http(), new_response).await,
+            Interaction::Autocomplete(ixn) => ixn.create_response(ctx.http(), new_response).await,
+            Interaction::Component(ixn) => ixn.create_response(ctx.http(), new_response).await,
+            Interaction::Modal(ixn) => ixn.create_response(ctx.http(), new_response).await,
+            _ => return,
+        };
     }
 }

@@ -99,9 +99,9 @@ pub(crate) async fn log_attendance(
 }
 
 pub(crate) async fn confirm_attendance_log_modal(
-    ctx: serenity::prelude::Context,
+    ctx: &serenity::prelude::Context,
     data: &'_ AppVars,
-    ixn: ModalInteraction,
+    ixn: &ModalInteraction,
 ) -> Result<(), AppError> {
     let inputs = ModalInputTexts::new(&ixn);
     let message = inputs

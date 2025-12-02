@@ -108,9 +108,9 @@ pub(crate) async fn log_bnb_meetup_message(
 
 // TODO potentially make handlers deal with interactions...
 pub(crate) async fn confirm_bnb_meetup_modal(
-    ctx: serenity::prelude::Context,
+    ctx: &serenity::prelude::Context,
     data: &'_ AppVars,
-    ixn: ModalInteraction,
+    ixn: &ModalInteraction,
 ) -> Result<(), AppError> {
     let inputs = ModalInputTexts::new(&ixn);
 

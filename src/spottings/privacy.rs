@@ -44,22 +44,19 @@ impl<'a> SnipesOptOut<'a> {
         };
 
         let response = match self.exists(interaction.user.id).await {
-            Err(_) => Err("Unable to find you. Please contact ICSSC IVP :("),
-            Ok(true) => Err("You are already opted out."),
+            Err(_) => bail!("Unable to find you. Please contact ICSSC IVP :("),
+            Ok(true) => bail!("You are already opted out."),
             Ok(false) => match opt_out::Entity::insert(opt_out_user)
                 .on_conflict_do_nothing()
                 .exec(&self.data.db)
                 .await
             {
-                Ok(_) => Ok("Successfully opted out of snipes!"),
-                Err(_) => Err("Unable to opt out. Please contact ICSSC IVP :("),
+                Ok(_) => "Successfully opted out of snipes!",
+                Err(_) => bail!("Unable to opt out. Please contact ICSSC IVP :("),
             },
         };
 
-        let success = response.is_ok();
-        let response = response.unwrap_or_else(|err| err);
-
-        let _ = interaction
+        interaction
             .create_response(
                 self.ctx.http(),
                 CreateInteractionResponse::Message(
@@ -68,36 +65,31 @@ impl<'a> SnipesOptOut<'a> {
                         .ephemeral(true),
                 ),
             )
-            .await;
+            .await?;
 
-        if success {
-            let channel = self.get_spottings_channel().await?;
-            let content = format!("<@{}> has opted out of being sniped!", interaction.user.id);
-            let _ = channel
-                .send_message(self.ctx.http(), CreateMessage::new().content(content))
-                .await?;
-        }
+        let channel = self.get_spottings_channel().await?;
+        let content = format!("<@{}> has opted out of being sniped!", interaction.user.id);
+        channel
+            .send_message(self.ctx.http(), CreateMessage::new().content(content))
+            .await?;
 
         Ok(())
     }
 
     pub(crate) async fn opt_in(&self, interaction: &ComponentInteraction) -> anyhow::Result<()> {
         let response = match self.exists(interaction.user.id).await {
-            Err(_) => Err("Unable to find you. Please contact ICSSC IVP :("),
-            Ok(false) => Err("You are already opted in to snipes!"),
+            Err(_) => bail!("Unable to find you. Please contact ICSSC IVP :("),
+            Ok(false) => bail!("You are already opted in to snipes!"),
             Ok(true) => match opt_out::Entity::delete_by_id(u64::from(interaction.user.id) as i64)
                 .exec(&self.data.db)
                 .await
             {
-                Ok(_) => Ok("Successfully opted in to snipes!"),
-                Err(_) => Err("Unable to opt in. Please contact ICSSC IVP :("),
+                Ok(_) => "Successfully opted in to snipes!",
+                Err(_) => bail!("Unable to opt in. Please contact ICSSC IVP :("),
             },
         };
 
-        let success = response.is_ok();
-        let response = response.unwrap_or_else(|err| err);
-
-        let _ = interaction
+        interaction
             .create_response(
                 self.ctx.http(),
                 CreateInteractionResponse::Message(
@@ -106,27 +98,25 @@ impl<'a> SnipesOptOut<'a> {
                         .ephemeral(true),
                 ),
             )
-            .await;
+            .await?;
 
-        if success {
-            let channel = self.get_spottings_channel().await?;
-            let content = format!("<@{}> has rejoined snipes!", interaction.user.id);
-            let _ = channel
-                .send_message(self.ctx.http(), CreateMessage::new().content(content))
-                .await?;
-        }
+        let channel = self.get_spottings_channel().await?;
+        let content = format!("<@{}> has rejoined snipes!", interaction.user.id);
+        channel
+            .send_message(self.ctx.http(), CreateMessage::new().content(content))
+            .await?;
 
         Ok(())
     }
 
-    pub(crate) async fn check(&self, interaction: &ComponentInteraction) -> () {
+    pub(crate) async fn check(&self, interaction: &ComponentInteraction) -> anyhow::Result<()> {
         let response = match self.exists(interaction.user.id).await {
             Ok(true) => "You are currently opted out of snipes!",
             Ok(false) => "You are currently opted in to snipes!",
-            Err(_) => "I couldn't check that for you :(",
+            Err(_) => bail!("I couldn't check that for you :("),
         };
 
-        let _ = interaction
+        interaction
             .create_response(
                 self.ctx.http(),
                 CreateInteractionResponse::Message(
@@ -135,7 +125,9 @@ impl<'a> SnipesOptOut<'a> {
                         .ephemeral(true),
                 ),
             )
-            .await;
+            .await?;
+
+        Ok(())
     }
 }
 
