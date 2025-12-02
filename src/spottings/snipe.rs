@@ -74,8 +74,8 @@ async fn add_spottings_to_db(
     Ok(())
 }
 
-#[poise::command(context_menu_command = "Log Snipe")]
-pub(crate) async fn log_message_snipe(
+#[poise::command(context_menu_command = "Log Spotting")]
+pub(crate) async fn log_message_spotting(
     ctx: Context<'_>,
     message: serenity::all::Message,
 ) -> Result<(), AppError> {
@@ -98,18 +98,28 @@ pub(crate) async fn log_message_snipe(
             .required(true),
     );
 
-    let input = CreateActionRow::InputText(
+    let spotted_input = CreateActionRow::InputText(
         CreateInputText::new(
-            InputTextStyle::Short,
+            InputTextStyle::Paragraph,
             "Who was spotted?",
             "spotting_modal_spotted",
         )
-        .value(spotted.iter().join(", "))
+        .value(spotted.iter().join("\n"))
         .required(true),
     );
 
-    let modal = CreateModal::new("spotting_modal_confirm", "Confirm Snipe")
-        .components(vec![msg_input, input]);
+    let spotting_type_input = CreateActionRow::InputText(
+        CreateInputText::new(
+            InputTextStyle::Short,
+            "Type of Spotting (snipe | social)",
+            "spotting_type"
+        )
+        .value("snipe")
+        .required(true)
+    );
+
+    let modal = CreateModal::new("spotting_modal_confirm", "Confirm Spotting")
+        .components(vec![msg_input, spotted_input, spotting_type_input]);
 
     let reply = CreateInteractionResponse::Modal(modal);
     let Context::Application(ctx) = ctx else {
@@ -121,7 +131,7 @@ pub(crate) async fn log_message_snipe(
     Ok(())
 }
 
-pub(crate) async fn confirm_message_snipe_modal(
+pub(crate) async fn confirm_message_spotting_modal(
     ctx: serenity::prelude::Context,
     data: &'_ AppVars,
     ixn: ModalInteraction,
@@ -136,19 +146,32 @@ pub(crate) async fn confirm_message_snipe_modal(
 
     let spotted_uids = inputs
         .get_required_value("spotting_modal_spotted")?
-        .split(",")
+        .split("\n")
         .filter_map(|s| {
             // TODO validate that user ids are actually in the server
             UserId::from_str(s.trim()).ok()
         })
         .collect_vec();
 
+    // TODO components v2 dropdown
+    let spotting_type = match inputs.get_required_value("spotting_type")?.as_str() {
+        "snipe" => SpottingType::Snipe,
+        "social" => SpottingType::Social,
+        _ => bail!("unexpected spotting type")
+    };
+    
     // TODO fail if the user is opted out
+
+
+    let reaction = ReactionType::Unicode(match spotting_type {
+        SpottingType::Snipe => "👏",
+        SpottingType::Social => "🙌",
+    }.to_string());
 
     // write snipe to db
     let response = match add_spottings_to_db(
         &data.db,
-        SpottingType::Snipe,
+        spotting_type,
         ixn.guild_id.unwrap(),
         &message,
         spotted_uids,
@@ -171,7 +194,7 @@ pub(crate) async fn confirm_message_snipe_modal(
     .await?;
 
     let _ = message
-        .react(ctx.http(), ReactionType::Unicode("👏".to_string()))
+        .react(ctx.http(), reaction)
         .await;
 
     Ok(())
