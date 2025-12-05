@@ -1,24 +1,89 @@
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::{AppError, Context};
-use anyhow::Context as _;
+use anyhow::{Context as _, anyhow};
 use entity::user_stat;
 use itertools::Itertools;
 use migration::NullOrdering;
-use poise::ChoiceParameter;
+use poise::{ChoiceParameter, CreateReply};
 use sea_orm::sea_query::Expr;
 use sea_orm::{EntityTrait, FromQueryResult, Order, QueryOrder, QuerySelect};
-use serenity::all::{Mentionable, UserId};
 use std::num::NonZeroUsize;
+use serenity::all::{CreateEmbed, Mentionable, UserId};
 
-#[derive(ChoiceParameter, PartialEq, Eq, Copy, Clone, Debug, Hash, Default)]
+#[derive(ChoiceParameter, PartialEq, Eq, Copy, Clone, Debug, Hash)]
 enum LeaderboardBy {
-    #[default]
     #[name = "Total snipes"]
     SnipeCount,
     #[name = "Times sniped"]
     VictimCount,
     #[name = "Ratio of total snipes to times sniped"]
     SnipeRate,
+}
+
+async fn show_summary_leaderboard(ctx: Context<'_>) -> anyhow::Result<()> {
+    let conn = &ctx.data().db;
+
+    let top5_overall = user_stat::Entity::find()
+        .order_by_desc(
+            Expr::col(user_stat::Column::SnipesInitiated)
+                .add(Expr::col(user_stat::Column::SocialsInitiated))
+                .add(Expr::col(user_stat::Column::SocialsVictim))
+        )
+        .limit(5)
+        .all(conn)
+        .await
+        .context("fetch top 5 from db")?
+        .into_iter()
+        .map(|row| {
+            let social_ct = row.socials_initiated + row.socials_victim;
+            let total = row.snipes_initiated + social_ct;
+            format!("1. <@{}>: {} points ({} snipes + {} socials)", row.id, total, row.snipes_initiated, social_ct)
+        })
+        .join("\n");
+
+    let top_sniper = user_stat::Entity::find()
+        .order_by_desc(user_stat::Column::SnipesInitiated)
+        .limit(1)
+        .one(conn)
+        .await
+        .context("fetch top sniper")?
+        .map(|row| {
+            format!("🔭 **Most Snipes:** <@{}> ({})", row.id, row.snipes_initiated)
+        })
+        .ok_or(anyhow!("missing top sniper"))?;
+
+    let top_social = user_stat::Entity::find()
+        .order_by_desc(
+            Expr::col(user_stat::Column::SocialsInitiated)
+                .add(Expr::col(user_stat::Column::SocialsVictim))
+        )
+        .limit(1)
+        .one(conn)
+        .await
+        .context("fetch top social")?
+        .map(|row| {
+            let social_ct = row.socials_initiated + row.socials_victim;
+            format!("😋 **Most Socials:** <@{}> ({})", row.id, social_ct)
+        })
+        .ok_or(anyhow!("missing top sniper"))?;
+
+    let embed = CreateEmbed::new()
+        .color(0xc0d9e5)
+        .title("ICSSC Spottings Leaderboard")
+        .thumbnail("https://cdn.discordapp.com/avatars/1336510972403126292/8db135d66c041c0191e0ae8085b9baa6.webp?size=512")
+        .description(
+            format!("This is the overall spottings leaderboard. **Snipes** are worth 1 point per person \
+                sniped, and **socials** are worth 1 point per person per photo, including yourself.\n\n\
+                **Top Overall Scores:**\n\n{top5_overall}\n\n\
+                {top_sniper}
+                {top_social}
+                \n\n-# To view a specific type of leaderboard, provide a value to the optional `by` \
+                parameter in `/spottings leaderboard by:type`")
+        );
+
+    ctx.send(CreateReply::default().embed(embed).ephemeral(true)).await?;
+
+    Ok(())
 }
 
 #[derive(FromQueryResult)]
@@ -33,7 +98,10 @@ pub(crate) async fn leaderboard(
     ctx: Context<'_>,
     #[description = "Leaderboard type; default is \"Total snipes\'"] by: Option<LeaderboardBy>,
 ) -> Result<(), AppError> {
-    let by = by.unwrap_or_default();
+    let Some(by) = by else {
+        show_summary_leaderboard(ctx).await?;
+        return Ok(());
+    };
 
     let lines = match by {
         LeaderboardBy::SnipeCount => user_stat::Entity::find()
