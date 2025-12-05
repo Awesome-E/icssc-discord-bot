@@ -12,6 +12,8 @@ use std::num::NonZeroUsize;
 
 #[derive(ChoiceParameter, PartialEq, Eq, Copy, Clone, Debug, Hash)]
 enum LeaderboardBy {
+    #[name = "Number of socials"]
+    SocialCount,
     #[name = "Total snipes"]
     SnipeCount,
     #[name = "Times sniped"]
@@ -111,6 +113,24 @@ pub(crate) async fn leaderboard(
     };
 
     let lines = match by {
+        LeaderboardBy::SocialCount => user_stat::Entity::find()
+            .order_by_desc(
+                Expr::col(user_stat::Column::SocialsInitiated)
+                    .add(Expr::col(user_stat::Column::SocialsVictim)),
+            )
+            .all(&ctx.data().db)
+            .await
+            .context("fetch leaderboard from db")?
+            .into_iter()
+            .map(|mdl| {
+                format!(
+                    "1. {}: {}",
+                    UserId::from(mdl.id as u64).mention(),
+                    mdl.socials_initiated + mdl.socials_victim
+                )
+                .into_boxed_str()
+            })
+            .collect_vec(),
         LeaderboardBy::SnipeCount => user_stat::Entity::find()
             .order_by_desc(user_stat::Column::SnipesInitiated)
             .all(&ctx.data().db)
