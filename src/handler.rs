@@ -8,8 +8,8 @@ use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
 use serenity::all::{
     ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse,
-    CreateInteractionResponseMessage, EditInteractionResponse, EventHandler,
-    Interaction, OnlineStatus, Permissions, Ready,
+    CreateInteractionResponseMessage, EditInteractionResponse, EventHandler, Interaction,
+    OnlineStatus, Permissions, Ready,
 };
 use serenity::async_trait;
 use std::time::Duration;
@@ -97,9 +97,7 @@ impl EventHandler for LaikaEventHandler {
                         .await
                 }
                 "snipes_check_participation" => {
-                    SnipesOptOut::new(&ctx, &self.data)
-                        .check(interaction)
-                        .await
+                    SnipesOptOut::new(&ctx, &self.data).check(interaction).await
                 }
                 _ => Ok(()),
             },

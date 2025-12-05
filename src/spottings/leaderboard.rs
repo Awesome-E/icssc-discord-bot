@@ -7,8 +7,8 @@ use migration::NullOrdering;
 use poise::{ChoiceParameter, CreateReply};
 use sea_orm::sea_query::Expr;
 use sea_orm::{EntityTrait, FromQueryResult, Order, QueryOrder, QuerySelect};
-use std::num::NonZeroUsize;
 use serenity::all::{CreateEmbed, Mentionable, UserId};
+use std::num::NonZeroUsize;
 
 #[derive(ChoiceParameter, PartialEq, Eq, Copy, Clone, Debug, Hash)]
 enum LeaderboardBy {
@@ -27,7 +27,7 @@ async fn show_summary_leaderboard(ctx: Context<'_>) -> anyhow::Result<()> {
         .order_by_desc(
             Expr::col(user_stat::Column::SnipesInitiated)
                 .add(Expr::col(user_stat::Column::SocialsInitiated))
-                .add(Expr::col(user_stat::Column::SocialsVictim))
+                .add(Expr::col(user_stat::Column::SocialsVictim)),
         )
         .limit(5)
         .all(conn)
@@ -37,7 +37,10 @@ async fn show_summary_leaderboard(ctx: Context<'_>) -> anyhow::Result<()> {
         .map(|row| {
             let social_ct = row.socials_initiated + row.socials_victim;
             let total = row.snipes_initiated + social_ct;
-            format!("1. <@{}>: {} points ({} snipes + {} socials)", row.id, total, row.snipes_initiated, social_ct)
+            format!(
+                "1. <@{}>: {} points ({} snipes + {} socials)",
+                row.id, total, row.snipes_initiated, social_ct
+            )
         })
         .join("\n");
 
@@ -48,14 +51,17 @@ async fn show_summary_leaderboard(ctx: Context<'_>) -> anyhow::Result<()> {
         .await
         .context("fetch top sniper")?
         .map(|row| {
-            format!("🔭 **Most Snipes:** <@{}> ({})", row.id, row.snipes_initiated)
+            format!(
+                "🔭 **Most Snipes:** <@{}> ({})",
+                row.id, row.snipes_initiated
+            )
         })
         .ok_or(anyhow!("missing top sniper"))?;
 
     let top_social = user_stat::Entity::find()
         .order_by_desc(
             Expr::col(user_stat::Column::SocialsInitiated)
-                .add(Expr::col(user_stat::Column::SocialsVictim))
+                .add(Expr::col(user_stat::Column::SocialsVictim)),
         )
         .limit(1)
         .one(conn)
@@ -81,7 +87,8 @@ async fn show_summary_leaderboard(ctx: Context<'_>) -> anyhow::Result<()> {
                 parameter in `/spottings leaderboard by:type`")
         );
 
-    ctx.send(CreateReply::default().embed(embed).ephemeral(true)).await?;
+    ctx.send(CreateReply::default().embed(embed).ephemeral(true))
+        .await?;
 
     Ok(())
 }
