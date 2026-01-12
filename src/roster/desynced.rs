@@ -39,7 +39,7 @@ pub(crate) async fn desynced(ctx: Context<'_>) -> Result<(), AppError> {
         let guild_member = guild_member?;
         let roster_committees = match roster_lookup.get(&guild_member.user.name) {
             Some(roster_member) => &roster_member.committees,
-            None => &vec![]
+            None => &vec![],
         };
 
         let gm_role_names = guild_member
@@ -50,9 +50,7 @@ pub(crate) async fn desynced(ctx: Context<'_>) -> Result<(), AppError> {
 
         let extra_roles = gm_role_names
             .iter()
-            .filter(|&name| {
-                committee_names.contains(name) && !roster_committees.contains(name)
-            })
+            .filter(|&name| committee_names.contains(name) && !roster_committees.contains(name))
             .collect_vec();
 
         let missing_roles = roster_committees

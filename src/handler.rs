@@ -4,6 +4,7 @@ use crate::bitsnbytes::meetup::confirm_bnb_meetup_modal;
 use crate::matchy::opt_in::MatchyMeetupOptIn;
 use crate::spottings::privacy::SnipesOptOut;
 use crate::spottings::snipe::confirm_message_spotting_modal;
+use crate::spottings::socials_role::SocialsParticipation;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom;
 use serenity::all::{
@@ -98,6 +99,21 @@ impl EventHandler for LaikaEventHandler {
                 }
                 "snipes_check_participation" => {
                     SnipesOptOut::new(&ctx, &self.data).check(interaction).await
+                }
+                "socials_opt_in" => {
+                    SocialsParticipation::new(&ctx, &self.data)
+                        .opt_in(interaction)
+                        .await
+                }
+                "socials_opt_out" => {
+                    SocialsParticipation::new(&ctx, &self.data)
+                        .opt_out(interaction)
+                        .await
+                }
+                "socials_check_participation" => {
+                    SocialsParticipation::new(&ctx, &self.data)
+                        .check(interaction)
+                        .await
                 }
                 _ => Ok(()),
             },

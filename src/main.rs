@@ -11,7 +11,9 @@ mod setup;
 mod spottings;
 mod util;
 
-use crate::setup::{ChannelVars, HttpVars, create_bot_framework_options, register_commands};
+use crate::setup::{
+    ChannelVars, HttpVars, RoleVars, create_bot_framework_options, register_commands,
+};
 use anyhow::Context as _;
 use clap::ValueHint;
 use env_vars_struct::env_vars_struct;
@@ -45,6 +47,7 @@ env_vars_struct!(
     "BOT__CHANNELS__MATCHY",
     "BOT__CHANNELS__SPOTTINGS",
     "BOT__DISCORD_TOKEN",
+    "BOT__ROLES__SOCIALS_PING",
     "GOOGLE_OAUTH_CLIENT__ID",
     "GOOGLE_OAUTH_CLIENT__SECRET",
     "ROSTER_SPREADSHEET__ID",
@@ -58,6 +61,7 @@ struct AppVarsInner {
     env: Vars,
     db: sea_orm::DatabaseConnection,
     channels: ChannelVars,
+    roles: RoleVars,
     http: HttpVars,
 }
 
@@ -88,6 +92,7 @@ impl AppVars {
                 db: connection,
                 channels: ChannelVars::new(&env),
                 http: HttpVars::new(&env),
+                roles: RoleVars::new(&env),
                 env,
             }),
         }

@@ -50,6 +50,22 @@ impl ChannelVars {
     }
 }
 
+pub(crate) struct RoleVars {
+    pub(crate) socials_role_id: u64,
+}
+impl RoleVars {
+    pub(crate) fn new(env: &Vars) -> Self {
+        Self {
+            socials_role_id: env
+                .bot
+                .roles
+                .socials_ping
+                .parse::<_>()
+                .expect("BOT__ROLES__SOCIALS__PING must be valid u64"),
+        }
+    }
+}
+
 pub(crate) struct HttpVars {
     pub(crate) port: u16,
     pub(crate) client: reqwest::Client,
