@@ -11,7 +11,7 @@ members = [".", "entity", "migration"]
 anyhow = "1.0.100"
 clap = { version = "4.5.54", features = ["cargo"] }
 discord-md = "3.0.0"
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 env_vars_struct = { git = "https://github.com/laggycomputer/env_vars_struct" }
 itertools = "0.14.0"
 petgraph = "0.8.3"

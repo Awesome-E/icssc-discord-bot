@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 pub(crate) fn load_env(args: &ArgMatches) {
-    dotenv::from_filename(
+    dotenvy::from_filename(
         args.get_one::<PathBuf>("config")
             .expect("config file is bad path?"),
     )
