@@ -13,14 +13,12 @@ use serenity::{
 
 use crate::{
     AppError, AppVars, Context,
-    attendance::roster_helpers::{
-        check_in_with_email, get_bulk_members_from_roster, get_user_from_discord,
-    },
     util::{
         ContextExtras,
         gsheets::{TokenResponse, get_gsheets_token, get_spreadsheet_range},
         message::get_members,
         modal::ModalInputTexts,
+        roster::{check_in_with_email, get_bulk_members_from_roster, get_user_from_discord},
     },
 };
 

@@ -4,6 +4,7 @@ mod handler;
 mod internal_commands;
 mod matchy;
 mod meta;
+mod roster;
 mod routes;
 mod server;
 mod setup;

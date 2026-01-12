@@ -1,5 +1,5 @@
 use crate::util::ContextExtras;
-use crate::{AppError, AppVars, AppVarsInner, Vars, meta};
+use crate::{AppError, AppVars, AppVarsInner, Vars, meta, roster};
 use crate::{attendance, bitsnbytes, internal_commands, matchy, spottings};
 use clap::ArgMatches;
 use itertools::Itertools;
@@ -163,6 +163,8 @@ fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
         spottings::command::spottings(),
         spottings::snipe::log_message_spotting(),
         internal_commands::calendar::calendar_command(),
+        roster::user_lookup::user_lookup(),
+        roster::command::roster(),
     ]
 }
 
