@@ -1,7 +1,7 @@
 use crate::util::ContextExtras as _;
 use crate::{AppError, AppVars, Context};
 use anyhow::{Context as _, bail, ensure};
-use entity::opt_out;
+use entity::snipe_opt_out;
 use poise::ChoiceParameter;
 use sea_orm::EntityTrait as _;
 use sea_orm::{ActiveValue, DbErr};
@@ -22,7 +22,7 @@ impl<'a> SnipesOptOut<'a> {
     }
 
     async fn exists(&self, user_id: UserId) -> Result<bool, DbErr> {
-        Ok(opt_out::Entity::find_by_id(u64::from(user_id) as i64)
+        Ok(snipe_opt_out::Entity::find_by_id(u64::from(user_id) as i64)
             .one(&self.data.db)
             .await?
             .is_some())
@@ -40,14 +40,14 @@ impl<'a> SnipesOptOut<'a> {
     }
 
     pub(crate) async fn opt_out(&self, interaction: &ComponentInteraction) -> anyhow::Result<()> {
-        let opt_out_user = opt_out::ActiveModel {
+        let opt_out_user = snipe_opt_out::ActiveModel {
             id: ActiveValue::Set(interaction.user.id.into()),
         };
 
         let response = match self.exists(interaction.user.id).await {
             Err(_) => bail!("Unable to find you. Please contact ICSSC IVP :("),
             Ok(true) => bail!("You are already opted out."),
-            Ok(false) => match opt_out::Entity::insert(opt_out_user)
+            Ok(false) => match snipe_opt_out::Entity::insert(opt_out_user)
                 .on_conflict_do_nothing()
                 .exec(&self.data.db)
                 .await
@@ -81,13 +81,15 @@ impl<'a> SnipesOptOut<'a> {
         let response = match self.exists(interaction.user.id).await {
             Err(_) => bail!("Unable to find you. Please contact ICSSC IVP :("),
             Ok(false) => bail!("You are already opted in to snipes!"),
-            Ok(true) => match opt_out::Entity::delete_by_id(u64::from(interaction.user.id) as i64)
-                .exec(&self.data.db)
-                .await
-            {
-                Ok(_) => "Successfully opted in to snipes!",
-                Err(_) => bail!("Unable to opt in. Please contact ICSSC IVP :("),
-            },
+            Ok(true) => {
+                match snipe_opt_out::Entity::delete_by_id(u64::from(interaction.user.id) as i64)
+                    .exec(&self.data.db)
+                    .await
+                {
+                    Ok(_) => "Successfully opted in to snipes!",
+                    Err(_) => bail!("Unable to opt in. Please contact ICSSC IVP :("),
+                }
+            }
         };
 
         interaction
@@ -135,7 +137,7 @@ impl<'a> SnipesOptOut<'a> {
 /// See whether you're opted out of being sniped
 #[poise::command(prefix_command, slash_command)]
 pub(crate) async fn check_snipes_participation(ctx: Context<'_>) -> Result<(), AppError> {
-    let got = opt_out::Entity::find_by_id(ctx.author().id.get() as i64)
+    let got = snipe_opt_out::Entity::find_by_id(ctx.author().id.get() as i64)
         .one(&ctx.data().db)
         .await
         .context("get opt out user id")?;
@@ -169,7 +171,7 @@ pub(crate) async fn set_snipes_participation(
 
     match target {
         OptInStatus::OptIn => {
-            opt_out::Entity::delete_by_id(ctx.author().id.get() as i64)
+            snipe_opt_out::Entity::delete_by_id(ctx.author().id.get() as i64)
                 .exec(conn)
                 .await
                 .context("Opt out delete user id")?;
@@ -178,11 +180,11 @@ pub(crate) async fn set_snipes_participation(
                 .await?;
         }
         OptInStatus::OptOut => {
-            let mdl = opt_out::ActiveModel {
+            let mdl = snipe_opt_out::ActiveModel {
                 id: ActiveValue::Set(ctx.author().id.get() as i64),
             };
 
-            opt_out::Entity::insert(mdl)
+            snipe_opt_out::Entity::insert(mdl)
                 .on_conflict_do_nothing()
                 .exec(conn)
                 .await?;

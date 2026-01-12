@@ -6,7 +6,7 @@ use crate::util::text::comma_join;
 use crate::util::{ContextExtras as _, spottings_embed};
 use crate::{AppError, AppVars, Context};
 use anyhow::{Context as _, bail};
-use entity::{message, snipe};
+use entity::{spotting_message, spotting_victim};
 use itertools::Itertools as _;
 use poise::{ChoiceParameter, CreateReply};
 use sea_orm::{
@@ -37,7 +37,7 @@ async fn add_spottings_to_db(
     message: &serenity::all::Message,
     victims: impl IntoIterator<Item = UserId>,
 ) -> Result<(), TransactionError<sea_orm::DbErr>> {
-    let message_sql = message::ActiveModel {
+    let message_sql = spotting_message::ActiveModel {
         // command is guild_only
         guild_id: ActiveValue::Set(guild_id.into()),
         channel_id: ActiveValue::Set(message.channel_id.into()),
@@ -52,7 +52,7 @@ async fn add_spottings_to_db(
 
     let snipes_sql = victims
         .into_iter()
-        .map(|victim| snipe::ActiveModel {
+        .map(|victim| spotting_victim::ActiveModel {
             message_id: ActiveValue::Set(message.id.into()),
             victim_id: ActiveValue::Set(victim.into()),
             latitude: ActiveValue::Set(None),
@@ -63,8 +63,12 @@ async fn add_spottings_to_db(
 
     conn.transaction::<_, (), DbErr>(move |txn| {
         Box::pin(async move {
-            message::Entity::insert(message_sql).exec(txn).await?;
-            snipe::Entity::insert_many(snipes_sql).exec(txn).await?;
+            spotting_message::Entity::insert(message_sql)
+                .exec(txn)
+                .await?;
+            spotting_victim::Entity::insert_many(snipes_sql)
+                .exec(txn)
+                .await?;
 
             txn.execute_unprepared("REFRESH MATERIALIZED VIEW user_stat")
                 .await?;
@@ -378,11 +382,11 @@ pub(crate) async fn post(
 pub(crate) async fn history(ctx: Context<'_>) -> Result<(), AppError> {
     let conn = &ctx.data().db;
 
-    let got = message::Entity::find()
+    let got = spotting_message::Entity::find()
         // .column_as(Expr::cust("array_agg(snipe.victim_id)"), "victims")
-        .find_with_related(snipe::Entity)
+        .find_with_related(spotting_victim::Entity)
         // .group_by(message::Column::MessageId)
-        .order_by_desc(message::Column::MessageId)
+        .order_by_desc(spotting_message::Column::MessageId)
         // .into_model::<ImplodedSnipes>()
         .all(conn)
         .await

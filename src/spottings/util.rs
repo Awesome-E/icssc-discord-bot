@@ -1,5 +1,5 @@
 use anyhow::Context as _;
-use entity::opt_out;
+use entity::snipe_opt_out;
 use itertools::Itertools as _;
 use sea_orm::QueryFilter as _;
 use sea_orm::{ColumnTrait as _, DatabaseConnection, EntityTrait as _};
@@ -12,8 +12,8 @@ pub async fn opted_out_among<Ids>(
 where
     Ids: Iterator<Item = UserId>,
 {
-    let got = opt_out::Entity::find()
-        .filter(opt_out::Column::Id.is_in(ids.map(UserId::get).collect_vec()))
+    let got = snipe_opt_out::Entity::find()
+        .filter(snipe_opt_out::Column::Id.is_in(ids.map(UserId::get).collect_vec()))
         .all(conn)
         .await
         .context("bulk opt out query")?;

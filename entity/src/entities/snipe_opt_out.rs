@@ -3,11 +3,10 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "matchy_meetup_opt_in")]
+#[sea_orm(table_name = "snipe_opt_out")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub user_id: i64,
-    pub created_at: DateTime,
+    pub id: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
