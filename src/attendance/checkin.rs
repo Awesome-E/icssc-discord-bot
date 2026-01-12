@@ -51,7 +51,7 @@ Discord username on the internal roster is correct.",
     if !success {
         ctx.reply_ephemeral("Unable to check in").await?;
         return Ok(());
-    };
+    }
 
     ctx.reply_ephemeral(format!("Successfully checked in as {}", user.name))
         .await?;
@@ -139,7 +139,7 @@ pub(crate) async fn confirm_attendance_log_modal(
     let is_missing = members.len() != usernames.len();
     if is_missing {
         bail!("user lookup failed");
-    };
+    }
 
     ixn.defer_ephemeral(ctx.http()).await?;
 
@@ -188,7 +188,7 @@ async fn get_events_attended_text(
 
             if row_email != *email {
                 return None;
-            };
+            }
 
             let current_time = Utc::now().time();
             let datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%Y %H:%M:%S")

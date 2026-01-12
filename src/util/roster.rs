@@ -118,7 +118,7 @@ pub(crate) async fn check_in_with_email(
 
     if let Some(reason) = reason {
         payload.push((&fields.event_input_id, reason));
-    };
+    }
 
     submit_google_form(&data.http.client, &fields.id, &payload)
         .await

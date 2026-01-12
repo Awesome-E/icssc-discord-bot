@@ -149,7 +149,7 @@ pub(crate) async fn get_calendar_events(
 
     if result.is_err() {
         dbg!(&result);
-    };
+    }
 
     result
 }
@@ -250,7 +250,7 @@ pub(crate) async fn update_discord_events(
         let mut payload = EditScheduledEvent::new().name(event.summary.clone());
         if let Some(desc) = &event.description {
             payload = payload.description(desc);
-        };
+        }
 
         // by definition of `updated`, it's in stored_events
         let curr_evt_entry = stored_events.get(&event.id).unwrap();
@@ -298,8 +298,8 @@ pub(crate) async fn update_discord_events(
             if let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.end {
                 let new_end = max(new_start, date_time);
                 payload = payload.end_time(new_end);
-            };
-        };
+            }
+        }
 
         http.edit_scheduled_event(
             GuildId::from(calendar.guild_id as u64),
@@ -328,7 +328,7 @@ pub(crate) async fn update_discord_events(
                     .location(location);
             if let Some(desc) = event.description {
                 payload = payload.description(desc);
-            };
+            }
             if let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.end {
                 let end = max(start, date_time);
                 payload = payload.end_time(end);
