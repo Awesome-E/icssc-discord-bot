@@ -123,7 +123,7 @@ pub(crate) async fn confirm_attendance_log_modal(
     }))
     .await
     .into_iter()
-    .filter_map(|item| item.ok())
+    .filter_map(Result::ok)
     .collect_vec();
 
     if participant_ids.collect_vec().len() != participants.len() {

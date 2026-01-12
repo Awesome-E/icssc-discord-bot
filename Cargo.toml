@@ -36,5 +36,6 @@ uuid = { version = "1.19.0", features = ["v4"] }
 redundant_semicolons = "deny"
 [lints.clippy]
 manual_assert = "warn"
+redundant_closure_for_method_calls = "warn"
 unnecessary_semicolon = "warn"
 unused_trait_names = "deny"

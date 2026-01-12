@@ -43,7 +43,7 @@ pub(crate) fn generate_add_calendar_link(
     let jwt = AddCalendarInteractionTrigger {
         guild_id: ixn
             .guild_id
-            .map(|v| v.get())
+            .map(GuildId::get)
             .context("Generate oauth link => guild id")?,
         interaction_token: ixn.token.clone(),
         calendar_id,

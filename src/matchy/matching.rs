@@ -28,7 +28,7 @@ pub fn random_pair<T: Clone>(vec: Vec<T>, seed: u64) -> Pairing<T> {
 
     let chunks = vec.chunks_exact(2);
     let remainder = chunks.remainder();
-    let mut x: Vec<Vec<T>> = chunks.map(|chunk| chunk.to_vec()).collect();
+    let mut x: Vec<Vec<T>> = chunks.map(ToOwned::to_owned).collect();
     x.last_mut().unwrap().extend_from_slice(remainder);
     Pairing(x, Vec::new())
 }
@@ -168,7 +168,7 @@ fn pair_unmatched(
         "got more than 1 remainder"
     );
     (
-        unmatched_pairs.clone().map(|p| p.to_vec()).collect(),
+        unmatched_pairs.clone().map(ToOwned::to_owned).collect(),
         unmatched_pairs.remainder().first().cloned(),
     )
 }
