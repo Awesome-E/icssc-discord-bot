@@ -5,7 +5,8 @@ use anyhow::{Context as _, anyhow};
 #[poise::command(
     slash_command,
     rename = "calendar",
-    subcommands("add_calendar", "list_calendars")
+    subcommands("add_calendar", "list_calendars"),
+    guild_only
 )]
 pub(crate) async fn calendar_command(_: Context<'_>) -> Result<(), AppError> {
     Ok(())

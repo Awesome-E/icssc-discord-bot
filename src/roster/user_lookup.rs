@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-#[poise::command(context_menu_command = "Lookup Member")]
+#[poise::command(context_menu_command = "Lookup Member", guild_only)]
 pub(crate) async fn user_lookup(
     ctx: Context<'_>,
     user: serenity::all::User,

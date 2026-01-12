@@ -50,7 +50,7 @@ async fn get_overview_range(data: &AppVars) -> anyhow::Result<SheetsResponse> {
     Ok(resp)
 }
 
-#[poise::command(context_menu_command = "Log B&B Meetup")]
+#[poise::command(context_menu_command = "Log B&B Meetup", guild_only)]
 pub(crate) async fn log_bnb_meetup_message(
     ctx: Context<'_>,
     message: serenity::all::Message,

@@ -59,7 +59,7 @@ Discord username on the internal roster is correct.",
 }
 
 /// Count a message as attendance for an ICSSC event
-#[poise::command(context_menu_command = "Log Attendance")]
+#[poise::command(context_menu_command = "Log Attendance", guild_only)]
 pub(crate) async fn log_attendance(
     ctx: Context<'_>,
     message: serenity::all::Message,
