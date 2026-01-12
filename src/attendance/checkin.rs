@@ -116,7 +116,7 @@ pub(crate) async fn confirm_attendance_log_modal(
     let attendees = inputs.get_required_value("participants")?;
     let event_name = inputs.get_value("event_name")?;
 
-    let participant_ids = attendees.split("\n");
+    let participant_ids = attendees.split('\n');
     let participants = future::join_all(participant_ids.clone().filter_map(|s| {
         let uid = UserId::from_str(s.trim()).ok()?;
         Some(ixn.guild_id?.member(ctx.http(), uid))

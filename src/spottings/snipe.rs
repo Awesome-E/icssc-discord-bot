@@ -149,7 +149,7 @@ pub(crate) async fn confirm_message_spotting_modal(
 
     let spotted_uids = inputs
         .get_required_value("spotting_modal_spotted")?
-        .split("\n")
+        .split('\n')
         .filter_map(|s| {
             // TODO validate that user ids are actually in the server
             UserId::from_str(s.trim()).ok()

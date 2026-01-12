@@ -12,7 +12,7 @@ use std::collections::HashSet;
 async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
     println!("{} used /send_pairing", ctx.author());
 
-    let Some((seed_str, checksum)) = key.rsplit_once("_") else {
+    let Some((seed_str, checksum)) = key.rsplit_once('_') else {
         bail!("Invalid key. Please make sure you only use keys returned by /create_pairing.")
     };
 

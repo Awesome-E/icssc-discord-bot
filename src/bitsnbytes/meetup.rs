@@ -128,7 +128,7 @@ pub(crate) async fn confirm_bnb_meetup_modal(
     ixn.defer_ephemeral(ctx.http()).await?;
 
     let message = message_link
-        .split("/")
+        .split('/')
         .last()
         .ok_or(anyhow!("Invalid link"))
         .and_then(|id| {

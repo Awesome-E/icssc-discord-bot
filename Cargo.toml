@@ -37,5 +37,6 @@ redundant_semicolons = "deny"
 [lints.clippy]
 manual_assert = "warn"
 redundant_closure_for_method_calls = "warn"
+single_char_pattern = "warn"
 unnecessary_semicolon = "warn"
 unused_trait_names = "deny"

@@ -23,7 +23,7 @@ pub(crate) struct RosterSheetRow {
 fn parse_committees_string(committees_text: &str) -> Vec<String> {
     committees_text
         .split(", ")
-        .map(|val| val.to_lowercase().replace("_", ""))
+        .map(|val| val.to_lowercase().replace('_', ""))
         .collect_vec()
 }
 

@@ -110,7 +110,7 @@ pub(crate) async fn register_commands(
         .bot
         .commands
         .guilds
-        .split(",")
+        .split(',')
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(|id| GuildId::from(id.parse::<u64>().expect("guild id not valid snowflake")))
