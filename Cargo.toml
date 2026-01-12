@@ -8,26 +8,26 @@ rust-version = "1.90.0"
 members = [".", "entity", "migration"]
 
 [dependencies]
+actix-web = "4.12.1"
 anyhow = "1.0.100"
+chrono = "0.4.42"
 clap = { version = "4.5.54", features = ["cargo"] }
 discord-md = "3.0.0"
 dotenvy = "0.15.7"
+entity = { path = "entity" }
 env_vars_struct = { git = "https://github.com/laggycomputer/env_vars_struct" }
 itertools = "0.14.0"
+jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
+migration = { path = "migration" }
 petgraph = "0.8.3"
 pluralizer = "0.5.0"
 poise = "0.6.1"
 rand = "0.9.2"
 rand_chacha = "0.9.0"
+reqwest = { version = "0.13.1", features = ["form", "json"] }
 sea-orm = { version = "1.1.0", features = ["sqlx-postgres", "runtime-tokio", "macros", "with-chrono"] }
+serde = "1.0.228"
+serde_json = "1.0.149"
 serenity = { version = "0.12.5", features = ["full"] }
 tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "macros"] }
-entity = { path = "entity" }
-migration = { path = "migration" }
-serde = "1.0.228"
-jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
-reqwest = { version = "0.13.1", features = ["form", "json"] }
-actix-web = "4.12.1"
 uuid = { version = "1.19.0", features = ["v4"] }
-chrono = "0.4.42"
-serde_json = "1.0.149"
