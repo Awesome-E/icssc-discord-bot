@@ -70,7 +70,6 @@ impl EventHandler for LaikaEventHandler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         let response = match &interaction {
             Interaction::Component(interaction) => match interaction.data.custom_id.as_str() {
-                // TODO consider creating enums for custom IDs to avoid magic strings
                 "matchy_opt_in" => {
                     MatchyMeetupOptIn::new(&ctx, &self.data)
                         .join(interaction)
@@ -86,7 +85,6 @@ impl EventHandler for LaikaEventHandler {
                         .check(interaction)
                         .await
                 }
-                // TODO make this better
                 "snipes_opt_in" => {
                     SnipesOptOut::new(&ctx, &self.data)
                         .opt_in(interaction)

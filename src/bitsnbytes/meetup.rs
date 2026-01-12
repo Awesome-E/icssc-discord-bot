@@ -114,7 +114,6 @@ pub(crate) async fn log_bnb_meetup_message(
     Ok(())
 }
 
-// TODO potentially make handlers deal with interactions...
 pub(crate) async fn confirm_bnb_meetup_modal(
     ctx: &serenity::prelude::Context,
     data: &'_ AppVars,

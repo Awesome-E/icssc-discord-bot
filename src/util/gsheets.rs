@@ -20,7 +20,6 @@ pub(crate) struct TokenResponse {
     // Can also read token_type: String and expires_in: u64
 }
 
-// TODO consolidate all google sheets helpers
 #[derive(Debug, Deserialize)]
 pub(crate) struct SheetsResponse {
     pub(crate) values: Vec<Vec<String>>,
