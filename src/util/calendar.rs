@@ -130,8 +130,7 @@ pub(crate) async fn get_calendar_events(
         .http
         .client
         .get(format!(
-            "https://www.googleapis.com/calendar/v3/calendars/{}/events",
-            calendar_id
+            "https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events",
         ))
         .query(&[
             ("showDeleted", "true"), /*("updatedMin", "")*/
@@ -253,7 +252,7 @@ pub(crate) async fn update_discord_events(
         }
 
         // by definition of `updated`, it's in stored_events
-        let curr_evt_entry = stored_events.get(&event.id).unwrap();
+        let curr_evt_entry = &stored_events[&event.id];
         // TODO handle cases where event has already finished or was deleted by user or completed
         let curr_event = http
             .get_scheduled_event(
@@ -274,19 +273,18 @@ pub(crate) async fn update_discord_events(
             Ok(())
         };
 
-        let curr_event = match curr_event {
-            Ok(ev) => match ev.end_time {
+        let curr_event = if let Ok(ev) = curr_event {
+            match ev.end_time {
                 Some(end) if end > now.into() => ev,
                 Some(_) => {
                     move_to_creates(event, curr_evt_entry).await?;
                     continue;
                 }
                 None => ev,
-            },
-            _ => {
-                move_to_creates(event, curr_evt_entry).await?;
-                continue;
             }
+        } else {
+            move_to_creates(event, curr_evt_entry).await?;
+            continue;
         };
 
         // Editable if the event on Discord has not started yet

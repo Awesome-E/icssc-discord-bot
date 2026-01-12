@@ -11,11 +11,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 pub(crate) fn load_env(args: &ArgMatches) {
-    dotenvy::from_filename(
+    let _ = dotenvy::from_filename(
         args.get_one::<PathBuf>("config")
             .expect("config file is bad path?"),
-    )
-    .ok();
+    );
 }
 
 // Env Setup
@@ -118,7 +117,7 @@ pub(crate) async fn register_commands(
 
     poise::builtins::register_globally(ctx, global_registration).await?;
 
-    for id in guilds.iter() {
+    for id in &guilds {
         poise::builtins::register_in_guild(ctx, local_registration, *id).await?;
     }
 

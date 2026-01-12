@@ -135,7 +135,7 @@ fn build_matching_graph<T: Hash + Eq + Copy>(
             // convert a Match into an iterable of edges of type NodeId
             // each edge has the smaller index first
             m.iter()
-                .flat_map(|u| nodes.get(u))
+                .filter_map(|u| nodes.get(u))
                 .copied()
                 .tuple_combinations()
                 .map(ConstraintEdge::new)
@@ -169,7 +169,7 @@ fn pair_unmatched(
     );
     (
         unmatched_pairs.clone().map(ToOwned::to_owned).collect(),
-        unmatched_pairs.remainder().first().cloned(),
+        unmatched_pairs.remainder().first().copied(),
     )
 }
 

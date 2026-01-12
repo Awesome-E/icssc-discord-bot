@@ -187,8 +187,7 @@ pub(crate) async fn leaderboard(
                     i + 1,
                     UserId::from(mdl.id as u64).mention(),
                     mdl.snipe_rate
-                        .map(|n| n.to_string())
-                        .unwrap_or(String::from("N/A"))
+                        .map_or(String::from("N/A"), |n| n.to_string())
                 )
                 .into_boxed_str()
             })

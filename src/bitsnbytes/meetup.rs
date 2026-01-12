@@ -72,8 +72,7 @@ pub(crate) async fn log_bnb_meetup_message(
 
             submitter == byte1 || submitter == byte2
         })
-        .map(|row| row[0].clone())
-        .unwrap_or(String::from(""));
+        .map_or(String::from(""), |row| row[0].clone());
 
     let msg_input = CreateActionRow::InputText(
         CreateInputText::new(InputTextStyle::Short, "Message Link", "message_link")
@@ -129,7 +128,7 @@ pub(crate) async fn confirm_bnb_meetup_modal(
 
     let message = message_link
         .split('/')
-        .last()
+        .next_back()
         .ok_or(anyhow!("Invalid link"))
         .and_then(|id| {
             id.parse::<u64>()
@@ -149,7 +148,7 @@ pub(crate) async fn confirm_bnb_meetup_modal(
         .await?;
 
     let _ = message
-        .react(ctx.http(), ReactionType::Unicode("👫".to_string()))
+        .react(ctx.http(), ReactionType::Unicode("👫".to_owned()))
         .await;
 
     Ok(())

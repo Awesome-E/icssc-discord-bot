@@ -34,7 +34,7 @@ pub(crate) async fn checkin(ctx: Context<'_>) -> Result<(), Error> {
 
     let username = &ctx.author().name;
     let Ok(Some(user)) =
-        get_user_from_discord(ctx.data(), Some(&access_token), username.to_string()).await
+        get_user_from_discord(ctx.data(), Some(&access_token), username.clone()).await
     else {
         ctx.reply_ephemeral(
             "\
@@ -71,7 +71,7 @@ pub(crate) async fn log_attendance(
     let members: HashSet<String> = get_members(&message, true);
 
     // create inputs
-    let msg_input: CreateActionRow = CreateActionRow::InputText(
+    let msg_input = CreateActionRow::InputText(
         CreateInputText::new(InputTextStyle::Short, "Message ID", "message_id")
             .value(message.id.to_string())
             .required(true),
@@ -164,7 +164,7 @@ pub(crate) async fn confirm_attendance_log_modal(
         .await?;
 
     let _ = message
-        .react(ctx.http(), ReactionType::Unicode("👋".to_string()))
+        .react(ctx.http(), ReactionType::Unicode("👋".to_owned()))
         .await;
 
     Ok(())
@@ -222,7 +222,7 @@ pub(crate) async fn attended(ctx: Context<'_>) -> Result<(), Error> {
 
     let username = &ctx.author().name;
     let Ok(Some(user)) =
-        get_user_from_discord(ctx.data(), Some(&access_token), username.to_string()).await
+        get_user_from_discord(ctx.data(), Some(&access_token), username.clone()).await
     else {
         ctx.reply_ephemeral(
             "\

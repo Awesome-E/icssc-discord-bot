@@ -43,7 +43,7 @@ pub(crate) async fn get_gsheets_token(data: &AppVars) -> Result<TokenResponse, A
     };
 
     let mut header = Header::new(jsonwebtoken::Algorithm::RS256);
-    header.kid = Some(key.id.to_owned());
+    header.kid = Some(key.id.clone());
 
     let token = encode(
         &header,

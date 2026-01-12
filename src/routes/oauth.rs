@@ -64,7 +64,7 @@ pub(crate) mod start {
         Ok(HttpResponse::Found()
             .insert_header(("Location", goog_request.url().as_str()))
             .cookie(
-                Cookie::build("oauth_state", encoded.to_string())
+                Cookie::build("oauth_state", encoded.clone())
                     .max_age(cookie::time::Duration::minutes(10))
                     .same_site(SameSite::Lax) // not defaulted on firefox and safari
                     .path("/")
@@ -135,9 +135,8 @@ pub(crate) mod cb {
 
         let OAuthCbGoogQuery {
             code: Some(code),
-            error: Option::None,
+            error: None,
             state,
-            ..
         } = info.into_inner()
         else {
             return Err(anyhow!("OAuth code was missing"));
@@ -172,7 +171,7 @@ pub(crate) mod cb {
             .await
         {
             Err(e) => {
-                return Err(anyhow!("OAuth exchange error: {}", e))?;
+                bail!("OAuth exchange error: {e}");
             }
             Ok(response) => response,
         }

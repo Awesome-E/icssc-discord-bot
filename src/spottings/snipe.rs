@@ -196,7 +196,7 @@ pub(crate) async fn confirm_message_spotting_modal(
             SpottingType::Snipe => "👏",
             SpottingType::Social => "🙌",
         }
-        .to_string(),
+        .to_owned(),
     );
 
     // write snipe to db
@@ -319,7 +319,7 @@ pub(crate) async fn post(
         )
         .await?;
 
-    let waited = match handle
+    let Some(waited) = handle
         .message()
         .await?
         .await_component_interaction(&ctx.serenity_context().shard)
@@ -327,18 +327,10 @@ pub(crate) async fn post(
         .custom_ids(vec![String::from(post_confirm_id)])
         .timeout(Duration::from_secs(15))
         .await
-    {
-        None => {
-            ctx.reply_ephemeral("ok, nevermind then").await?;
-            return Ok(());
-        }
-        Some(ixn) => {
-            // defer here?
-            ixn
-        }
+    else {
+        ctx.reply_ephemeral("ok, nevermind then").await?;
+        return Ok(());
     };
-
-    // command is guild_only
 
     let victims = victims.into_iter().map(|user| user.id).collect_vec();
 

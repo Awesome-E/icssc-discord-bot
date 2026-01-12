@@ -157,8 +157,9 @@ impl EventHandler for LaikaEventHandler {
         };
 
         let _ = match interaction {
-            Interaction::Command(ixn) => ixn.edit_response(http, edit_response).await,
-            Interaction::Autocomplete(ixn) => ixn.edit_response(http, edit_response).await,
+            Interaction::Command(ixn) | Interaction::Autocomplete(ixn) => {
+                ixn.edit_response(http, edit_response).await
+            }
             Interaction::Component(ixn) => ixn.edit_response(http, edit_response).await,
             Interaction::Modal(ixn) => ixn.edit_response(http, edit_response).await,
             _ => return,

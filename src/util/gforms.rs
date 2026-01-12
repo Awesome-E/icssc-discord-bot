@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::bail;
 use reqwest::StatusCode;
 use serde::Serialize;
 
@@ -18,6 +18,6 @@ pub(crate) async fn submit_google_form(
 
     match status.is_success() {
         true => Ok(status),
-        false => Err(anyhow!("Failed with status code {}", status)),
+        false => bail!("Failed with status code {status}"),
     }
 }

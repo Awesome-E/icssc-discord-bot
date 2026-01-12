@@ -99,7 +99,7 @@ impl EmbedLinePaginator {
         }
     }
 
-    fn embed_for(&self, ctx: Context<'_>, page: u8) -> CreateEmbed {
+    fn embed_for(&self, _ctx: Context<'_>, page: u8) -> CreateEmbed {
         spottings_embed()
             .description(self.pages[(page - 1) as usize].clone())
             .footer(CreateEmbedFooter::new(format!(
