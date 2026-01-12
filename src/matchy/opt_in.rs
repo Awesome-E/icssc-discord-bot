@@ -3,8 +3,8 @@ use anyhow::bail;
 use entity::matchy_meetup_opt_in;
 use sea_orm::{ActiveValue, DbErr, EntityTrait as _};
 use serenity::all::{
-    CacheHttp as _, ComponentInteraction, CreateInteractionResponse, CreateInteractionResponseMessage,
-    UserId,
+    CacheHttp as _, ComponentInteraction, CreateInteractionResponse,
+    CreateInteractionResponseMessage, UserId,
 };
 use serenity::client::Context;
 

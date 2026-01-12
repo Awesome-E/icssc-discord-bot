@@ -9,7 +9,10 @@ use anyhow::{Context as _, bail};
 use entity::{message, snipe};
 use itertools::Itertools as _;
 use poise::{ChoiceParameter, CreateReply};
-use sea_orm::{ActiveValue, ConnectionTrait as _, DbErr, EntityTrait as _, QueryOrder as _, TransactionTrait as _};
+use sea_orm::{
+    ActiveValue, ConnectionTrait as _, DbErr, EntityTrait as _, QueryOrder as _,
+    TransactionTrait as _,
+};
 use sea_orm::{DatabaseConnection, TransactionError};
 use serenity::all::{
     CacheHttp as _, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,

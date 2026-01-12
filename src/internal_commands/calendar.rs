@@ -1,4 +1,6 @@
-use crate::{AppError, Context, util::ContextExtras as _, util::calendar::generate_add_calendar_link};
+use crate::{
+    AppError, Context, util::ContextExtras as _, util::calendar::generate_add_calendar_link,
+};
 use anyhow::{Context as _, anyhow};
 
 /// Link Google Calendars to Discord!

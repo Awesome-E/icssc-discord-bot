@@ -1,7 +1,7 @@
 use anyhow::bail;
 use serenity::all::{
-    CacheHttp as _, ComponentInteraction, CreateInteractionResponse, CreateInteractionResponseMessage,
-    Member, RoleId,
+    CacheHttp as _, ComponentInteraction, CreateInteractionResponse,
+    CreateInteractionResponseMessage, Member, RoleId,
 };
 
 use crate::{AppError, AppVars};

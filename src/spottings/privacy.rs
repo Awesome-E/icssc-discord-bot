@@ -6,8 +6,9 @@ use poise::ChoiceParameter;
 use sea_orm::EntityTrait as _;
 use sea_orm::{ActiveValue, DbErr};
 use serenity::all::{
-    CacheHttp as _, Channel, ChannelId, ChannelType, ComponentInteraction, CreateInteractionResponse,
-    CreateInteractionResponseMessage, CreateMessage, GuildChannel, UserId,
+    CacheHttp as _, Channel, ChannelId, ChannelType, ComponentInteraction,
+    CreateInteractionResponse, CreateInteractionResponseMessage, CreateMessage, GuildChannel,
+    UserId,
 };
 
 pub(crate) struct SnipesOptOut<'a> {

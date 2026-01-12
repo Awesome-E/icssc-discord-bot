@@ -5,8 +5,8 @@ use chrono::{DateTime, Duration, NaiveDate, Utc};
 use itertools::Itertools as _;
 use jsonwebtoken::Header;
 use sea_orm::{
-    ActiveValue, ColumnTrait as _, DatabaseConnection, EntityTrait as _, IntoActiveModel as _, ModelTrait as _,
-    QueryFilter as _,
+    ActiveValue, ColumnTrait as _, DatabaseConnection, EntityTrait as _, IntoActiveModel as _,
+    ModelTrait as _, QueryFilter as _,
 };
 use serde::{Deserialize, Serialize};
 use serenity::all::{CommandInteraction, GuildId, ScheduledEventId, ScheduledEventType};
