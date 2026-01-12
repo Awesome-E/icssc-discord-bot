@@ -1,17 +1,33 @@
 # ICSSC Discord Bot
-Discord Utility Bot for ICSSC
+
+![ICSSC Bot Banner](https://cdn.discordapp.com/banners/1413632282136154234/800e62e9f6339a923f2d52f398d646f9.png?size=1280)
+
+A utility bot created for ICSSC's Discord server. *Massive thanks to the ICSSC Graphics Committee for being awesome and drawing up custom assets in line with ICSSC and UCI's graphical themes.*
 
 ## Features
 
-### Spotting Logs
+### Attendance
 
-Discord bot to track "snipes", incidental encounters on the UCI campus, between members of
-the [ICS Student Council](https://icssc.club). Massive thanks to the ICSSC Graphics Committee
-for being awesome and drawing up custom assets in line with ICSSC and UCI's graphical themes.
+Allows users to check in to ICSSC events with the `/checkin` command.
+
+### Bits & Bytes
+
+Allows board members to log bits & bytes meetups with context menu commands
 
 ### Matchy Meetups
 
-Creates pairings between members for ICSSC's Matchy Meetups. Commands include 
+Creates and sends pairings between members for ICSSC's Matchy Meetups every other week.
+Pairings are created with a seed using `/matchy create` and DMd to all individuals using
+`/matchy send`.
+
+### Roster Syncing
+
+Automatically checks which members are out of sync with the ICSSC roster when
+`/roster desynced` is run.
+
+### Spotting Logs
+
+Tracks "snipes" and "socials", incidental encounters on the UCI campus, between members of the [ICS Student Council](https://icssc.club).
 
 ## Local Development
 
