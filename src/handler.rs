@@ -142,8 +142,9 @@ impl EventHandler for LaikaEventHandler {
                 .ephemeral(true),
         );
         let did_create = match &interaction {
-            Interaction::Command(ixn) => ixn.create_response(ctx.http(), new_response).await,
-            Interaction::Autocomplete(ixn) => ixn.create_response(ctx.http(), new_response).await,
+            Interaction::Command(ixn) | Interaction::Autocomplete(ixn) => {
+                ixn.create_response(ctx.http(), new_response).await
+            }
             Interaction::Component(ixn) => ixn.create_response(ctx.http(), new_response).await,
             Interaction::Modal(ixn) => ixn.create_response(ctx.http(), new_response).await,
             _ => return,
