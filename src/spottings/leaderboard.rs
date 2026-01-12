@@ -2,12 +2,12 @@ use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::{AppError, Context};
 use anyhow::{Context as _, anyhow};
 use entity::user_stat;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use migration::NullOrdering;
 use poise::{ChoiceParameter, CreateReply};
 use sea_orm::sea_query::Expr;
-use sea_orm::{EntityTrait, FromQueryResult, Order, QueryOrder, QuerySelect};
-use serenity::all::{CreateEmbed, Mentionable, UserId};
+use sea_orm::{EntityTrait as _, FromQueryResult, Order, QueryOrder as _, QuerySelect as _};
+use serenity::all::{CreateEmbed, Mentionable as _, UserId};
 use std::num::NonZeroUsize;
 
 #[derive(ChoiceParameter, PartialEq, Eq, Copy, Clone, Debug, Hash)]

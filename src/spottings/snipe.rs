@@ -3,22 +3,22 @@ use crate::util::message::get_members;
 use crate::util::modal::ModalInputTexts;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
-use crate::util::{ContextExtras, spottings_embed};
+use crate::util::{ContextExtras as _, spottings_embed};
 use crate::{AppError, AppVars, Context};
 use anyhow::{Context as _, bail};
 use entity::{message, snipe};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use poise::{ChoiceParameter, CreateReply};
-use sea_orm::{ActiveValue, ConnectionTrait, DbErr, EntityTrait, QueryOrder, TransactionTrait};
+use sea_orm::{ActiveValue, ConnectionTrait as _, DbErr, EntityTrait as _, QueryOrder as _, TransactionTrait as _};
 use sea_orm::{DatabaseConnection, TransactionError};
 use serenity::all::{
-    CacheHttp, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,
-    CreateInteractionResponseMessage, CreateModal, GuildId, InputTextStyle, Mentionable,
+    CacheHttp as _, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,
+    CreateInteractionResponseMessage, CreateModal, GuildId, InputTextStyle, Mentionable as _,
     ModalInteraction, ReactionType, User, UserId,
 };
 use std::collections::HashSet;
 use std::num::NonZeroUsize;
-use std::str::FromStr;
+use std::str::FromStr as _;
 use std::time::Duration;
 
 #[derive(PartialEq, Eq, ChoiceParameter)]

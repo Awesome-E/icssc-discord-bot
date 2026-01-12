@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use anyhow::anyhow;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use serde::Deserialize;
 
 use crate::{

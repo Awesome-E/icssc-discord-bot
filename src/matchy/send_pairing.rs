@@ -3,7 +3,7 @@ use super::helpers::{Pairing, add_pairings_to_db, checksum_matching, format_pair
 use crate::Context;
 use crate::util::text::remove_markdown;
 use anyhow::{Context as _, Error, Result, bail, ensure};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use poise::futures_util::future::try_join_all;
 use serenity::all::GuildId;
 use std::collections::HashSet;

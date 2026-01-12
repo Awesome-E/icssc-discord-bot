@@ -1,4 +1,4 @@
-use crate::util::ContextExtras;
+use crate::util::ContextExtras as _;
 use crate::{AppError, Context};
 
 async fn check_db_ok(ctx: &Context<'_>) -> Result<(), AppError> {

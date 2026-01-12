@@ -3,12 +3,12 @@ pub(crate) mod webhook {
     use crate::server::ExtractedAppData;
     use crate::util::calendar::{get_calendar_events, update_discord_events};
     use actix_web::{HttpResponse, Responder, post, web};
-    use anyhow::{Context, anyhow};
+    use anyhow::{Context as _, anyhow};
     use chrono::{Duration, Utc};
     use entity::server_calendar;
     use sea_orm::{
-        ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait,
-        IntoActiveModel, QueryFilter,
+        ActiveModelTrait as _, ActiveValue, ColumnTrait as _, DatabaseConnection, EntityTrait as _,
+        IntoActiveModel as _, QueryFilter as _,
     };
     use serde::{Deserialize, Serialize};
 

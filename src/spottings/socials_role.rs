@@ -1,6 +1,6 @@
 use anyhow::bail;
 use serenity::all::{
-    CacheHttp, ComponentInteraction, CreateInteractionResponse, CreateInteractionResponseMessage,
+    CacheHttp as _, ComponentInteraction, CreateInteractionResponse, CreateInteractionResponseMessage,
     Member, RoleId,
 };
 

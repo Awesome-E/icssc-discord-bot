@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use serenity::all::{InputText, ModalInteraction};
 
 pub(crate) struct ModalInputTexts {

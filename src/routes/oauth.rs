@@ -17,9 +17,9 @@ pub(crate) mod start {
     use actix_web::cookie::time::UtcDateTime;
     use actix_web::cookie::{Cookie, SameSite};
     use actix_web::{HttpResponse, Responder, cookie, get, web};
-    use anyhow::Context;
+    use anyhow::Context as _;
     use jsonwebtoken::Header;
-    use std::ops::Add;
+    use std::ops::Add as _;
 
     #[derive(Debug, Deserialize)]
     struct Query {
@@ -90,10 +90,10 @@ pub(crate) mod cb {
     use actix_web::cookie::{Cookie, SameSite};
     use actix_web::http::StatusCode;
     use actix_web::{HttpRequest, HttpResponse, Responder, get, web};
-    use anyhow::{Context, anyhow, bail};
+    use anyhow::{Context as _, anyhow, bail};
     use chrono::{Duration, Utc};
     use jsonwebtoken::Validation;
-    use sea_orm::{ActiveValue, ColumnTrait, EntityTrait, QueryFilter};
+    use sea_orm::{ActiveValue, ColumnTrait as _, EntityTrait as _, QueryFilter as _};
     use serde::{Deserialize, Serialize};
 
     // JS will give us the query params unchanged

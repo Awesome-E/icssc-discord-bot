@@ -1,8 +1,8 @@
 use anyhow::Context as _;
 use entity::opt_out;
-use itertools::Itertools;
-use sea_orm::QueryFilter;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait};
+use itertools::Itertools as _;
+use sea_orm::QueryFilter as _;
+use sea_orm::{ColumnTrait as _, DatabaseConnection, EntityTrait as _};
 use serenity::all::UserId;
 
 pub async fn opted_out_among(

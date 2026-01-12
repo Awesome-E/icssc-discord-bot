@@ -1,9 +1,9 @@
-use serenity::all::Mentionable;
+use serenity::all::Mentionable as _;
 
 use crate::{
     AppError, Context,
     util::{
-        ContextExtras,
+        ContextExtras as _,
         roster::{RosterSheetRow, get_user_from_discord},
     },
 };

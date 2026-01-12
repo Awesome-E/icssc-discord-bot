@@ -17,11 +17,11 @@ use crate::setup::{
 use anyhow::Context as _;
 use clap::ValueHint;
 use env_vars_struct::env_vars_struct;
-use migration::{Migrator, MigratorTrait};
+use migration::{Migrator, MigratorTrait as _};
 use serenity::Client;
 use serenity::all::GatewayIntents;
 use std::env;
-use std::ops::{BitAnd, Deref};
+use std::ops::{BitAnd as _, Deref};
 use std::path::PathBuf;
 
 env_vars_struct!(

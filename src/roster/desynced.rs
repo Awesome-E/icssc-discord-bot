@@ -3,13 +3,13 @@ use std::collections::{HashMap, HashSet};
 use crate::{
     AppError, Context,
     util::{
-        ContextExtras,
+        ContextExtras as _,
         roster::{RosterSheetRow, get_bulk_members_from_roster},
     },
 };
 use anyhow::Context as _;
-use itertools::Itertools;
-use serenity::{all::Mentionable, futures::StreamExt};
+use itertools::Itertools as _;
+use serenity::{all::Mentionable as _, futures::StreamExt as _};
 
 /// Get a list of members that are out of sync with the roster
 #[poise::command(slash_command, hide_in_help, ephemeral)]

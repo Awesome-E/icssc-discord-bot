@@ -1,12 +1,12 @@
 use crate::server::{ActixData, ExtractedAppData};
 use crate::{AppError, AppVars};
-use anyhow::{Context, bail};
+use anyhow::{Context as _, bail};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use jsonwebtoken::Header;
 use sea_orm::{
-    ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, ModelTrait,
-    QueryFilter,
+    ActiveValue, ColumnTrait as _, DatabaseConnection, EntityTrait as _, IntoActiveModel as _, ModelTrait as _,
+    QueryFilter as _,
 };
 use serde::{Deserialize, Serialize};
 use serenity::all::{CommandInteraction, GuildId, ScheduledEventId, ScheduledEventType};
@@ -15,7 +15,7 @@ use serenity::futures;
 use serenity::http::Http;
 use std::cmp::max;
 use std::collections::HashMap;
-use std::ops::Add;
+use std::ops::Add as _;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 

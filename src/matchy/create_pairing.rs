@@ -3,7 +3,7 @@ use super::helpers::Pairing;
 use super::helpers::{format_id, format_pairs, hash_seed};
 use crate::Context;
 use anyhow::Result;
-use itertools::Itertools;
+use itertools::Itertools as _;
 
 async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<String> {
     let seed = hash_seed(&seed_str);

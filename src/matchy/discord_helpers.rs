@@ -3,7 +3,7 @@ use super::matching::graph_pair;
 use crate::Context;
 use crate::matchy::participation::{get_current_opted_in, get_previous_matches};
 use anyhow::{Result, bail};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use serenity::all::{PartialGuild, RoleId, UserId};
 
 /// Returns a vector of all guild members with the specified role ID.

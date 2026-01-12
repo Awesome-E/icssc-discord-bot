@@ -10,7 +10,7 @@ use crate::{
 };
 use anyhow::{Context as _, anyhow, bail};
 use serenity::all::{
-    CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
+    CacheHttp as _, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
     EditInteractionResponse, InputTextStyle, ModalInteraction, ReactionType,
 };
 

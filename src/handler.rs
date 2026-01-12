@@ -6,9 +6,9 @@ use crate::spottings::privacy::SnipesOptOut;
 use crate::spottings::snipe::confirm_message_spotting_modal;
 use crate::spottings::socials_role::SocialsParticipation;
 use crate::util::text::bot_invite_url;
-use rand::seq::IndexedRandom;
+use rand::seq::IndexedRandom as _;
 use serenity::all::{
-    ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse,
+    ActivityData, ActivityType, CacheHttp as _, Context, CreateInteractionResponse,
     CreateInteractionResponseMessage, EditInteractionResponse, EventHandler, Interaction,
     OnlineStatus, Permissions, Ready,
 };

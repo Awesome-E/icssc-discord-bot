@@ -1,9 +1,9 @@
 use crate::AppVars;
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use entity::{matchy_meetup_opt_in, matchy_meetup_pair_member};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use sea_orm::sea_query::Expr;
-use sea_orm::{EntityTrait, FromQueryResult, QuerySelect};
+use sea_orm::{EntityTrait as _, FromQueryResult, QuerySelect as _};
 use serenity::all::UserId;
 
 /// Gets the currently opted in participants for Matchy Meetups

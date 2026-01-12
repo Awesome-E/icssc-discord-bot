@@ -1,11 +1,11 @@
 use super::helpers::{Match, Pairing};
-use anyhow::{Context, Result, bail, ensure};
-use itertools::Itertools;
+use anyhow::{Context as _, Result, bail, ensure};
+use itertools::Itertools as _;
 use petgraph::Undirected;
 use petgraph::algo::{Matching, maximum_matching};
 use petgraph::matrix_graph::MatrixGraph;
-use rand::prelude::SliceRandom;
-use rand_chacha::rand_core::SeedableRng;
+use rand::prelude::SliceRandom as _;
+use rand_chacha::rand_core::SeedableRng as _;
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, RandomState};

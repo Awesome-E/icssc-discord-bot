@@ -1,12 +1,12 @@
-use crate::util::ContextExtras;
+use crate::util::ContextExtras as _;
 use crate::{AppError, AppVars, Context};
 use anyhow::{Context as _, bail, ensure};
 use entity::opt_out;
 use poise::ChoiceParameter;
-use sea_orm::EntityTrait;
+use sea_orm::EntityTrait as _;
 use sea_orm::{ActiveValue, DbErr};
 use serenity::all::{
-    CacheHttp, Channel, ChannelId, ChannelType, ComponentInteraction, CreateInteractionResponse,
+    CacheHttp as _, Channel, ChannelId, ChannelType, ComponentInteraction, CreateInteractionResponse,
     CreateInteractionResponseMessage, CreateMessage, GuildChannel, UserId,
 };
 

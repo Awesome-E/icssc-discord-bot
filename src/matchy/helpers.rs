@@ -1,10 +1,10 @@
 use crate::{AppError, Context};
 use anyhow::Context as _;
 use entity::{matchy_meetup_pair, matchy_meetup_pair_member, matchy_meetup_round};
-use itertools::Itertools;
-use sea_orm::{ActiveModelTrait, Set, TransactionTrait};
+use itertools::Itertools as _;
+use sea_orm::{ActiveModelTrait as _, Set, TransactionTrait as _};
 use serenity::all::UserId;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{DefaultHasher, Hash, Hasher as _};
 
 /// A Match represents a single set of elements matched together. In the context of matchy meetups
 /// most Matches are pairs, but if there are an odd number there will be one 3-matching.

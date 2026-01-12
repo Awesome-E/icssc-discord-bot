@@ -1,11 +1,11 @@
-use crate::util::ContextExtras;
+use crate::util::ContextExtras as _;
 use crate::{AppError, AppVars, AppVarsInner, Vars, meta, roster};
 use crate::{attendance, bitsnbytes, internal_commands, matchy, spottings};
 use clap::ArgMatches;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use pluralizer::pluralize;
 use poise::{BoxFuture, Command, Framework, FrameworkError, FrameworkOptions};
-use serenity::FutureExt;
+use serenity::FutureExt as _;
 use serenity::all::{Context, GuildId};
 use std::path::PathBuf;
 use std::sync::Arc;

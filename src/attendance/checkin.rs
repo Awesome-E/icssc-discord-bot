@@ -1,11 +1,11 @@
-use std::{collections::HashSet, str::FromStr};
+use std::{collections::HashSet, str::FromStr as _};
 
 use anyhow::{Context as _, Error, Result, bail};
 use chrono::{NaiveDate, NaiveDateTime, Utc};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use serenity::{
     all::{
-        CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
+        CacheHttp as _, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
         EditInteractionResponse, InputTextStyle, ModalInteraction, ReactionType, UserId,
     },
     futures::future,
@@ -14,7 +14,7 @@ use serenity::{
 use crate::{
     AppError, AppVars, Context,
     util::{
-        ContextExtras,
+        ContextExtras as _,
         gsheets::{TokenResponse, get_gsheets_token, get_spreadsheet_range},
         message::get_members,
         modal::ModalInputTexts,

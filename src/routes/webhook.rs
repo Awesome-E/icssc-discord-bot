@@ -1,5 +1,5 @@
 pub(crate) mod add_event_test {
-    use std::str::FromStr;
+    use std::str::FromStr as _;
 
     use actix_web::{HttpResponse, Responder, get};
     use serenity::all::{CreateScheduledEvent, GuildId, ScheduledEventType, Timestamp};
