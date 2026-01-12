@@ -93,7 +93,7 @@ pub fn graph_pair<T: Hash + Eq + Copy>(
         let mut v: Vec<_> = imperfect_match_pairs
             .iter()
             .flatten()
-            .cloned()
+            .copied()
             .map(index_to_element)
             .collect();
         if let Some(remainder) = remainder
