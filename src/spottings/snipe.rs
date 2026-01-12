@@ -414,7 +414,7 @@ pub(crate) async fn history(ctx: Context<'_>) -> Result<(), AppError> {
             })
             .collect_vec(),
         PaginatorOptions::default()
-            .sep("\n\n")
+            .sep("\n\n".into())
             .max_lines(NonZeroUsize::new(10).unwrap())
             .ephemeral(true),
     );

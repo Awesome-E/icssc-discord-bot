@@ -198,7 +198,7 @@ pub(crate) async fn leaderboard(
     let paginator = EmbedLinePaginator::new(
         lines,
         PaginatorOptions::default()
-            .sep("\n")
+            .sep("\n".into())
             .max_lines(NonZeroUsize::new(10).unwrap())
             .ephemeral(true),
     );

@@ -36,18 +36,18 @@ impl PaginatorOptions {
         Self::default()
     }
 
-    pub fn sep(mut self, sep: impl Into<Box<str>>) -> Self {
-        self.sep = sep.into();
+    pub fn sep(mut self, sep: Box<str>) -> Self {
+        self.sep = sep;
         self
     }
 
-    pub fn max_lines(mut self, max_lines: impl Into<NonZeroUsize>) -> Self {
-        self.max_lines = Some(max_lines.into().get());
+    pub fn max_lines(mut self, max_lines: NonZeroUsize) -> Self {
+        self.max_lines = Some(max_lines.get());
         self
     }
 
-    pub fn char_limit(mut self, char_limit: impl Into<NonZeroUsize>) -> Self {
-        self.char_limit = min(char_limit.into().get(), 4096);
+    pub fn char_limit(mut self, char_limit: NonZeroUsize) -> Self {
+        self.char_limit = min(char_limit.get(), 4096);
         self
     }
 
