@@ -149,7 +149,7 @@ fn handle_framework_error(error: FrameworkError<AppVars, AppError>) -> BoxFuture
             _ => ctx.reply_ephemeral("An unknown error occurred").await,
         };
         if let Err(e) = error_res {
-            println!("A further error occurred sending the error message to discord: {e:?}")
+            println!("A further error occurred sending the error message to discord: {e:?}");
         }
     }
     .boxed()

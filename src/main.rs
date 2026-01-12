@@ -170,11 +170,11 @@ async fn main() {
         }
 
         _ = serenity_task => {
-            println!("serenity has stopped")
+            println!("serenity has stopped");
         }
 
         _ = actix_task => {
-            println!("actix has stopped")
+            println!("actix has stopped");
         }
     }
 }
