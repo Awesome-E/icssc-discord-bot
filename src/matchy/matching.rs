@@ -23,9 +23,7 @@ fn shuffled<T>(mut vec: Vec<T>, seed: u64) -> Vec<T> {
 /// Each pair is represented as a smaller vector
 /// within the larger returned vector.
 pub fn random_pair<T: Clone>(vec: Vec<T>, seed: u64) -> Pairing<T> {
-    if vec.len() <= 1 {
-        panic!("Cannot pair with <= 1 elements.")
-    }
+    assert!(vec.len() > 1, "Cannot pair with <= 1 elements.");
     let vec = shuffled(vec, seed);
 
     let chunks = vec.chunks_exact(2);
