@@ -132,7 +132,7 @@ pub(crate) async fn register_commands(
     Ok(())
 }
 
-fn handle_framework_error(error: FrameworkError<AppVars, AppError>) -> BoxFuture<()> {
+fn handle_framework_error(error: FrameworkError<'_, AppVars, AppError>) -> BoxFuture<'_, ()> {
     async move {
         println!("Error: {error}");
 

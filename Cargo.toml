@@ -33,13 +33,31 @@ tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "macros"] }
 uuid = { version = "1.19.0", features = ["v4"] }
 
 [lints.rust]
+ambiguous_negative_literals = "warn"
+deref_into_dyn_supertrait = "warn"
+elided_lifetimes_in_paths = "deny"
+explicit_outlives_requirements = "warn"
+ffi_unwind_calls = "warn"
 let_underscore_lock = "deny"
+linker_messages = "warn"
+macro_use_extern_crate = "deny"
 map_unit_fn = "deny"
 non_ascii_idents = "deny"
+redundant_imports = "deny"
+redundant_lifetimes = "deny"
 redundant_semicolons = "deny"
+trivial_numeric_casts = "warn"
 unit_bindings = "deny"
+unnameable_types = "warn"
+unsafe_attr_outside_unsafe = "deny"
 unsafe_op_in_unsafe_fn = "deny"
+unused_crate_dependencies = "warn"
+unused_import_braces = "warn"
+unused_extern_crates = "warn"
+unused_lifetimes = "warn"
+unused_macro_rules = "warn"
 unused_unsafe = "deny"
+variant_size_differences = "warn"
 
 [lints.clippy]
 allow_attributes = "warn"
