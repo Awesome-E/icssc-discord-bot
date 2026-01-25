@@ -46,7 +46,6 @@ pub async fn create_pairing(
     let resp = handle_create_pairing(ctx, seed)
         .await
         .unwrap_or_else(|e| format!("Error: {e}"));
-    println!("{resp}");
     ctx.say(resp).await?;
     Ok(())
 }

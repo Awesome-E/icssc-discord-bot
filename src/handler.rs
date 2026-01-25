@@ -134,6 +134,7 @@ impl EventHandler for LaikaEventHandler {
             return;
         };
 
+        dbg!(&error);
         let http = ctx.http();
 
         let new_response = CreateInteractionResponse::Message(

@@ -10,10 +10,8 @@ use std::collections::HashSet;
 
 /// Run the /send_pairing command
 async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
-    println!("{} used /send_pairing", ctx.author());
-
     let Some((seed_str, checksum)) = key.rsplit_once('_') else {
-        bail!("Invalid key. Please make sure you only use keys returned by /create_pairing.")
+        bail!("Invalid key. Please make sure you only use keys returned by `/matchy create`")
     };
 
     let channels = &ctx.data().channels;
@@ -33,7 +31,7 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
     ensure!(
         checksum_matching(seed, &pairs) == checksum,
         "Key mismatch. This can happen if you typed the key incorrectly, or the members with the \
-        matchy meetups role have changed since this key was generated. Please call /create_pairing \
+        matchy meetups role have changed since this key was generated. Please call `/matchy create` \
         again to get a new key."
     );
 
@@ -117,7 +115,6 @@ pub async fn send_pairing(
     let resp = handle_send_pairing(ctx, key)
         .await
         .unwrap_or_else(|e| format!("Error: {e}"));
-    println!("{resp}");
     ctx.say(resp).await?;
     Ok(())
 }
