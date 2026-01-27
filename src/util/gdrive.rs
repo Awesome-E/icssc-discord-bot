@@ -1,7 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use jsonwebtoken::{EncodingKey, Header, encode};
-use reqwest::Client;
+use jsonwebtoken::{encode, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 
 use crate::{AppError, AppVars};
@@ -91,7 +90,7 @@ pub(crate) struct PermissionsResponse {
 }
 
 async fn get_permissions_page(
-    client: &Client,
+    data: &AppVars,
     access_token: &str,
     page_token: Option<&str>,
 ) -> Result<PermissionsResponse, AppError> {
@@ -104,8 +103,13 @@ async fn get_permissions_page(
         query.push(("pageToken", tok));
     }
 
-    let resp = client
-        .get("https://www.googleapis.com/drive/v3/files/1UZVILhymFC3EO851vQQR8T1TheXaJzvZAAY8-euPgWY/permissions")
+    let resp = data
+        .http
+        .client
+        .get(format!(
+            "https://www.googleapis.com/drive/v3/files/{}/permissions",
+            data.env.roster_spreadsheet.id
+        ))
         .query(&query)
         .bearer_auth(access_token)
         .send()
@@ -130,7 +134,7 @@ pub(crate) async fn get_file_permissions(
 
     loop {
         let resp = get_permissions_page(
-            &data.http.client,
+            &data,
             &token_resp.access_token,
             next_page_token.as_deref(),
         )
