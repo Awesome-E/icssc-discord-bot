@@ -243,7 +243,7 @@ pub(crate) async fn update_discord_events(
         .filter(server_event::Column::GuildId.eq(calendar.guild_id))
         .filter(server_event::Column::GuildEventId.is_in(deleted_ids));
 
-    let now = Utc::now().add(Duration::seconds(30)).to_utc();
+    let now = Utc::now().add(Duration::seconds(30));
     // changed events => update discord only
     for event in updated {
         let mut payload = EditScheduledEvent::new().name(event.summary.clone());
