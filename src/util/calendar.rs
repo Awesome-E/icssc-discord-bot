@@ -1,6 +1,6 @@
 use crate::server::{ActixData, ExtractedAppData};
 use crate::{AppError, AppVars};
-use anyhow::{Context as _, bail};
+use anyhow::{bail, Context as _};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use itertools::Itertools as _;
 use jsonwebtoken::Header;
@@ -262,15 +262,13 @@ pub(crate) async fn update_discord_events(
             )
             .await;
 
-        let mut move_to_creates = async |event: GoogleCalendarEventDetails,
-                                         entry: &server_event::Model|
-               -> anyhow::Result<()> {
+        let mut move_to_creates = async |event, entry: &server_event::Model| {
             created.push(event);
             // allow nonexistent deletions to silently fail
             let _ = server_event::Entity::delete(entry.clone().into_active_model())
                 .exec(conn)
                 .await;
-            Ok(())
+            anyhow::Ok(())
         };
 
         let curr_event = if let Ok(ev) = curr_event {
