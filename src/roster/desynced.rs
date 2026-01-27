@@ -81,9 +81,11 @@ pub(crate) async fn check_discord_roles(ctx: Context<'_>) -> Result<(), AppError
     Ok(())
 }
 
+const ICSSC_EMAIL: &str = "icssc@uci.edu";
+
 // in case we add more emails, e.g. club advisor, later
 fn is_admin_email(email: &str) -> bool {
-    email == "icssc@uci.edu"
+    email == ICSSC_EMAIL
 }
 
 /// Check whether Google Drive access is desynced from the roster
@@ -104,10 +106,10 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
 
     anyhow::ensure!(
         drive_permissions.iter().any(|u| {
-            u.email_address == "icssc@uci.edu"
+            u.email_address == ICSSC_EMAIL
                 && matches!(u.role, DriveFilePermissionRole::Organizer)
         }),
-        "expected icssc@uci.edu to have organizer access"
+        "expected {ICSSC_EMAIL} to have organizer access"
     );
 
     let mut desynced = Vec::new();
