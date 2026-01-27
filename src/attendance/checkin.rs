@@ -126,8 +126,8 @@ pub(crate) async fn confirm_attendance_log_modal(
     .collect::<Result<Vec<_>, _>>().context("Some user IDs not found")?;
 
     let usernames = participants
-        .iter()
-        .map(|member| member.user.name.clone())
+        .into_iter()
+        .map(|member| member.user.name)
         .collect_vec();
 
     let members = get_bulk_members_from_roster(data, &usernames).await?;
