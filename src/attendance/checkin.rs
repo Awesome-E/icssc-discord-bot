@@ -15,7 +15,8 @@ use crate::{
     AppError, AppVars, Context,
     util::{
         ContextExtras as _,
-        gsheets::{TokenResponse, get_gsheets_token, get_spreadsheet_range},
+        gdrive::TokenResponse,
+        gsheets::{get_gsheets_token, get_spreadsheet_range},
         message::get_members,
         modal::ModalInputTexts,
         roster::{check_in_with_email, get_bulk_members_from_roster, get_user_from_discord},

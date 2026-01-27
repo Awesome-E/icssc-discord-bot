@@ -1,6 +1,14 @@
-use crate::{AppError, Context, roster::desynced::desynced};
+use crate::{
+    AppError, Context,
+    roster::desynced::{check_discord_roles, check_google_access},
+};
 
-#[poise::command(prefix_command, slash_command, subcommands("desynced"), guild_only)]
+#[poise::command(
+    prefix_command,
+    slash_command,
+    subcommands("check_discord_roles", "check_google_access"),
+    guild_only
+)]
 pub(crate) async fn roster(ctx: Context<'_>) -> Result<(), AppError> {
     ctx.reply("base command is a noop").await?;
     Ok(())

@@ -20,6 +20,12 @@ pub(crate) struct RosterSheetRow {
     pub(crate) committees: Vec<String>,
 }
 
+impl RosterSheetRow {
+    pub fn is_board(&self) -> bool {
+        self.committees.iter().any(|c| c == "board")
+    }
+}
+
 fn parse_committees_string(committees_text: &str) -> Vec<String> {
     committees_text
         .split(", ")
