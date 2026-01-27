@@ -5,11 +5,11 @@ use itertools::Itertools as _;
 use serde::Deserialize;
 
 use crate::{
-    AppError, AppVars,
     util::{
         gforms::submit_google_form,
-        gsheets::{SheetsResponse, get_gsheets_token, get_spreadsheet_range},
-    },
+        gsheets::{get_gsheets_token, get_spreadsheet_range, SheetsResponse},
+    }, AppError,
+    AppVars,
 };
 
 #[derive(Debug, Deserialize)]
@@ -18,6 +18,12 @@ pub(crate) struct RosterSheetRow {
     pub(crate) email: String,
     pub(crate) discord: String,
     pub(crate) committees: Vec<String>,
+}
+
+impl RosterSheetRow {
+    pub fn is_board(&self) -> bool {
+        self.committees.iter().any(|c| c == "board")
+    }
 }
 
 fn parse_committees_string(committees_text: &str) -> Vec<String> {

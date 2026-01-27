@@ -1,12 +1,12 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    AppError, Context,
     util::{
+        gdrive::{get_file_permissions, DriveFilePermissionRole},
+        roster::{get_bulk_members_from_roster, RosterSheetRow},
         ContextExtras as _,
-        gdrive::{DriveFilePermissionRole, get_file_permissions},
-        roster::{RosterSheetRow, get_bulk_members_from_roster},
-    },
+    }, AppError,
+    Context,
 };
 use anyhow::Context as _;
 use itertools::Itertools as _;
@@ -110,7 +110,6 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
         })
         .context("expected icssc@uci.edu to have organizer access")?;
 
-    let board = &String::from("board");
     let mut desynced = Vec::new();
 
     // ensure no one on the roster is missing from the drive_permissions list
@@ -124,7 +123,7 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
     while let Some(roster_user) = roster_iter.next()
         && desynced.len() < 20
     {
-        let expected = match roster_user.committees.contains(board) {
+        let expected = match roster_user.is_board() {
             true => "`Manager`",
             false => "`Editor` or `Content Manager`",
         };
@@ -147,7 +146,7 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
         }
 
         let error = match roster_lookup.get(email) {
-            Some(val) => match val.committees.contains(board) {
+            Some(val) => match val.is_board() {
                 true => match &google_user.role {
                     DriveFilePermissionRole::Organizer => continue 'user_with_perms,
                     _ => format!("1. Insufficient: `{email}` is not `Manager`"),
