@@ -334,7 +334,7 @@ pub(crate) async fn update_discord_events(
                 .create_scheduled_event(
                     GuildId::from(calendar.guild_id as u64),
                     &payload,
-                    "Sync from Google Calendar".into(),
+                    Some("Sync from Google Calendar"),
                 )
                 .await;
             let discord_event = match discord_event {
