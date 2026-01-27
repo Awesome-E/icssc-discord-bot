@@ -138,7 +138,7 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
 
     // ensure that all drive_permissions are found in the roster and are consistent with committee.
     let mut perms_iter = drive_permissions.iter();
-    while let Some(google_user) = perms_iter.next()
+    'user_with_perms: while let Some(google_user) = perms_iter.next()
         && desynced.len() < 20
     {
         let email = &google_user.email_address;
@@ -147,30 +147,29 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
         }
 
         let error = match roster_lookup.get(email) {
+            #[allow(clippy::match_same_arms, reason = "readability")]
             Some(val) => match (val.committees.contains(board), &google_user.role) {
-                (true, DriveFilePermissionRole::Organizer)
-                | (
+                (true, DriveFilePermissionRole::Organizer) => continue 'user_with_perms,
+                (true, _) => format!("1. Insufficient: `{email}` is not `Manager`"),
+                (false, DriveFilePermissionRole::Organizer) => format!(
+                    "1. Unexpected: `{email}` should be `Editor` or `Content Manager`, not `Manager`",
+                ),
+                (
                     false,
                     DriveFilePermissionRole::FileOrganizer | DriveFilePermissionRole::Writer,
-                ) => None,
-                (true, _) => Some(format!("1. Insufficient: `{email}` is not `Manager`")),
-                (false, DriveFilePermissionRole::Organizer) => Some(format!(
-                    "1. Unexpected: `{email}` should be `Editor` or `Content Manager`, not `Manager`",
-                )),
-                (false, _) => Some(format!(
-                    "1. Insufficient: `{email}` is not `Editor` or `Content Manager`",
-                )),
+                ) => continue 'user_with_perms,
+                (false, _) => {
+                    format!("1. Insufficient: `{email}` is not `Editor` or `Content Manager`",)
+                }
             },
             None if is_admin_email(email) => match &google_user.role {
-                DriveFilePermissionRole::Organizer => None,
-                _ => Some(format!("1. Insufficient: `{email}` is not `Manager`")),
+                DriveFilePermissionRole::Organizer => continue 'user_with_perms,
+                _ => format!("1. Insufficient: `{email}` is not `Manager`"),
             },
-            None => Some(format!("1. Unexpected: `{email}`")),
+            None => format!("1. Unexpected: `{email}`"),
         };
 
-        if let Some(why) = error {
-            desynced.push(why);
-        }
+        desynced.push(error);
     }
 
     let text = match desynced.len() {
