@@ -147,20 +147,22 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
         }
 
         let error = match roster_lookup.get(email) {
-            #[expect(clippy::match_same_arms, reason = "readability")]
-            Some(val) => match (val.committees.contains(board), &google_user.role) {
-                (true, DriveFilePermissionRole::Organizer) => continue 'user_with_perms,
-                (true, _) => format!("1. Insufficient: `{email}` is not `Manager`"),
-                (false, DriveFilePermissionRole::Organizer) => format!(
-                    "1. Unexpected: `{email}` should be `Editor` or `Content Manager`, not `Manager`",
-                ),
-                (
-                    false,
-                    DriveFilePermissionRole::FileOrganizer | DriveFilePermissionRole::Writer,
-                ) => continue 'user_with_perms,
-                (false, _) => {
-                    format!("1. Insufficient: `{email}` is not `Editor` or `Content Manager`")
-                }
+            Some(val) => match val.committees.contains(board) {
+                true => match &google_user.role {
+                    DriveFilePermissionRole::Organizer => continue 'user_with_perms,
+                    _ => format!("1. Insufficient: `{email}` is not `Manager`"),
+                },
+                false => match &google_user.role {
+                    DriveFilePermissionRole::Organizer => format!(
+                        "1. Unexpected: `{email}` should be `Editor` or `Content Manager`, not `Manager`",
+                    ),
+                    DriveFilePermissionRole::FileOrganizer | DriveFilePermissionRole::Writer => {
+                        continue 'user_with_perms;
+                    }
+                    _ => {
+                        format!("1. Insufficient: `{email}` is not `Editor` or `Content Manager`")
+                    }
+                },
             },
             None if is_admin_email(email) => match &google_user.role {
                 DriveFilePermissionRole::Organizer => continue 'user_with_perms,
