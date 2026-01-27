@@ -64,9 +64,11 @@ async fn add_spottings_to_db(
     conn.transaction::<_, (), DbErr>(move |txn| {
         Box::pin(async move {
             spotting_message::Entity::insert(message_sql)
+                .on_conflict_do_nothing()
                 .exec(txn)
                 .await?;
             spotting_victim::Entity::insert_many(snipes_sql)
+                .on_conflict_do_nothing()
                 .exec(txn)
                 .await?;
 
@@ -214,7 +216,7 @@ pub(crate) async fn confirm_message_spotting_modal(
     .await
     {
         Ok(_) => "ok, logged",
-        _ => "couldn't insert; has this message been logged before?",
+        _ => "couldn't insert :(",
     };
 
     // write the snipe to the db
@@ -340,7 +342,7 @@ pub(crate) async fn post(
 
     let Ok(_) = add_spottings_to_db(conn, r#type, ctx.guild_id().unwrap(), &message, victims).await
     else {
-        ctx.reply_ephemeral("couldn't insert; has this message been logged before?")
+        ctx.reply_ephemeral("couldn't insert :(")
             .await?;
         return Ok(());
     };
