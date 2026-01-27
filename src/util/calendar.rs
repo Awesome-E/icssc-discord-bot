@@ -202,7 +202,7 @@ pub(crate) async fn update_discord_events(
     calendar: &entity::server_calendar::Model,
     conn: &DatabaseConnection,
     http: Arc<Http>,
-    mut events: GoogleCalendarEventListResponse,
+    events: GoogleCalendarEventListResponse,
 ) -> anyhow::Result<()> {
     use entity::server_event;
 
@@ -219,7 +219,7 @@ pub(crate) async fn update_discord_events(
     let mut updated = Vec::new();
     let mut created = Vec::new();
 
-    while let Some(event) = events.items.pop() {
+    for event in events.items.into_iter().rev() {
         match event.status.as_deref() {
             Some("cancelled") => deleted.push(event),
             _ if stored_events.contains_key(&event.id) => updated.push(event),
