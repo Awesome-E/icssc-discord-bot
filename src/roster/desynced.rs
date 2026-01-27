@@ -97,8 +97,8 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
     let roster = get_bulk_members_from_roster(data, &[]).await?;
     let roster_lookup = roster
         .iter()
-        .map(|row| (&row.email, row))
-        .collect::<HashMap<&String, &RosterSheetRow>>();
+        .map(|row| (&*row.email, row))
+        .collect::<HashMap<&str, &RosterSheetRow>>();
 
     let drive_permissions = get_file_permissions(data)
         .await
@@ -142,8 +142,8 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
     'user_with_perms: while let Some(google_user) = perms_iter.next()
         && desynced.len() < 20
     {
-        let email = &google_user.email_address;
-        if *email == data.env.service_account_key.email {
+        let email = &*google_user.email_address;
+        if email == data.env.service_account_key.email {
             continue;
         }
 
