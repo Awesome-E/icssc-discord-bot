@@ -115,7 +115,7 @@ pub(crate) async fn log_bnb_meetup_message(
 
 pub(crate) async fn confirm_bnb_meetup_modal(
     ctx: &serenity::prelude::Context,
-    data: &'_ AppVars,
+    data: &AppVars,
     ixn: &ModalInteraction,
 ) -> Result<(), AppError> {
     let inputs = ModalInputTexts::new(ixn);
