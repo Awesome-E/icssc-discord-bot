@@ -215,9 +215,9 @@ pub(crate) async fn update_discord_events(
         .map(|e| (e.calendar_event_id.clone(), e))
         .collect();
 
-    let mut deleted: Vec<GoogleCalendarEventDetails> = Vec::new();
-    let mut updated: Vec<GoogleCalendarEventDetails> = Vec::new();
-    let mut created: Vec<GoogleCalendarEventDetails> = Vec::new();
+    let mut deleted = Vec::new();
+    let mut updated = Vec::new();
+    let mut created = Vec::new();
 
     while let Some(event) = events.items.pop() {
         match event.status.as_deref() {
