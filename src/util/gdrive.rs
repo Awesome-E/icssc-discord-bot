@@ -100,10 +100,9 @@ async fn get_permissions_page(
         ("supportsTeamDrives", "true"),
     ];
 
-    match page_token {
-        Some(tok) => query.push(("pageToken", tok.clone())),
-        _ => (),
-    };
+    if let Some(tok) = page_token {
+        query.push(("pageToken", tok));
+    }
 
     let resp = client
         .get("https://www.googleapis.com/drive/v3/files/1UZVILhymFC3EO851vQQR8T1TheXaJzvZAAY8-euPgWY/permissions")

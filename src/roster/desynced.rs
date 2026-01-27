@@ -132,7 +132,7 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
             desynced.push(format!(
                 "1. Missing: `{}` is not {}",
                 &roster_user.email, expected
-            ))
+            ));
         }
     }
 
@@ -148,32 +148,29 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
 
         let error = match roster_lookup.get(email) {
             Some(val) => match (val.committees.contains(board), &google_user.role) {
-                (true, DriveFilePermissionRole::Organizer) => None,
-                (true, _) => Some(format!("1. Insufficient: `{}` is not `Manager`", email)),
-                (false, DriveFilePermissionRole::Organizer) => Some(format!(
-                    "1. Unexpected: `{}` should be `Editor` or `Content Manager`, not `Manager`",
-                    email
-                )),
-                (
+                (true, DriveFilePermissionRole::Organizer)
+                | (
                     false,
                     DriveFilePermissionRole::FileOrganizer | DriveFilePermissionRole::Writer,
                 ) => None,
+                (true, _) => Some(format!("1. Insufficient: `{email}` is not `Manager`")),
+                (false, DriveFilePermissionRole::Organizer) => Some(format!(
+                    "1. Unexpected: `{email}` should be `Editor` or `Content Manager`, not `Manager`",
+                )),
                 (false, _) => Some(format!(
-                    "1. Insufficient: `{}` is not `Editor` or `Content Manager`",
-                    email
+                    "1. Insufficient: `{email}` is not `Editor` or `Content Manager`",
                 )),
             },
             None if is_admin_email(email) => match &google_user.role {
                 DriveFilePermissionRole::Organizer => None,
-                _ => Some(format!("1. Insufficient: `{}` is not `Manager`", email)),
+                _ => Some(format!("1. Insufficient: `{email}` is not `Manager`")),
             },
-            None => Some(format!("1. Unexpected: `{}`", email)),
+            None => Some(format!("1. Unexpected: `{email}`")),
         };
 
-        match error {
-            Some(why) => desynced.push(why),
-            None => (),
-        };
+        if let Some(why) = error {
+            desynced.push(why);
+        }
     }
 
     let text = match desynced.len() {
