@@ -102,13 +102,13 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
         .await
         .context("Failed to fetch permissions; ensure service account has access")?;
 
-    drive_permissions
-        .iter()
-        .find(|u| {
+    anyhow::ensure!(
+        drive_permissions.iter().any(|u| {
             u.email_address == "icssc@uci.edu"
                 && matches!(u.role, DriveFilePermissionRole::Organizer)
-        })
-        .context("expected icssc@uci.edu to have organizer access")?;
+        }),
+        "expected icssc@uci.edu to have organizer access"
+    );
 
     let mut desynced = Vec::new();
 
