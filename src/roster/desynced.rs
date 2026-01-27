@@ -147,7 +147,7 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
         }
 
         let error = match roster_lookup.get(email) {
-            #[allow(clippy::match_same_arms, reason = "readability")]
+            #[expect(clippy::match_same_arms, reason = "readability")]
             Some(val) => match (val.committees.contains(board), &google_user.role) {
                 (true, DriveFilePermissionRole::Organizer) => continue 'user_with_perms,
                 (true, _) => format!("1. Insufficient: `{email}` is not `Manager`"),
