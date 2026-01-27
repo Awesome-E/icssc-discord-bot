@@ -4,7 +4,7 @@ use std::{
 };
 
 use actix_web::{App, HttpServer, ResponseError, web};
-use anyhow::Context;
+use anyhow::Context as _;
 use serenity::all::Http;
 
 use crate::{

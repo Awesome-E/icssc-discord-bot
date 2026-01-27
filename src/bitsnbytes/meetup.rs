@@ -10,7 +10,7 @@ use crate::{
 };
 use anyhow::{Context as _, anyhow, bail};
 use serenity::all::{
-    CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
+    CacheHttp as _, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
     EditInteractionResponse, InputTextStyle, ModalInteraction, ReactionType,
 };
 
@@ -50,7 +50,7 @@ async fn get_overview_range(data: &AppVars) -> anyhow::Result<SheetsResponse> {
     Ok(resp)
 }
 
-#[poise::command(context_menu_command = "Log B&B Meetup")]
+#[poise::command(context_menu_command = "Log B&B Meetup", guild_only)]
 pub(crate) async fn log_bnb_meetup_message(
     ctx: Context<'_>,
     message: serenity::all::Message,
@@ -72,8 +72,7 @@ pub(crate) async fn log_bnb_meetup_message(
 
             submitter == byte1 || submitter == byte2
         })
-        .map(|row| row[0].clone())
-        .unwrap_or(String::from(""));
+        .map_or(String::from(""), |row| row[0].clone());
 
     let msg_input = CreateActionRow::InputText(
         CreateInputText::new(InputTextStyle::Short, "Message Link", "message_link")
@@ -114,7 +113,6 @@ pub(crate) async fn log_bnb_meetup_message(
     Ok(())
 }
 
-// TODO potentially make handlers deal with interactions...
 pub(crate) async fn confirm_bnb_meetup_modal(
     ctx: &serenity::prelude::Context,
     data: &'_ AppVars,
@@ -129,8 +127,8 @@ pub(crate) async fn confirm_bnb_meetup_modal(
     ixn.defer_ephemeral(ctx.http()).await?;
 
     let message = message_link
-        .split("/")
-        .last()
+        .split('/')
+        .next_back()
         .ok_or(anyhow!("Invalid link"))
         .and_then(|id| {
             id.parse::<u64>()
@@ -150,7 +148,7 @@ pub(crate) async fn confirm_bnb_meetup_modal(
         .await?;
 
     let _ = message
-        .react(ctx.http(), ReactionType::Unicode("👫".to_string()))
+        .react(ctx.http(), ReactionType::Unicode("👫".to_owned()))
         .await;
 
     Ok(())

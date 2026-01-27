@@ -15,7 +15,8 @@ use crate::{AppError, Context};
         "history",
         "check_snipes_participation",
         "set_snipes_participation"
-    )
+    ),
+    guild_only
 )]
 pub(crate) async fn spottings(ctx: Context<'_>) -> Result<(), AppError> {
     ctx.reply("base command is a noop").await?;

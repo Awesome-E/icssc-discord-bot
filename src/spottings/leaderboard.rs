@@ -2,12 +2,12 @@ use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::{AppError, Context};
 use anyhow::{Context as _, anyhow};
 use entity::user_stat;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use migration::NullOrdering;
 use poise::{ChoiceParameter, CreateReply};
 use sea_orm::sea_query::Expr;
-use sea_orm::{EntityTrait, FromQueryResult, Order, QueryOrder, QuerySelect};
-use serenity::all::{CreateEmbed, Mentionable, UserId};
+use sea_orm::{EntityTrait as _, FromQueryResult, Order, QueryOrder as _, QuerySelect as _};
+use serenity::all::{CreateEmbed, Mentionable as _, UserId};
 use std::num::NonZeroUsize;
 
 #[derive(ChoiceParameter, PartialEq, Eq, Copy, Clone, Debug, Hash)]
@@ -187,8 +187,7 @@ pub(crate) async fn leaderboard(
                     i + 1,
                     UserId::from(mdl.id as u64).mention(),
                     mdl.snipe_rate
-                        .map(|n| n.to_string())
-                        .unwrap_or(String::from("N/A"))
+                        .map_or(String::from("N/A"), |n| n.to_string())
                 )
                 .into_boxed_str()
             })
@@ -198,7 +197,7 @@ pub(crate) async fn leaderboard(
     let paginator = EmbedLinePaginator::new(
         lines,
         PaginatorOptions::default()
-            .sep("\n")
+            .sep("\n".into())
             .max_lines(NonZeroUsize::new(10).unwrap())
             .ephemeral(true),
     );

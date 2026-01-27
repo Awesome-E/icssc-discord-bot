@@ -3,7 +3,7 @@ use super::helpers::Pairing;
 use super::helpers::{format_id, format_pairs, hash_seed};
 use crate::Context;
 use anyhow::Result;
-use itertools::Itertools;
+use itertools::Itertools as _;
 
 async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<String> {
     let seed = hash_seed(&seed_str);
@@ -15,7 +15,7 @@ async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<Str
         seed_str,
         super::helpers::checksum_matching(seed, &pairs)
     );
-    let num_members: usize = pairs.iter().map(|p| p.len()).sum();
+    let num_members: usize = pairs.iter().map(Vec::len).sum();
     let imperfect_matches_message = if imperfect_matches.is_empty() {
         "All members were matched with new people".to_owned()
     } else {
@@ -46,7 +46,6 @@ pub async fn create_pairing(
     let resp = handle_create_pairing(ctx, seed)
         .await
         .unwrap_or_else(|e| format!("Error: {e}"));
-    println!("{resp}");
     ctx.say(resp).await?;
     Ok(())
 }

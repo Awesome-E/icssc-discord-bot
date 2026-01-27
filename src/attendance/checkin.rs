@@ -1,11 +1,11 @@
-use std::{collections::HashSet, str::FromStr};
+use std::{collections::HashSet, str::FromStr as _};
 
 use anyhow::{Context as _, Error, Result, bail};
 use chrono::{NaiveDate, NaiveDateTime, Utc};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use serenity::{
     all::{
-        CacheHttp, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
+        CacheHttp as _, CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal,
         EditInteractionResponse, InputTextStyle, ModalInteraction, ReactionType, UserId,
     },
     futures::future,
@@ -13,14 +13,13 @@ use serenity::{
 
 use crate::{
     AppError, AppVars, Context,
-    attendance::roster_helpers::{
-        check_in_with_email, get_bulk_members_from_roster, get_user_from_discord,
-    },
     util::{
-        ContextExtras,
-        gsheets::{TokenResponse, get_gsheets_token, get_spreadsheet_range},
+        ContextExtras as _,
+        gdrive::TokenResponse,
+        gsheets::{get_gsheets_token, get_spreadsheet_range},
         message::get_members,
         modal::ModalInputTexts,
+        roster::{check_in_with_email, get_bulk_members_from_roster, get_user_from_discord},
     },
 };
 
@@ -36,7 +35,7 @@ pub(crate) async fn checkin(ctx: Context<'_>) -> Result<(), Error> {
 
     let username = &ctx.author().name;
     let Ok(Some(user)) =
-        get_user_from_discord(ctx.data(), Some(&access_token), username.to_string()).await
+        get_user_from_discord(ctx.data(), Some(&access_token), username.clone()).await
     else {
         ctx.reply_ephemeral(
             "\
@@ -53,7 +52,7 @@ Discord username on the internal roster is correct.",
     if !success {
         ctx.reply_ephemeral("Unable to check in").await?;
         return Ok(());
-    };
+    }
 
     ctx.reply_ephemeral(format!("Successfully checked in as {}", user.name))
         .await?;
@@ -61,7 +60,7 @@ Discord username on the internal roster is correct.",
 }
 
 /// Count a message as attendance for an ICSSC event
-#[poise::command(context_menu_command = "Log Attendance")]
+#[poise::command(context_menu_command = "Log Attendance", guild_only)]
 pub(crate) async fn log_attendance(
     ctx: Context<'_>,
     message: serenity::all::Message,
@@ -73,7 +72,7 @@ pub(crate) async fn log_attendance(
     let members: HashSet<String> = get_members(&message, true);
 
     // create inputs
-    let msg_input: CreateActionRow = CreateActionRow::InputText(
+    let msg_input = CreateActionRow::InputText(
         CreateInputText::new(InputTextStyle::Short, "Message ID", "message_id")
             .value(message.id.to_string())
             .required(true),
@@ -118,14 +117,14 @@ pub(crate) async fn confirm_attendance_log_modal(
     let attendees = inputs.get_required_value("participants")?;
     let event_name = inputs.get_value("event_name")?;
 
-    let participant_ids = attendees.split("\n");
+    let participant_ids = attendees.split('\n');
     let participants = future::join_all(participant_ids.clone().filter_map(|s| {
         let uid = UserId::from_str(s.trim()).ok()?;
         Some(ixn.guild_id?.member(ctx.http(), uid))
     }))
     .await
     .into_iter()
-    .filter_map(|item| item.ok())
+    .filter_map(Result::ok)
     .collect_vec();
 
     if participant_ids.collect_vec().len() != participants.len() {
@@ -141,7 +140,7 @@ pub(crate) async fn confirm_attendance_log_modal(
     let is_missing = members.len() != usernames.len();
     if is_missing {
         bail!("user lookup failed");
-    };
+    }
 
     ixn.defer_ephemeral(ctx.http()).await?;
 
@@ -166,7 +165,7 @@ pub(crate) async fn confirm_attendance_log_modal(
         .await?;
 
     let _ = message
-        .react(ctx.http(), ReactionType::Unicode("👋".to_string()))
+        .react(ctx.http(), ReactionType::Unicode("👋".to_owned()))
         .await;
 
     Ok(())
@@ -190,7 +189,7 @@ async fn get_events_attended_text(
 
             if row_email != *email {
                 return None;
-            };
+            }
 
             let current_time = Utc::now().time();
             let datetime = NaiveDateTime::parse_from_str(&time, "%m/%d/%Y %H:%M:%S")
@@ -224,7 +223,7 @@ pub(crate) async fn attended(ctx: Context<'_>) -> Result<(), Error> {
 
     let username = &ctx.author().name;
     let Ok(Some(user)) =
-        get_user_from_discord(ctx.data(), Some(&access_token), username.to_string()).await
+        get_user_from_discord(ctx.data(), Some(&access_token), username.clone()).await
     else {
         ctx.reply_ephemeral(
             "\

@@ -1,12 +1,12 @@
 use crate::server::{ActixData, ExtractedAppData};
 use crate::{AppError, AppVars};
-use anyhow::{Context, bail};
+use anyhow::{Context as _, bail};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use jsonwebtoken::Header;
 use sea_orm::{
-    ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, ModelTrait,
-    QueryFilter,
+    ActiveValue, ColumnTrait as _, DatabaseConnection, EntityTrait as _, IntoActiveModel as _,
+    ModelTrait as _, QueryFilter as _,
 };
 use serde::{Deserialize, Serialize};
 use serenity::all::{CommandInteraction, GuildId, ScheduledEventId, ScheduledEventType};
@@ -15,7 +15,7 @@ use serenity::futures;
 use serenity::http::Http;
 use std::cmp::max;
 use std::collections::HashMap;
-use std::ops::Add;
+use std::ops::Add as _;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -43,7 +43,7 @@ pub(crate) fn generate_add_calendar_link(
     let jwt = AddCalendarInteractionTrigger {
         guild_id: ixn
             .guild_id
-            .map(|v| v.get())
+            .map(GuildId::get)
             .context("Generate oauth link => guild id")?,
         interaction_token: ixn.token.clone(),
         calendar_id,
@@ -130,8 +130,7 @@ pub(crate) async fn get_calendar_events(
         .http
         .client
         .get(format!(
-            "https://www.googleapis.com/calendar/v3/calendars/{}/events",
-            calendar_id
+            "https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events",
         ))
         .query(&[
             ("showDeleted", "true"), /*("updatedMin", "")*/
@@ -149,7 +148,7 @@ pub(crate) async fn get_calendar_events(
 
     if result.is_err() {
         dbg!(&result);
-    };
+    }
 
     result
 }
@@ -250,10 +249,10 @@ pub(crate) async fn update_discord_events(
         let mut payload = EditScheduledEvent::new().name(event.summary.clone());
         if let Some(desc) = &event.description {
             payload = payload.description(desc);
-        };
+        }
 
         // by definition of `updated`, it's in stored_events
-        let curr_evt_entry = stored_events.get(&event.id).unwrap();
+        let curr_evt_entry = &stored_events[&event.id];
         // TODO handle cases where event has already finished or was deleted by user or completed
         let curr_event = http
             .get_scheduled_event(
@@ -274,19 +273,18 @@ pub(crate) async fn update_discord_events(
             Ok(())
         };
 
-        let curr_event = match curr_event {
-            Ok(ev) => match ev.end_time {
+        let curr_event = if let Ok(ev) = curr_event {
+            match ev.end_time {
                 Some(end) if end > now.into() => ev,
                 Some(_) => {
                     move_to_creates(event, curr_evt_entry).await?;
                     continue;
                 }
                 None => ev,
-            },
-            _ => {
-                move_to_creates(event, curr_evt_entry).await?;
-                continue;
             }
+        } else {
+            move_to_creates(event, curr_evt_entry).await?;
+            continue;
         };
 
         // Editable if the event on Discord has not started yet
@@ -298,8 +296,8 @@ pub(crate) async fn update_discord_events(
             if let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.end {
                 let new_end = max(new_start, date_time);
                 payload = payload.end_time(new_end);
-            };
-        };
+            }
+        }
 
         http.edit_scheduled_event(
             GuildId::from(calendar.guild_id as u64),
@@ -328,7 +326,7 @@ pub(crate) async fn update_discord_events(
                     .location(location);
             if let Some(desc) = event.description {
                 payload = payload.description(desc);
-            };
+            }
             if let GoogleCalendarEventTime::DateAndTime { date_time, .. } = event.end {
                 let end = max(start, date_time);
                 payload = payload.end_time(end);

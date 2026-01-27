@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use anyhow::anyhow;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use serde::Deserialize;
 
 use crate::{
@@ -17,6 +17,20 @@ pub(crate) struct RosterSheetRow {
     pub(crate) name: String,
     pub(crate) email: String,
     pub(crate) discord: String,
+    pub(crate) committees: Vec<String>,
+}
+
+impl RosterSheetRow {
+    pub fn is_board(&self) -> bool {
+        self.committees.iter().any(|c| c == "board")
+    }
+}
+
+fn parse_committees_string(committees_text: &str) -> Vec<String> {
+    committees_text
+        .split(", ")
+        .map(|val| val.to_lowercase().replace('_', ""))
+        .collect_vec()
 }
 
 async fn get_roster_rows(
@@ -51,12 +65,13 @@ pub(crate) async fn get_user_from_discord(
         .values
         .into_iter()
         .filter_map(|row| {
-            let row = row.into_iter().collect_array::<3>()?;
-            let [name, email, discord] = row;
+            let [name, email, discord, committees] = row.into_iter().collect_array::<4>()?;
+            let committees = parse_committees_string(&committees);
             Some(RosterSheetRow {
-                name: name.to_string(),
-                email: email.to_string(),
-                discord: discord.to_string(),
+                name,
+                email,
+                discord,
+                committees,
             })
         })
         .find(|row| row.discord.to_lowercase() == username);
@@ -75,9 +90,10 @@ pub(crate) async fn get_bulk_members_from_roster(
         .values
         .into_iter()
         .filter_map(|row| {
-            let [name, email, discord] = row.into_iter().collect_array::<3>()?;
+            let [name, email, discord, committees] = row.into_iter().collect_array::<4>()?;
+            let committees = parse_committees_string(&committees);
 
-            let found = usernames.contains(&discord.to_lowercase());
+            let found = usernames.is_empty() || usernames.contains(&discord.to_lowercase());
             if !found {
                 return None;
             }
@@ -86,6 +102,7 @@ pub(crate) async fn get_bulk_members_from_roster(
                 name,
                 email,
                 discord,
+                committees,
             })
         })
         .collect_vec();
@@ -107,7 +124,7 @@ pub(crate) async fn check_in_with_email(
 
     if let Some(reason) = reason {
         payload.push((&fields.event_input_id, reason));
-    };
+    }
 
     submit_google_form(&data.http.client, &fields.id, &payload)
         .await

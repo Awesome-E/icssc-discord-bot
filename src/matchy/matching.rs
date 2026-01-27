@@ -1,11 +1,11 @@
 use super::helpers::{Match, Pairing};
-use anyhow::{Context, Result, bail, ensure};
-use itertools::Itertools;
+use anyhow::{Context as _, Result, bail, ensure};
+use itertools::Itertools as _;
 use petgraph::Undirected;
 use petgraph::algo::{Matching, maximum_matching};
 use petgraph::matrix_graph::MatrixGraph;
-use rand::prelude::SliceRandom;
-use rand_chacha::rand_core::SeedableRng;
+use rand::prelude::SliceRandom as _;
+use rand_chacha::rand_core::SeedableRng as _;
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, RandomState};
@@ -23,14 +23,12 @@ fn shuffled<T>(mut vec: Vec<T>, seed: u64) -> Vec<T> {
 /// Each pair is represented as a smaller vector
 /// within the larger returned vector.
 pub fn random_pair<T: Clone>(vec: Vec<T>, seed: u64) -> Pairing<T> {
-    if vec.len() <= 1 {
-        panic!("Cannot pair with <= 1 elements.")
-    }
+    assert!(vec.len() > 1, "Cannot pair with <= 1 elements.");
     let vec = shuffled(vec, seed);
 
     let chunks = vec.chunks_exact(2);
     let remainder = chunks.remainder();
-    let mut x: Vec<Vec<T>> = chunks.map(|chunk| chunk.to_vec()).collect();
+    let mut x: Vec<Vec<T>> = chunks.map(ToOwned::to_owned).collect();
     x.last_mut().unwrap().extend_from_slice(remainder);
     Pairing(x, Vec::new())
 }
@@ -95,7 +93,7 @@ pub fn graph_pair<T: Hash + Eq + Copy>(
         let mut v: Vec<_> = imperfect_match_pairs
             .iter()
             .flatten()
-            .cloned()
+            .copied()
             .map(index_to_element)
             .collect();
         if let Some(remainder) = remainder
@@ -137,7 +135,7 @@ fn build_matching_graph<T: Hash + Eq + Copy>(
             // convert a Match into an iterable of edges of type NodeId
             // each edge has the smaller index first
             m.iter()
-                .flat_map(|u| nodes.get(u))
+                .filter_map(|u| nodes.get(u))
                 .copied()
                 .tuple_combinations()
                 .map(ConstraintEdge::new)
@@ -170,8 +168,8 @@ fn pair_unmatched(
         "got more than 1 remainder"
     );
     (
-        unmatched_pairs.clone().map(|p| p.to_vec()).collect(),
-        unmatched_pairs.remainder().first().cloned(),
+        unmatched_pairs.clone().map(ToOwned::to_owned).collect(),
+        unmatched_pairs.remainder().first().copied(),
     )
 }
 

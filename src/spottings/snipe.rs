@@ -3,22 +3,25 @@ use crate::util::message::get_members;
 use crate::util::modal::ModalInputTexts;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
-use crate::util::{ContextExtras, spottings_embed};
+use crate::util::{ContextExtras as _, spottings_embed};
 use crate::{AppError, AppVars, Context};
 use anyhow::{Context as _, bail};
-use entity::{message, snipe};
-use itertools::Itertools;
+use entity::{spotting_message, spotting_victim};
+use itertools::Itertools as _;
 use poise::{ChoiceParameter, CreateReply};
-use sea_orm::{ActiveValue, ConnectionTrait, DbErr, EntityTrait, QueryOrder, TransactionTrait};
+use sea_orm::{
+    ActiveValue, ConnectionTrait as _, DbErr, EntityTrait as _, QueryOrder as _,
+    TransactionTrait as _,
+};
 use sea_orm::{DatabaseConnection, TransactionError};
 use serenity::all::{
-    CacheHttp, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,
-    CreateInteractionResponseMessage, CreateModal, GuildId, InputTextStyle, Mentionable,
+    CacheHttp as _, CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,
+    CreateInteractionResponseMessage, CreateModal, GuildId, InputTextStyle, Mentionable as _,
     ModalInteraction, ReactionType, User, UserId,
 };
 use std::collections::HashSet;
 use std::num::NonZeroUsize;
-use std::str::FromStr;
+use std::str::FromStr as _;
 use std::time::Duration;
 
 #[derive(PartialEq, Eq, ChoiceParameter)]
@@ -33,8 +36,8 @@ async fn add_spottings_to_db(
     guild_id: GuildId,
     message: &serenity::all::Message,
     victims: impl IntoIterator<Item = UserId>,
-) -> Result<(), TransactionError<DbErr>> {
-    let message_sql = message::ActiveModel {
+) -> Result<(), TransactionError<sea_orm::DbErr>> {
+    let message_sql = spotting_message::ActiveModel {
         // command is guild_only
         guild_id: ActiveValue::Set(guild_id.into()),
         channel_id: ActiveValue::Set(message.channel_id.into()),
@@ -49,7 +52,7 @@ async fn add_spottings_to_db(
 
     let snipes_sql = victims
         .into_iter()
-        .map(|victim| snipe::ActiveModel {
+        .map(|victim| spotting_victim::ActiveModel {
             message_id: ActiveValue::Set(message.id.into()),
             victim_id: ActiveValue::Set(victim.into()),
             latitude: ActiveValue::Set(None),
@@ -60,8 +63,14 @@ async fn add_spottings_to_db(
 
     conn.transaction::<_, (), DbErr>(move |txn| {
         Box::pin(async move {
-            message::Entity::insert(message_sql).on_conflict_do_nothing().exec(txn).await?;
-            snipe::Entity::insert_many(snipes_sql).on_conflict_do_nothing().exec(txn).await?;
+            spotting_message::Entity::insert(message_sql)
+                .on_conflict_do_nothing()
+                .exec(txn)
+                .await?;
+            spotting_victim::Entity::insert_many(snipes_sql)
+                .on_conflict_do_nothing()
+                .exec(txn)
+                .await?;
 
             txn.execute_unprepared("REFRESH MATERIALIZED VIEW user_stat")
                 .await?;
@@ -149,7 +158,7 @@ pub(crate) async fn confirm_message_spotting_modal(
 
     let spotted_uids = inputs
         .get_required_value("spotting_modal_spotted")?
-        .split("\n")
+        .split('\n')
         .filter_map(|s| {
             // TODO validate that user ids are actually in the server
             UserId::from_str(s.trim()).ok()
@@ -193,7 +202,7 @@ pub(crate) async fn confirm_message_spotting_modal(
             SpottingType::Snipe => "👏",
             SpottingType::Social => "🙌",
         }
-        .to_string(),
+        .to_owned(),
     );
 
     // write snipe to db
@@ -316,7 +325,7 @@ pub(crate) async fn post(
         )
         .await?;
 
-    let waited = match handle
+    let Some(waited) = handle
         .message()
         .await?
         .await_component_interaction(&ctx.serenity_context().shard)
@@ -324,18 +333,10 @@ pub(crate) async fn post(
         .custom_ids(vec![String::from(post_confirm_id)])
         .timeout(Duration::from_secs(15))
         .await
-    {
-        None => {
-            ctx.reply_ephemeral("ok, nevermind then").await?;
-            return Ok(());
-        }
-        Some(ixn) => {
-            // defer here?
-            ixn
-        }
+    else {
+        ctx.reply_ephemeral("ok, nevermind then").await?;
+        return Ok(());
     };
-
-    // command is guild_only
 
     let victims = victims.into_iter().map(|user| user.id).collect_vec();
 
@@ -383,11 +384,11 @@ pub(crate) async fn post(
 pub(crate) async fn history(ctx: Context<'_>) -> Result<(), AppError> {
     let conn = &ctx.data().db;
 
-    let got = message::Entity::find()
+    let got = spotting_message::Entity::find()
         // .column_as(Expr::cust("array_agg(snipe.victim_id)"), "victims")
-        .find_with_related(snipe::Entity)
+        .find_with_related(spotting_victim::Entity)
         // .group_by(message::Column::MessageId)
-        .order_by_desc(message::Column::MessageId)
+        .order_by_desc(spotting_message::Column::MessageId)
         // .into_model::<ImplodedSnipes>()
         .all(conn)
         .await
@@ -414,7 +415,7 @@ pub(crate) async fn history(ctx: Context<'_>) -> Result<(), AppError> {
             })
             .collect_vec(),
         PaginatorOptions::default()
-            .sep("\n\n")
+            .sep("\n\n".into())
             .max_lines(NonZeroUsize::new(10).unwrap())
             .ephemeral(true),
     );

@@ -4,10 +4,11 @@ use crate::bitsnbytes::meetup::confirm_bnb_meetup_modal;
 use crate::matchy::opt_in::MatchyMeetupOptIn;
 use crate::spottings::privacy::SnipesOptOut;
 use crate::spottings::snipe::confirm_message_spotting_modal;
+use crate::spottings::socials_role::SocialsParticipation;
 use crate::util::text::bot_invite_url;
-use rand::seq::IndexedRandom;
+use rand::seq::IndexedRandom as _;
 use serenity::all::{
-    ActivityData, ActivityType, CacheHttp, Context, CreateInteractionResponse,
+    ActivityData, ActivityType, CacheHttp as _, Context, CreateInteractionResponse,
     CreateInteractionResponseMessage, EditInteractionResponse, EventHandler, Interaction,
     OnlineStatus, Permissions, Ready,
 };
@@ -69,7 +70,6 @@ impl EventHandler for LaikaEventHandler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         let response = match &interaction {
             Interaction::Component(interaction) => match interaction.data.custom_id.as_str() {
-                // TODO consider creating enums for custom IDs to avoid magic strings
                 "matchy_opt_in" => {
                     MatchyMeetupOptIn::new(&ctx, &self.data)
                         .join(interaction)
@@ -85,7 +85,6 @@ impl EventHandler for LaikaEventHandler {
                         .check(interaction)
                         .await
                 }
-                // TODO make this better
                 "snipes_opt_in" => {
                     SnipesOptOut::new(&ctx, &self.data)
                         .opt_in(interaction)
@@ -98,6 +97,21 @@ impl EventHandler for LaikaEventHandler {
                 }
                 "snipes_check_participation" => {
                     SnipesOptOut::new(&ctx, &self.data).check(interaction).await
+                }
+                "socials_opt_in" => {
+                    SocialsParticipation::new(&ctx, &self.data)
+                        .opt_in(interaction)
+                        .await
+                }
+                "socials_opt_out" => {
+                    SocialsParticipation::new(&ctx, &self.data)
+                        .opt_out(interaction)
+                        .await
+                }
+                "socials_check_participation" => {
+                    SocialsParticipation::new(&ctx, &self.data)
+                        .check(interaction)
+                        .await
                 }
                 _ => Ok(()),
             },
@@ -120,6 +134,7 @@ impl EventHandler for LaikaEventHandler {
             return;
         };
 
+        dbg!(&error);
         let http = ctx.http();
 
         let new_response = CreateInteractionResponse::Message(
@@ -128,8 +143,9 @@ impl EventHandler for LaikaEventHandler {
                 .ephemeral(true),
         );
         let did_create = match &interaction {
-            Interaction::Command(ixn) => ixn.create_response(ctx.http(), new_response).await,
-            Interaction::Autocomplete(ixn) => ixn.create_response(ctx.http(), new_response).await,
+            Interaction::Command(ixn) | Interaction::Autocomplete(ixn) => {
+                ixn.create_response(ctx.http(), new_response).await
+            }
             Interaction::Component(ixn) => ixn.create_response(ctx.http(), new_response).await,
             Interaction::Modal(ixn) => ixn.create_response(ctx.http(), new_response).await,
             _ => return,
@@ -142,8 +158,9 @@ impl EventHandler for LaikaEventHandler {
         };
 
         let _ = match interaction {
-            Interaction::Command(ixn) => ixn.edit_response(http, edit_response).await,
-            Interaction::Autocomplete(ixn) => ixn.edit_response(http, edit_response).await,
+            Interaction::Command(ixn) | Interaction::Autocomplete(ixn) => {
+                ixn.edit_response(http, edit_response).await
+            }
             Interaction::Component(ixn) => ixn.edit_response(http, edit_response).await,
             Interaction::Modal(ixn) => ixn.edit_response(http, edit_response).await,
             _ => return,

@@ -4,21 +4,24 @@ mod handler;
 mod internal_commands;
 mod matchy;
 mod meta;
+mod roster;
 mod routes;
 mod server;
 mod setup;
 mod spottings;
 mod util;
 
-use crate::setup::{ChannelVars, HttpVars, create_bot_framework_options, register_commands};
+use crate::setup::{
+    ChannelVars, HttpVars, RoleVars, create_bot_framework_options, register_commands,
+};
 use anyhow::Context as _;
 use clap::ValueHint;
 use env_vars_struct::env_vars_struct;
-use migration::{Migrator, MigratorTrait};
+use migration::{Migrator, MigratorTrait as _};
 use serenity::Client;
 use serenity::all::GatewayIntents;
 use std::env;
-use std::ops::{BitAnd, Deref};
+use std::ops::{BitAnd as _, Deref};
 use std::path::PathBuf;
 
 env_vars_struct!(
@@ -44,6 +47,7 @@ env_vars_struct!(
     "BOT__CHANNELS__MATCHY",
     "BOT__CHANNELS__SPOTTINGS",
     "BOT__DISCORD_TOKEN",
+    "BOT__ROLES__SOCIALS_PING",
     "GOOGLE_OAUTH_CLIENT__ID",
     "GOOGLE_OAUTH_CLIENT__SECRET",
     "ROSTER_SPREADSHEET__ID",
@@ -57,6 +61,7 @@ struct AppVarsInner {
     env: Vars,
     db: sea_orm::DatabaseConnection,
     channels: ChannelVars,
+    roles: RoleVars,
     http: HttpVars,
 }
 
@@ -87,6 +92,7 @@ impl AppVars {
                 db: connection,
                 channels: ChannelVars::new(&env),
                 http: HttpVars::new(&env),
+                roles: RoleVars::new(&env),
                 env,
             }),
         }
@@ -164,11 +170,11 @@ async fn main() {
         }
 
         _ = serenity_task => {
-            println!("serenity has stopped")
+            println!("serenity has stopped");
         }
 
         _ = actix_task => {
-            println!("actix has stopped")
+            println!("actix has stopped");
         }
     }
 }

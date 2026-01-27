@@ -1,5 +1,5 @@
-use discord_md::generate::{ToMarkdownString, ToMarkdownStringOption};
-use itertools::Itertools;
+use discord_md::generate::{ToMarkdownString as _, ToMarkdownStringOption};
+use itertools::Itertools as _;
 use serenity::all::{Permissions, UserId};
 use std::fmt::Display;
 

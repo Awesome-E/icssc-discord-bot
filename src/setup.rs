@@ -1,21 +1,20 @@
-use crate::util::ContextExtras;
-use crate::{AppError, AppVars, AppVarsInner, Vars, meta};
+use crate::util::ContextExtras as _;
+use crate::{AppError, AppVars, AppVarsInner, Vars, meta, roster};
 use crate::{attendance, bitsnbytes, internal_commands, matchy, spottings};
 use clap::ArgMatches;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use pluralizer::pluralize;
 use poise::{BoxFuture, Command, Framework, FrameworkError, FrameworkOptions};
-use serenity::FutureExt;
+use serenity::FutureExt as _;
 use serenity::all::{Context, GuildId};
 use std::path::PathBuf;
 use std::sync::Arc;
 
 pub(crate) fn load_env(args: &ArgMatches) {
-    dotenv::from_filename(
+    let _ = dotenvy::from_filename(
         args.get_one::<PathBuf>("config")
             .expect("config file is bad path?"),
-    )
-    .ok();
+    );
 }
 
 // Env Setup
@@ -46,6 +45,22 @@ impl ChannelVars {
                 .spottings
                 .parse::<_>()
                 .expect("BOT__CHANNELS__SPOTTINGS must be valid u64"),
+        }
+    }
+}
+
+pub(crate) struct RoleVars {
+    pub(crate) socials_role_id: u64,
+}
+impl RoleVars {
+    pub(crate) fn new(env: &Vars) -> Self {
+        Self {
+            socials_role_id: env
+                .bot
+                .roles
+                .socials_ping
+                .parse::<_>()
+                .expect("BOT__ROLES__SOCIALS__PING must be valid u64"),
         }
     }
 }
@@ -94,15 +109,15 @@ pub(crate) async fn register_commands(
         .bot
         .commands
         .guilds
-        .split(",")
-        .map(|s| s.trim())
+        .split(',')
+        .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(|id| GuildId::from(id.parse::<u64>().expect("guild id not valid snowflake")))
         .collect_vec();
 
     poise::builtins::register_globally(ctx, global_registration).await?;
 
-    for id in guilds.iter() {
+    for id in &guilds {
         poise::builtins::register_in_guild(ctx, local_registration, *id).await?;
     }
 
@@ -117,7 +132,7 @@ pub(crate) async fn register_commands(
     Ok(())
 }
 
-fn handle_framework_error(error: FrameworkError<AppVars, AppError>) -> BoxFuture<()> {
+fn handle_framework_error(error: FrameworkError<'_, AppVars, AppError>) -> BoxFuture<'_, ()> {
     async move {
         println!("Error: {error}");
 
@@ -133,7 +148,7 @@ fn handle_framework_error(error: FrameworkError<AppVars, AppError>) -> BoxFuture
             _ => ctx.reply_ephemeral("An unknown error occurred").await,
         };
         if let Err(e) = error_res {
-            println!("A further error occurred sending the error message to discord: {e:?}")
+            println!("A further error occurred sending the error message to discord: {e:?}");
         }
     }
     .boxed()
@@ -163,6 +178,8 @@ fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
         spottings::command::spottings(),
         spottings::snipe::log_message_spotting(),
         internal_commands::calendar::calendar_command(),
+        roster::user_lookup::user_lookup(),
+        roster::command::roster(),
     ]
 }
 

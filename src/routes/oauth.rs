@@ -17,9 +17,9 @@ pub(crate) mod start {
     use actix_web::cookie::time::UtcDateTime;
     use actix_web::cookie::{Cookie, SameSite};
     use actix_web::{HttpResponse, Responder, cookie, get, web};
-    use anyhow::Context;
+    use anyhow::Context as _;
     use jsonwebtoken::Header;
-    use std::ops::Add;
+    use std::ops::Add as _;
 
     #[derive(Debug, Deserialize)]
     struct Query {
@@ -64,7 +64,7 @@ pub(crate) mod start {
         Ok(HttpResponse::Found()
             .insert_header(("Location", goog_request.url().as_str()))
             .cookie(
-                Cookie::build("oauth_state", encoded.to_string())
+                Cookie::build("oauth_state", encoded.clone())
                     .max_age(cookie::time::Duration::minutes(10))
                     .same_site(SameSite::Lax) // not defaulted on firefox and safari
                     .path("/")
@@ -90,10 +90,10 @@ pub(crate) mod cb {
     use actix_web::cookie::{Cookie, SameSite};
     use actix_web::http::StatusCode;
     use actix_web::{HttpRequest, HttpResponse, Responder, get, web};
-    use anyhow::{Context, anyhow, bail};
+    use anyhow::{Context as _, anyhow, bail};
     use chrono::{Duration, Utc};
     use jsonwebtoken::Validation;
-    use sea_orm::{ActiveValue, ColumnTrait, EntityTrait, QueryFilter};
+    use sea_orm::{ActiveValue, ColumnTrait as _, EntityTrait as _, QueryFilter as _};
     use serde::{Deserialize, Serialize};
 
     // JS will give us the query params unchanged
@@ -135,9 +135,8 @@ pub(crate) mod cb {
 
         let OAuthCbGoogQuery {
             code: Some(code),
-            error: Option::None,
+            error: None,
             state,
-            ..
         } = info.into_inner()
         else {
             return Err(anyhow!("OAuth code was missing"));
@@ -172,7 +171,7 @@ pub(crate) mod cb {
             .await
         {
             Err(e) => {
-                return Err(anyhow!("OAuth exchange error: {}", e))?;
+                bail!("OAuth exchange error: {e}");
             }
             Ok(response) => response,
         }
