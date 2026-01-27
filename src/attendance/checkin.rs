@@ -46,13 +46,12 @@ Discord username on the internal roster is correct.",
         return Ok(());
     };
 
-    let success = check_in_with_email(ctx.data(), &user.email, None)
+    let Ok(_) = check_in_with_email(ctx.data(), &user.email, None)
         .await
-        .is_ok();
-    if !success {
+    else {
         ctx.reply_ephemeral("Unable to check in").await?;
         return Ok(());
-    }
+    };
 
     ctx.reply_ephemeral(format!("Successfully checked in as {}", user.name))
         .await?;
