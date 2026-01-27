@@ -123,12 +123,7 @@ pub(crate) async fn confirm_attendance_log_modal(
     }))
     .await
     .into_iter()
-    .filter_map(Result::ok)
-    .collect_vec();
-
-    if participant_ids.collect_vec().len() != participants.len() {
-        bail!("Some user IDs not found");
-    }
+    .collect::<Result<Vec<_>, _>>().context("Some user IDs not found")?;
 
     let usernames = participants
         .iter()
