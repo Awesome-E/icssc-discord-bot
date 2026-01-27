@@ -4,6 +4,7 @@ use crate::{
     AppError, Context,
     util::{
         ContextExtras as _,
+        gdrive::{DriveFilePermissionRole, get_file_permissions},
         roster::{RosterSheetRow, get_bulk_members_from_roster},
     },
 };
@@ -11,9 +12,9 @@ use anyhow::Context as _;
 use itertools::Itertools as _;
 use serenity::{all::Mentionable as _, futures::StreamExt as _};
 
-/// Get a list of members that are out of sync with the roster
+/// Get a list of server members whose roles are out of sync with the roster
 #[poise::command(slash_command, hide_in_help, ephemeral)]
-pub(crate) async fn desynced(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn check_discord_roles(ctx: Context<'_>) -> Result<(), AppError> {
     ctx.defer_ephemeral().await?;
 
     let roster = get_bulk_members_from_roster(ctx.data(), &[]).await?;
@@ -72,6 +73,111 @@ pub(crate) async fn desynced(ctx: Context<'_>) -> Result<(), AppError> {
 
     let text = match desynced.len() {
         0 => String::from("All users are in sync!"),
+        _ => desynced.join("\n"),
+    };
+
+    ctx.reply_ephemeral(text).await?;
+
+    Ok(())
+}
+
+// in case we add more emails, e.g. club advisor, later
+fn is_admin_email(email: &str) -> bool {
+    email == "icssc@uci.edu"
+}
+
+/// Check whether Google Drive access is desynced from the roster
+#[poise::command(slash_command, hide_in_help, ephemeral)]
+pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError> {
+    ctx.defer_ephemeral().await?;
+    let data = ctx.data();
+
+    let roster = get_bulk_members_from_roster(data, &[]).await?;
+    let roster_lookup = roster
+        .iter()
+        .map(|row| (&row.email, row))
+        .collect::<HashMap<&String, &RosterSheetRow>>();
+
+    let drive_permissions = get_file_permissions(data)
+        .await
+        .context("Failed to fetch permissions; ensure service account has access")?;
+
+    drive_permissions
+        .iter()
+        .find(|u| {
+            u.email_address == "icssc@uci.edu"
+                && matches!(u.role, DriveFilePermissionRole::Organizer)
+        })
+        .context("expected icssc@uci.edu to have organizer access")?;
+
+    let board = &String::from("board");
+    let mut desynced = Vec::new();
+
+    // ensure no one on the roster is missing from the drive_permissions list
+    // insufficient permissions are handled when iterating the drive_permissions list, not here
+    let mut roster_iter = roster.iter();
+    let emails_with_access = drive_permissions
+        .iter()
+        .map(|u| u.email_address.as_str())
+        .collect::<HashSet<&str>>();
+
+    while let Some(roster_user) = roster_iter.next()
+        && desynced.len() < 20
+    {
+        let expected = match roster_user.committees.contains(board) {
+            true => "`Manager`",
+            false => "`Editor` or `Content Manager`",
+        };
+        if !emails_with_access.contains(roster_user.email.as_str()) {
+            desynced.push(format!(
+                "1. Missing: `{}` is not {}",
+                &roster_user.email, expected
+            ))
+        }
+    }
+
+    // ensure that all drive_permissions are found in the roster and are consistent with committee.
+    let mut perms_iter = drive_permissions.iter();
+    while let Some(google_user) = perms_iter.next()
+        && desynced.len() < 20
+    {
+        let email = &google_user.email_address;
+        if *email == data.env.service_account_key.email {
+            continue;
+        }
+
+        let error = match roster_lookup.get(email) {
+            Some(val) => match (val.committees.contains(board), &google_user.role) {
+                (true, DriveFilePermissionRole::Organizer) => None,
+                (true, _) => Some(format!("1. Insufficient: `{}` is not `Manager`", email)),
+                (false, DriveFilePermissionRole::Organizer) => Some(format!(
+                    "1. Unexpected: `{}` should be `Editor` or `Content Manager`, not `Manager`",
+                    email
+                )),
+                (
+                    false,
+                    DriveFilePermissionRole::FileOrganizer | DriveFilePermissionRole::Writer,
+                ) => None,
+                (false, _) => Some(format!(
+                    "1. Insufficient: `{}` is not `Editor` or `Content Manager`",
+                    email
+                )),
+            },
+            None if is_admin_email(email) => match &google_user.role {
+                DriveFilePermissionRole::Organizer => None,
+                _ => Some(format!("1. Insufficient: `{}` is not `Manager`", email)),
+            },
+            None => Some(format!("1. Unexpected: `{}`", email)),
+        };
+
+        match error {
+            Some(why) => desynced.push(why),
+            None => (),
+        };
+    }
+
+    let text = match desynced.len() {
+        0 => String::from("All Google Drive users are in sync!"),
         _ => desynced.join("\n"),
     };
 

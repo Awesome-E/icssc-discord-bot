@@ -1,4 +1,5 @@
 pub(crate) mod calendar;
+pub(crate) mod gdrive;
 pub(crate) mod gforms;
 pub(crate) mod gsheets;
 pub(crate) mod message;
