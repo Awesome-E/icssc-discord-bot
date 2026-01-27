@@ -342,8 +342,7 @@ pub(crate) async fn post(
 
     let Ok(_) = add_spottings_to_db(conn, r#type, ctx.guild_id().unwrap(), &message, victims).await
     else {
-        ctx.reply_ephemeral("couldn't insert :(")
-            .await?;
+        ctx.reply_ephemeral("couldn't insert :(").await?;
         return Ok(());
     };
 

@@ -133,9 +133,8 @@ pub(crate) async fn get_file_permissions(
     let mut permissions = vec![];
 
     loop {
-        let resp =
-            get_permissions_page(data, &token_resp.access_token, next_page_token.as_deref())
-                .await?;
+        let resp = get_permissions_page(data, &token_resp.access_token, next_page_token.as_deref())
+            .await?;
 
         permissions.extend(resp.permissions);
         match resp.next_page_token {
