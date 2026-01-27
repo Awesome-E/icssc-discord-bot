@@ -5,11 +5,11 @@ use itertools::Itertools as _;
 use serde::Deserialize;
 
 use crate::{
+    AppError, AppVars,
     util::{
         gforms::submit_google_form,
-        gsheets::{get_gsheets_token, get_spreadsheet_range, SheetsResponse},
-    }, AppError,
-    AppVars,
+        gsheets::{SheetsResponse, get_gsheets_token, get_spreadsheet_range},
+    },
 };
 
 #[derive(Debug, Deserialize)]

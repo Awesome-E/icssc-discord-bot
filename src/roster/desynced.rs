@@ -1,12 +1,12 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
+    AppError, Context,
     util::{
-        gdrive::{get_file_permissions, DriveFilePermissionRole},
-        roster::{get_bulk_members_from_roster, RosterSheetRow},
         ContextExtras as _,
-    }, AppError,
-    Context,
+        gdrive::{DriveFilePermissionRole, get_file_permissions},
+        roster::{RosterSheetRow, get_bulk_members_from_roster},
+    },
 };
 use anyhow::Context as _;
 use itertools::Itertools as _;
@@ -106,8 +106,7 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
 
     anyhow::ensure!(
         drive_permissions.iter().any(|u| {
-            u.email_address == ICSSC_EMAIL
-                && matches!(u.role, DriveFilePermissionRole::Organizer)
+            u.email_address == ICSSC_EMAIL && matches!(u.role, DriveFilePermissionRole::Organizer)
         }),
         "expected {ICSSC_EMAIL} to have organizer access"
     );
