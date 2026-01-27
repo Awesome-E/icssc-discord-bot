@@ -135,7 +135,7 @@ pub(crate) async fn confirm_bnb_meetup_modal(
                 .context("unexpected non-numerical message ID")
         })
         .map(|id| ixn.channel_id.message(ctx.http(), id))
-        .context("Cannnot find the original message")?
+        .context("Cannot find the original message")?
         .await?;
 
     // submit the B&B Google Form
