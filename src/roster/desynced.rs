@@ -153,12 +153,12 @@ pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError
                     _ => format!("1. Insufficient: `{email}` is not `Manager`"),
                 },
                 false => match &google_user.role {
-                    DriveFilePermissionRole::Organizer => format!(
-                        "1. Unexpected: `{email}` should be `Editor` or `Content Manager`, not `Manager`",
-                    ),
                     DriveFilePermissionRole::FileOrganizer | DriveFilePermissionRole::Writer => {
                         continue 'user_with_perms;
                     }
+                    DriveFilePermissionRole::Organizer => format!(
+                        "1. Unexpected: `{email}` should be `Editor` or `Content Manager`, not `Manager`",
+                    ),
                     _ => {
                         format!("1. Insufficient: `{email}` is not `Editor` or `Content Manager`")
                     }
