@@ -1,6 +1,6 @@
 use std::{collections::HashSet, str::FromStr as _};
 
-use anyhow::{bail, Context as _, Error};
+use anyhow::{Context as _, Error, bail};
 use chrono::{NaiveDate, NaiveDateTime, Utc};
 use itertools::Itertools as _;
 use serenity::{
@@ -12,15 +12,15 @@ use serenity::{
 };
 
 use crate::{
+    AppError, AppVars, Context,
     util::{
+        ContextExtras as _,
         gdrive::TokenResponse,
         gsheets::{get_gsheets_token, get_spreadsheet_range},
         message::get_members,
         modal::ModalInputTexts,
         roster::{check_in_with_email, get_bulk_members_from_roster, get_user_from_discord},
-        ContextExtras as _,
-    }, AppError, AppVars,
-    Context,
+    },
 };
 
 /// Check into today's ICSSC event!
@@ -42,13 +42,11 @@ pub(crate) async fn checkin(ctx: Context<'_>) -> Result<(), Error> {
 Cannot find a matching internal member. Double check that your \
 Discord username on the internal roster is correct.",
         )
-            .await?;
+        .await?;
         return Ok(());
     };
 
-    let Ok(_) = check_in_with_email(ctx.data(), &user.email, None)
-        .await
-    else {
+    let Ok(_) = check_in_with_email(ctx.data(), &user.email, None).await else {
         ctx.reply_ephemeral("Unable to check in").await?;
         return Ok(());
     };
@@ -87,8 +85,8 @@ pub(crate) async fn log_attendance(
             "Who was at this event?",
             "participants",
         )
-            .value(members.iter().join("\n"))
-            .required(true),
+        .value(members.iter().join("\n"))
+        .required(true),
     );
 
     let modal = CreateModal::new("attendance_log_modal_confirm", "Confirm Attendance")
@@ -123,7 +121,8 @@ pub(crate) async fn confirm_attendance_log_modal(
     }))
     .await
     .into_iter()
-    .collect::<Result<Vec<_>, _>>().context("Some user IDs not found")?;
+    .collect::<Result<Vec<_>, _>>()
+    .context("Some user IDs not found")?;
 
     let usernames = participants
         .into_iter()
@@ -224,7 +223,7 @@ pub(crate) async fn attended(ctx: Context<'_>) -> Result<(), Error> {
 Cannot find a matching internal member. Double check that your \
 Discord username on the internal roster is correct.",
         )
-            .await?;
+        .await?;
         return Ok(());
     };
 
