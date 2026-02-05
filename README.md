@@ -23,7 +23,7 @@ Pairings are created with a seed using `/matchy create` and DMd to all individua
 ### Roster Syncing
 
 Automatically checks which members are out of sync with the ICSSC roster when
-`/roster desynced` is run.
+`/roster check_discord_roles` or `/roster check_google_access` is run.
 
 ### Spotting Logs
 
