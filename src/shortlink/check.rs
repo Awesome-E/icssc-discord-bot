@@ -1,5 +1,6 @@
 use anyhow::{Context as _, bail};
 use reqwest::StatusCode;
+use urlencoding::encode;
 
 use crate::{AppError, Context, util::ContextExtras as _};
 
@@ -13,8 +14,7 @@ pub(crate) async fn check(
         .redirect(reqwest::redirect::Policy::none())
         .build()?;
 
-    // TODO url-encode the identifier
-    let url = format!("https://icssc.link/{identifier}");
+    let url = format!("https://icssc.link/{}", encode(&identifier));
     let response = client
         .get(url) // head requests are not supported by icssc.link
         .send()

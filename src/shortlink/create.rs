@@ -4,6 +4,7 @@ use chrono::Utc;
 use regex::Regex;
 use reqwest::{StatusCode, Url};
 use serde_json::json;
+use urlencoding::encode;
 
 async fn reply_link_style_error(ctx: &Context<'_>, cause: &str) -> Result<(), AppError> {
     let guide_url = &ctx.data().env.shortlink.style_guide_url;
@@ -101,12 +102,11 @@ pub(crate) async fn create(
     // has a 401 status on the sign in redirect. I'd rather a wrong link get created (since it
     // can be overridden) than a correct link get blocked.
 
-    // TODO url-encode the identifier
     let response_status = client
         .post("https://icssc.link/") // head requests are not supported by icssc.link
         .bearer_auth(&data.env.shortlink.secret)
         .json(&json!({
-            "Identifier": identifier.as_str(),
+            "Identifier": encode(&identifier),
             "Target": correct_url
         }))
         .send()
