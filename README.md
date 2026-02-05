@@ -29,6 +29,10 @@ Automatically checks which members are out of sync with the ICSSC roster when
 
 Tracks "snipes" and "socials", incidental encounters on the UCI campus, between members of the [ICS Student Council](https://icssc.club).
 
+### Short Link Creation
+
+Creates icssc.link short links with `/shortlink create` and checks the destination URLs of shortened links with `/shortlink check`.
+
 ## Local Development
 
 ### Setup
