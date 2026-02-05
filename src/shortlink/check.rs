@@ -20,7 +20,7 @@ pub(crate) async fn check(
         .send()
         .await?;
 
-    let destination: &str = match response.status() {
+    let destination = match response.status() {
         StatusCode::MOVED_PERMANENTLY
         | StatusCode::FOUND
         | StatusCode::TEMPORARY_REDIRECT

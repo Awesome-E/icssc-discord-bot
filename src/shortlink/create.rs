@@ -2,7 +2,7 @@ use crate::{AppError, Context, util::ContextExtras as _};
 use anyhow::Context as _;
 use chrono::Utc;
 use regex::Regex;
-use reqwest::StatusCode;
+use reqwest::{StatusCode, Url};
 use serde_json::json;
 
 async fn reply_link_style_error(ctx: &Context<'_>, cause: &str) -> Result<(), AppError> {
@@ -70,12 +70,12 @@ pub(crate) async fn create(
         return Ok(());
     }
 
-    if reqwest::Url::parse(&destination).is_err() {
+    let Ok(dest_url) = Url::parse(&destination) else {
         return reply_invalid_destination_error(&ctx, "Destination must be a valid url").await;
-    }
+    };
 
     // sometimes google form short links do not immediately redirect
-    let is_short_gform_link = Regex::new(r"^https://forms.gle")?.is_match(&destination);
+    let is_short_gform_link = dest_url.domain().is_some_and(|d| d == "forms.gle");
     if is_short_gform_link {
         return reply_invalid_destination_error(
             &ctx,
@@ -89,7 +89,9 @@ pub(crate) async fn create(
 
     let attempted_destination_resp = client.get(&destination).send().await?;
 
-    let is_google_link = Regex::new(r"https://([\w.]+)google.com/")?.is_match(&destination);
+    let is_google_link = dest_url
+        .domain()
+        .is_some_and(|d| Regex::new(r"\bgoogle\.com").is_ok_and(|r| r.is_match(d)));
     let correct_url = match is_google_link {
         true => &destination,
         false => attempted_destination_resp.url().as_str(),
