@@ -1,6 +1,6 @@
 use crate::server::{ActixData, ExtractedAppData};
 use crate::{AppError, AppVars};
-use anyhow::{bail, Context as _};
+use anyhow::{Context as _, bail};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use itertools::Itertools as _;
 use jsonwebtoken::Header;

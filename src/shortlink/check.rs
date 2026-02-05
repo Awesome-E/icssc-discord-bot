@@ -1,15 +1,13 @@
 use anyhow::{Context as _, bail};
 use reqwest::StatusCode;
 
-use crate::{AppError, Context, util::ContextExtras};
-
+use crate::{AppError, Context, util::ContextExtras as _};
 
 /// Returns where the shortlink redirects to
 #[poise::command(slash_command, hide_in_help, ephemeral)]
 pub(crate) async fn check(
     ctx: Context<'_>,
-    #[description = "the identifier of the shortlink, e.g. committee-apps"]
-    identifier: String,
+    #[description = "the identifier of the shortlink, e.g. committee-apps"] identifier: String,
 ) -> Result<(), AppError> {
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
@@ -23,10 +21,10 @@ pub(crate) async fn check(
         .await?;
 
     let destination: &str = match response.status() {
-        StatusCode::MOVED_PERMANENTLY |
-        StatusCode::FOUND |
-        StatusCode::TEMPORARY_REDIRECT |
-        StatusCode::PERMANENT_REDIRECT => response
+        StatusCode::MOVED_PERMANENTLY
+        | StatusCode::FOUND
+        | StatusCode::TEMPORARY_REDIRECT
+        | StatusCode::PERMANENT_REDIRECT => response
             .headers()
             .get("location")
             .context("Cannot determine location")?
