@@ -44,3 +44,8 @@ Tracks "snipes" and "socials", incidental encounters on the UCI campus, between 
 - `sea-orm-cli migrate up`
 - `sea-orm-cli generate entity -o entity/src/entities`
     - Revert the removed line in `entities/mod.rs` for the materialized view :P
+
+## Todos
+- make sure most commands use administrator
+- make `Context`s less confusing between poise, serenity, and crate
+  
