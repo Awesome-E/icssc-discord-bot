@@ -23,11 +23,15 @@ Pairings are created with a seed using `/matchy create` and DMd to all individua
 ### Roster Syncing
 
 Automatically checks which members are out of sync with the ICSSC roster when
-`/roster desynced` is run.
+`/roster check_discord_roles` or `/roster check_google_access` is run.
 
 ### Spotting Logs
 
 Tracks "snipes" and "socials", incidental encounters on the UCI campus, between members of the [ICS Student Council](https://icssc.club).
+
+### Short Link Creation
+
+Creates icssc.link short links with `/shortlink create` and checks the destination URLs of shortened links with `/shortlink check`.
 
 ## Local Development
 
@@ -44,3 +48,8 @@ Tracks "snipes" and "socials", incidental encounters on the UCI campus, between 
 - `sea-orm-cli migrate up`
 - `sea-orm-cli generate entity -o entity/src/entities`
     - Revert the removed line in `entities/mod.rs` for the materialized view :P
+
+## Todos
+- make sure most commands use administrator
+- make `Context`s less confusing between poise, serenity, and crate
+  
