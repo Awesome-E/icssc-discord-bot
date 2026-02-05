@@ -8,6 +8,7 @@ mod roster;
 mod routes;
 mod server;
 mod setup;
+mod shortlink;
 mod spottings;
 mod util;
 
@@ -55,6 +56,8 @@ env_vars_struct!(
     "SERVICE_ACCOUNT_KEY__ID",
     "SERVICE_ACCOUNT_KEY__EMAIL",
     "SERVICE_ACCOUNT_KEY__PEM",
+    "SHORTLINK__SECRET",
+    "SHORTLINK__STYLE_GUIDE_URL",
 );
 
 struct AppVarsInner {
