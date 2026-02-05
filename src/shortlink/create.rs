@@ -92,7 +92,7 @@ pub(crate) async fn create(
 
     let is_google_link = dest_url
         .domain()
-        .is_some_and(|d| Regex::new(r"\bgoogle\.com").is_ok_and(|r| r.is_match(d)));
+        .is_some_and(|d| d == "google.com" || d.ends_with(".google.com"));
     let correct_url = match is_google_link {
         true => &destination,
         false => attempted_destination_resp.url().as_str(),

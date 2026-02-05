@@ -27,7 +27,7 @@ pub(crate) async fn check(
         | StatusCode::PERMANENT_REDIRECT => response
             .headers()
             .get("location")
-            .context("Cannot determine location")?
+            .context("Invalid redirect url")?
             .to_str()?,
         other_status => bail!("{other_status}"),
     };
