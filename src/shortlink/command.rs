@@ -9,8 +9,7 @@ use crate::{
     prefix_command,
     slash_command,
     subcommands("check", "create"),
-    guild_only,
-    required_permissions = "ADMINISTRATOR"
+    guild_only
 )]
 pub(crate) async fn shortlink(ctx: Context<'_>) -> Result<(), AppError> {
     ctx.reply("base command is a noop").await?;
