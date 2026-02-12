@@ -1,6 +1,6 @@
 use super::helpers::Pairing;
 use super::matching::graph_pair;
-use crate::Context;
+use crate::AppContext;
 use crate::matchy::participation::{get_current_opted_in, get_previous_matches};
 use anyhow::{Result, bail};
 use itertools::Itertools as _;
@@ -8,7 +8,7 @@ use serenity::all::{PartialGuild, RoleId, UserId};
 
 /// Returns a vector of all guild members with the specified role ID.
 async fn guild_members_with_role(
-    ctx: &Context<'_>,
+    ctx: &AppContext<'_>,
     guild: &PartialGuild,
     role_id: RoleId,
 ) -> Result<Vec<UserId>> {
@@ -47,7 +47,7 @@ async fn guild_members_with_role(
 
 /// Pairs members with ROLE_NAME in the guild together.
 /// The result is a pairing of
-pub async fn match_members(ctx: Context<'_>, seed: u64) -> Result<Pairing<UserId>> {
+pub async fn match_members(ctx: AppContext<'_>, seed: u64) -> Result<Pairing<UserId>> {
     let participants = get_current_opted_in(ctx.data()).await?;
     if participants.len() <= 1 {
         bail!(

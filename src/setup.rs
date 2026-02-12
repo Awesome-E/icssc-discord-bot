@@ -6,7 +6,7 @@ use itertools::Itertools as _;
 use pluralizer::pluralize;
 use poise::{BoxFuture, Command, Framework, FrameworkError, FrameworkOptions};
 use serenity::FutureExt as _;
-use serenity::all::{Context, GuildId};
+use serenity::all::GuildId;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -96,7 +96,7 @@ impl HttpVars {
 
 pub(crate) async fn register_commands(
     data: Arc<AppVarsInner>,
-    ctx: &Context,
+    ctx: &serenity::all::Context,
     framework: &Framework<AppVars, AppError>,
 ) -> Result<(), AppError> {
     let is_global = !data.env.bot.commands.register_globally.is_empty();

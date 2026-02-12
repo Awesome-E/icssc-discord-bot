@@ -1,9 +1,9 @@
-use crate::Context;
+use crate::AppContext;
 use crate::matchy::helpers::add_pairings_to_db;
 use crate::matchy::participation::get_previous_matches;
 use anyhow::{Error, Result};
 
-async fn handle_dump_pairings(ctx: &Context<'_>) -> Result<String> {
+async fn handle_dump_pairings(ctx: &AppContext<'_>) -> Result<String> {
     let prev_matches = get_previous_matches(ctx.data()).await?;
 
     add_pairings_to_db(ctx, prev_matches).await?;
@@ -13,7 +13,7 @@ async fn handle_dump_pairings(ctx: &Context<'_>) -> Result<String> {
 
 /// Dump pairing history from the current channel into the database
 #[poise::command(slash_command, hide_in_help, required_permissions = "ADMINISTRATOR")]
-pub async fn dump_pairings(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn dump_pairings(ctx: AppContext<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
     let resp = handle_dump_pairings(&ctx)
         .await

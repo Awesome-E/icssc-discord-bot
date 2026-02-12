@@ -1,4 +1,4 @@
-use crate::{AppError, Context, util::ContextExtras as _};
+use crate::{AppError, AppContext, util::ContextExtras as _};
 use anyhow::Context as _;
 use chrono::Utc;
 use regex::Regex;
@@ -6,7 +6,7 @@ use reqwest::{StatusCode, Url};
 use serde_json::json;
 use urlencoding::encode;
 
-async fn reply_link_style_error(ctx: &Context<'_>, cause: &str) -> Result<(), AppError> {
+async fn reply_link_style_error(ctx: &AppContext<'_>, cause: &str) -> Result<(), AppError> {
     let guide_url = &ctx.data().env.shortlink.style_guide_url;
     ctx.reply_ephemeral(format!(
         "Link shortener [style guide]({guide_url}) error: {cause}"
@@ -15,7 +15,7 @@ async fn reply_link_style_error(ctx: &Context<'_>, cause: &str) -> Result<(), Ap
     Ok(())
 }
 
-async fn validate_identifier(ctx: &Context<'_>, identifier: &str) -> Result<bool, AppError> {
+async fn validate_identifier(ctx: &AppContext<'_>, identifier: &str) -> Result<bool, AppError> {
     let regex = Regex::new(&Utc::now().format(r"(\b|\D)(%Y|%y)").to_string())
         .context("invalid year regex")?;
 
@@ -51,7 +51,7 @@ async fn validate_identifier(ctx: &Context<'_>, identifier: &str) -> Result<bool
     Ok(true)
 }
 
-async fn reply_invalid_destination_error(ctx: &Context<'_>, cause: &str) -> Result<(), AppError> {
+async fn reply_invalid_destination_error(ctx: &AppContext<'_>, cause: &str) -> Result<(), AppError> {
     ctx.reply_ephemeral(format!("Invalid destination url: {cause}"))
         .await?;
     Ok(())
@@ -60,7 +60,7 @@ async fn reply_invalid_destination_error(ctx: &Context<'_>, cause: &str) -> Resu
 /// Create a new icssc.link short link
 #[poise::command(slash_command, hide_in_help, ephemeral)]
 pub(crate) async fn create(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     #[description = "the identifier of the shortlink, e.g. committee-apps"] identifier: String,
     #[description = "The link to redirect to. Paste a full, unshortened link (NOT forms.gle, tinyurl, etc.)"]
     destination: String,

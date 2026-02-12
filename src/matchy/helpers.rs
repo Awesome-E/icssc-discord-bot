@@ -1,4 +1,4 @@
-use crate::{AppError, Context};
+use crate::{AppError, AppContext};
 use anyhow::Context as _;
 use entity::{matchy_meetup_pair, matchy_meetup_pair_member, matchy_meetup_round};
 use itertools::Itertools as _;
@@ -53,7 +53,7 @@ pub fn format_pairs(pairs: &[Match<UserId>]) -> String {
 }
 
 pub(crate) async fn add_pairings_to_db(
-    ctx: &Context<'_>,
+    ctx: &AppContext<'_>,
     pairs: Vec<Vec<UserId>>,
 ) -> Result<(), AppError> {
     let round_sql = matchy_meetup_round::ActiveModel {

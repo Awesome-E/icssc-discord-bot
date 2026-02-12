@@ -1,5 +1,5 @@
 use crate::util::ContextExtras as _;
-use crate::{AppError, AppVars, Context};
+use crate::{AppError, AppVars, AppContext};
 use anyhow::{Context as _, bail, ensure};
 use entity::snipe_opt_out;
 use poise::ChoiceParameter;
@@ -12,12 +12,12 @@ use serenity::all::{
 };
 
 pub(crate) struct SnipesOptOut<'a> {
-    ctx: &'a serenity::client::Context,
+    ctx: &'a serenity::all::Context,
     data: &'a AppVars,
 }
 
 impl<'a> SnipesOptOut<'a> {
-    pub(crate) fn new(ctx: &'a serenity::client::Context, data: &'a AppVars) -> Self {
+    pub(crate) fn new(ctx: &'a serenity::all::Context, data: &'a AppVars) -> Self {
         Self { ctx, data }
     }
 
@@ -136,7 +136,7 @@ impl<'a> SnipesOptOut<'a> {
 
 /// See whether you're opted out of being sniped
 #[poise::command(prefix_command, slash_command)]
-pub(crate) async fn check_snipes_participation(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn check_snipes_participation(ctx: AppContext<'_>) -> Result<(), AppError> {
     let got = snipe_opt_out::Entity::find_by_id(ctx.author().id.get() as i64)
         .one(&ctx.data().db)
         .await
@@ -164,7 +164,7 @@ enum OptInStatus {
 /// Opt in or out of being sniped
 #[poise::command(prefix_command, slash_command)]
 pub(crate) async fn set_snipes_participation(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     #[description = "New value you want to set"] target: OptInStatus,
 ) -> Result<(), AppError> {
     let conn = &ctx.data().db;

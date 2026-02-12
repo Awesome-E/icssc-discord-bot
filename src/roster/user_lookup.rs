@@ -1,7 +1,7 @@
 use serenity::all::Mentionable as _;
 
 use crate::{
-    AppError, Context,
+    AppError, AppContext,
     util::{
         ContextExtras as _,
         roster::{RosterSheetRow, get_user_from_discord},
@@ -10,7 +10,7 @@ use crate::{
 
 #[poise::command(context_menu_command = "Lookup Member", guild_only)]
 pub(crate) async fn user_lookup(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     user: serenity::all::User,
 ) -> Result<(), AppError> {
     let mention = user.mention();

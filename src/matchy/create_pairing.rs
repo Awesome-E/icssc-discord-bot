@@ -1,11 +1,11 @@
 use super::discord_helpers::match_members;
 use super::helpers::Pairing;
 use super::helpers::{format_id, format_pairs, hash_seed};
-use crate::Context;
+use crate::AppContext;
 use anyhow::Result;
 use itertools::Itertools as _;
 
-async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<String> {
+async fn handle_create_pairing(ctx: AppContext<'_>, seed_str: String) -> Result<String> {
     let seed = hash_seed(&seed_str);
 
     let Pairing(pairs, imperfect_matches) = match_members(ctx, seed).await?;
@@ -38,7 +38,7 @@ async fn handle_create_pairing(ctx: Context<'_>, seed_str: String) -> Result<Str
     required_permissions = "ADMINISTRATOR"
 )]
 pub async fn create_pairing(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     #[description = "A seed to use for the generated pairing (for example, use the current date)."]
     seed: String,
 ) -> Result<()> {

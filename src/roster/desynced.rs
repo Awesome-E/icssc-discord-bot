@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    AppError, Context,
+    AppError, AppContext,
     util::{
         ContextExtras as _,
         gdrive::{DriveFilePermissionRole, get_file_permissions},
@@ -14,7 +14,7 @@ use serenity::{all::Mentionable as _, futures::StreamExt as _};
 
 /// Get a list of server members whose roles are out of sync with the roster
 #[poise::command(slash_command, hide_in_help, ephemeral)]
-pub(crate) async fn check_discord_roles(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn check_discord_roles(ctx: AppContext<'_>) -> Result<(), AppError> {
     ctx.defer_ephemeral().await?;
 
     let roster = get_bulk_members_from_roster(ctx.data(), &[]).await?;
@@ -90,7 +90,7 @@ fn is_admin_email(email: &str) -> bool {
 
 /// Check whether Google Drive access is desynced from the roster
 #[poise::command(slash_command, hide_in_help, ephemeral)]
-pub(crate) async fn check_google_access(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn check_google_access(ctx: AppContext<'_>) -> Result<(), AppError> {
     ctx.defer_ephemeral().await?;
     let data = ctx.data();
 

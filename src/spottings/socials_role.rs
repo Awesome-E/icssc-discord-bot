@@ -7,12 +7,12 @@ use serenity::all::{
 use crate::{AppError, AppVars};
 
 pub(crate) struct SocialsParticipation<'a> {
-    ctx: &'a serenity::client::Context,
+    ctx: &'a serenity::all::Context,
     role_id: RoleId,
 }
 
 impl<'a> SocialsParticipation<'a> {
-    pub(crate) fn new(ctx: &'a serenity::client::Context, data: &'a AppVars) -> Self {
+    pub(crate) fn new(ctx: &'a serenity::all::Context, data: &'a AppVars) -> Self {
         let role_id = RoleId::from(data.roles.socials_role_id);
         Self { ctx, role_id }
     }

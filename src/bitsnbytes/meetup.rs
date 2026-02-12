@@ -1,7 +1,7 @@
 // Log a Bits & Bytes Meetup using a context menu command
 
 use crate::{
-    AppError, AppVars, Context,
+    AppError, AppVars, AppContext,
     util::{
         gforms::submit_google_form,
         gsheets::{SheetsResponse, get_spreadsheet_range},
@@ -52,7 +52,7 @@ async fn get_overview_range(data: &AppVars) -> anyhow::Result<SheetsResponse> {
 
 #[poise::command(context_menu_command = "Log B&B Meetup", guild_only)]
 pub(crate) async fn log_bnb_meetup_message(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     message: serenity::all::Message,
 ) -> Result<(), AppError> {
     let submitter = &message.author.name;
@@ -104,7 +104,7 @@ pub(crate) async fn log_bnb_meetup_message(
         .components(vec![msg_input, fam_name_input, meetup_type_input]);
 
     let reply = CreateInteractionResponse::Modal(modal);
-    let Context::Application(ctx) = ctx else {
+    let AppContext::Application(ctx) = ctx else {
         bail!("unexpected context type")
     };
 
@@ -114,7 +114,7 @@ pub(crate) async fn log_bnb_meetup_message(
 }
 
 pub(crate) async fn confirm_bnb_meetup_modal(
-    ctx: &serenity::prelude::Context,
+    ctx: &serenity::all::Context,
     data: &AppVars,
     ixn: &ModalInteraction,
 ) -> Result<(), AppError> {

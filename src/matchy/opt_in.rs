@@ -6,15 +6,14 @@ use serenity::all::{
     CacheHttp as _, ComponentInteraction, CreateInteractionResponse,
     CreateInteractionResponseMessage, UserId,
 };
-use serenity::client::Context;
 
 pub(crate) struct MatchyMeetupOptIn<'a> {
-    ctx: &'a Context,
+    ctx: &'a serenity::all::Context,
     data: &'a AppVars,
 }
 
 impl<'a> MatchyMeetupOptIn<'a> {
-    pub(crate) fn new(ctx: &'a Context, data: &'a AppVars) -> Self {
+    pub(crate) fn new(ctx: &'a serenity::all::Context, data: &'a AppVars) -> Self {
         Self { ctx, data }
     }
 

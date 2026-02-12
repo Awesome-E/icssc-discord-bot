@@ -8,7 +8,7 @@ use crate::spottings::socials_role::SocialsParticipation;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom as _;
 use serenity::all::{
-    ActivityData, ActivityType, CacheHttp as _, Context, CreateInteractionResponse,
+    ActivityData, ActivityType, CacheHttp as _, CreateInteractionResponse,
     CreateInteractionResponseMessage, EditInteractionResponse, EventHandler, Interaction,
     OnlineStatus, Permissions, Ready,
 };
@@ -22,7 +22,7 @@ pub(crate) struct LaikaEventHandler {
 
 #[async_trait]
 impl EventHandler for LaikaEventHandler {
-    async fn ready(&self, ctx: Context, ready_info: Ready) {
+    async fn ready(&self, ctx: serenity::all::Context, ready_info: Ready) {
         println!(
             "ok, connected as {} (UID {})",
             ready_info.user.tag(),
@@ -67,7 +67,7 @@ impl EventHandler for LaikaEventHandler {
         println!("status cycling active");
     }
 
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+    async fn interaction_create(&self, ctx: serenity::all::Context, interaction: Interaction) {
         let response = match &interaction {
             Interaction::Component(interaction) => match interaction.data.custom_id.as_str() {
                 "matchy_opt_in" => {

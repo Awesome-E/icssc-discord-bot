@@ -1,5 +1,5 @@
 use crate::util::spottings_embed;
-use crate::{AppError, Context};
+use crate::{AppError, AppContext};
 use poise::CreateReply;
 use serenity::all::{
     CreateActionRow, CreateButton, CreateEmbed, CreateEmbedFooter,
@@ -99,7 +99,7 @@ impl EmbedLinePaginator {
         }
     }
 
-    fn embed_for(&self, _ctx: Context<'_>, page: u8) -> CreateEmbed {
+    fn embed_for(&self, _ctx: AppContext<'_>, page: u8) -> CreateEmbed {
         spottings_embed()
             .description(self.pages[(page - 1) as usize].clone())
             .footer(CreateEmbedFooter::new(format!(
@@ -108,7 +108,7 @@ impl EmbedLinePaginator {
             )))
     }
 
-    pub(crate) async fn run(mut self, ctx: Context<'_>) -> Result<(), AppError> {
+    pub(crate) async fn run(mut self, ctx: AppContext<'_>) -> Result<(), AppError> {
         let components = if self.pages.len() > 1 {
             vec![CreateActionRow::Buttons(vec![
                 CreateButton::new("embedinator_start")

@@ -1,5 +1,5 @@
 use crate::{
-    AppError, Context,
+    AppError, AppContext,
     roster::desynced::{check_discord_roles, check_google_access},
 };
 
@@ -9,7 +9,7 @@ use crate::{
     subcommands("check_discord_roles", "check_google_access"),
     guild_only
 )]
-pub(crate) async fn roster(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn roster(ctx: AppContext<'_>) -> Result<(), AppError> {
     ctx.reply("base command is a noop").await?;
     Ok(())
 }

@@ -12,7 +12,7 @@ use serenity::{
 };
 
 use crate::{
-    AppError, AppVars, Context,
+    AppError, AppVars, AppContext,
     util::{
         ContextExtras as _,
         gdrive::TokenResponse,
@@ -25,7 +25,7 @@ use crate::{
 
 /// Check into today's ICSSC event!
 #[poise::command(slash_command, hide_in_help)]
-pub(crate) async fn checkin(ctx: Context<'_>) -> Result<(), Error> {
+pub(crate) async fn checkin(ctx: AppContext<'_>) -> Result<(), Error> {
     let Ok(TokenResponse { access_token }) = get_gsheets_token(ctx.data()).await else {
         ctx.reply_ephemeral("Unable to find who you are :(").await?;
         return Ok(());
@@ -59,10 +59,10 @@ Discord username on the internal roster is correct.",
 /// Count a message as attendance for an ICSSC event
 #[poise::command(context_menu_command = "Log Attendance", guild_only)]
 pub(crate) async fn log_attendance(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     message: serenity::all::Message,
 ) -> Result<(), Error> {
-    let Context::Application(ctx) = ctx else {
+    let AppContext::Application(ctx) = ctx else {
         bail!("unexpected context type")
     };
 
@@ -106,7 +106,7 @@ pub(crate) async fn log_attendance(
 }
 
 pub(crate) async fn confirm_attendance_log_modal(
-    ctx: &serenity::prelude::Context,
+    ctx: &serenity::all::Context,
     data: &'_ AppVars,
     ixn: &ModalInteraction,
 ) -> Result<(), AppError> {
@@ -213,7 +213,7 @@ async fn get_events_attended_text(
 
 /// See what ICSSC events you have checked in for!
 #[poise::command(slash_command, hide_in_help)]
-pub(crate) async fn attended(ctx: Context<'_>) -> Result<(), Error> {
+pub(crate) async fn attended(ctx: AppContext<'_>) -> Result<(), Error> {
     let Ok(TokenResponse { access_token }) = get_gsheets_token(ctx.data()).await else {
         ctx.reply_ephemeral("Unable to find who you are :(").await?;
         return Ok(());

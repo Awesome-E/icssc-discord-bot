@@ -1,7 +1,7 @@
 // subcommands: create, check
 
 use crate::{
-    AppError, Context,
+    AppError, AppContext,
     shortlink::{check::check, create::create},
 };
 
@@ -11,7 +11,7 @@ use crate::{
     subcommands("check", "create"),
     guild_only
 )]
-pub(crate) async fn shortlink(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn shortlink(ctx: AppContext<'_>) -> Result<(), AppError> {
     ctx.reply("base command is a noop").await?;
     Ok(())
 }

@@ -1,5 +1,5 @@
 use crate::{
-    AppError, Context, util::ContextExtras as _, util::calendar::generate_add_calendar_link,
+    AppError, AppContext, util::ContextExtras as _, util::calendar::generate_add_calendar_link,
 };
 use anyhow::{Context as _, anyhow};
 
@@ -10,18 +10,18 @@ use anyhow::{Context as _, anyhow};
     subcommands("add_calendar", "list_calendars"),
     guild_only
 )]
-pub(crate) async fn calendar_command(_: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn calendar_command(_: AppContext<'_>) -> Result<(), AppError> {
     Ok(())
 }
 
 /// Add a calendar to the current server
 #[poise::command(slash_command, rename = "add")]
 pub(crate) async fn add_calendar(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     #[description = "ID of the Google Calendar to add (usually in the form of an email address)"]
     calendar_id: String,
 ) -> Result<(), AppError> {
-    let Context::Application(app_ctx) = ctx else {
+    let AppContext::Application(app_ctx) = ctx else {
         return Err(anyhow!("receive application command"));
     };
 
@@ -37,6 +37,6 @@ pub(crate) async fn add_calendar(
 
 /// List calendars in the current server
 #[poise::command(slash_command, rename = "list")]
-pub(crate) async fn list_calendars(_ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn list_calendars(_ctx: AppContext<'_>) -> Result<(), AppError> {
     Ok(())
 }

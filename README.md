@@ -50,6 +50,4 @@ Creates icssc.link short links with `/shortlink create` and checks the destinati
     - Revert the removed line in `entities/mod.rs` for the materialized view :P
 
 ## Todos
-- make sure most commands use administrator
-- make `Context`s less confusing between poise, serenity, and crate
-  
+- document setting up proper app permissions via discord settings.

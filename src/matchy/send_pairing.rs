@@ -1,6 +1,6 @@
 use super::discord_helpers::match_members;
 use super::helpers::{Pairing, add_pairings_to_db, checksum_matching, format_pairs, hash_seed};
-use crate::Context;
+use crate::AppContext;
 use crate::util::text::remove_markdown;
 use anyhow::{Context as _, Error, Result, bail, ensure};
 use itertools::Itertools as _;
@@ -9,7 +9,7 @@ use serenity::all::GuildId;
 use std::collections::HashSet;
 
 /// Run the /send_pairing command
-async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
+async fn handle_send_pairing(ctx: AppContext<'_>, key: String) -> Result<String> {
     let Some((seed_str, checksum)) = key.rsplit_once('_') else {
         bail!("Invalid key. Please make sure you only use keys returned by `/matchy create`")
     };
@@ -108,7 +108,7 @@ async fn handle_send_pairing(ctx: Context<'_>, key: String) -> Result<String> {
     required_permissions = "ADMINISTRATOR"
 )]
 pub async fn send_pairing(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     #[description = "A pairing key returned by /create_pairing."] key: String,
 ) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;

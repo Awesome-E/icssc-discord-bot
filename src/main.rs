@@ -183,4 +183,4 @@ async fn main() {
 }
 
 type AppError = anyhow::Error;
-type Context<'a> = poise::Context<'a, AppVars, AppError>;
+type AppContext<'a> = poise::Context<'a, AppVars, AppError>;

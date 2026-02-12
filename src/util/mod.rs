@@ -8,11 +8,11 @@ pub(crate) mod paginate;
 pub(crate) mod roster;
 pub(crate) mod text;
 
-use crate::Context;
+use crate::AppContext;
 use poise::{CreateReply, ReplyHandle};
 use serenity::all::{CreateEmbed, CreateEmbedAuthor, User};
 
-pub(crate) fn base_embed(ctx: Context<'_>) -> CreateEmbed {
+pub(crate) fn base_embed(ctx: AppContext<'_>) -> CreateEmbed {
     CreateEmbed::default()
         .color(0xff87a6)
         .author(CreateEmbedAuthor::from(User::from(
@@ -34,7 +34,7 @@ pub trait ContextExtras<'a> {
     ) -> Result<ReplyHandle<'a>, serenity::Error>;
 }
 
-impl<'a> ContextExtras<'a> for Context<'a> {
+impl<'a> ContextExtras<'a> for AppContext<'a> {
     async fn reply_ephemeral(
         self,
         text: impl Into<String>,

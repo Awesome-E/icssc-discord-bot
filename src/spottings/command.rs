@@ -4,7 +4,7 @@ use crate::spottings::{
     snipe::history,
     snipe::post,
 };
-use crate::{AppError, Context};
+use crate::{AppError, AppContext};
 
 #[poise::command(
     prefix_command,
@@ -18,7 +18,7 @@ use crate::{AppError, Context};
     ),
     guild_only
 )]
-pub(crate) async fn spottings(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn spottings(ctx: AppContext<'_>) -> Result<(), AppError> {
     ctx.reply("base command is a noop").await?;
     Ok(())
 }

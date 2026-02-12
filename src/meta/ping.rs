@@ -1,14 +1,14 @@
 use crate::util::ContextExtras as _;
-use crate::{AppError, Context};
+use crate::{AppError, AppContext};
 
-async fn check_db_ok(ctx: &Context<'_>) -> Result<(), AppError> {
+async fn check_db_ok(ctx: &AppContext<'_>) -> Result<(), AppError> {
     ctx.data().db.ping().await?;
     Ok(())
 }
 
 /// Check bot is alive, get numerical ping to Discord
 #[poise::command(prefix_command, slash_command)]
-pub(crate) async fn ping(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn ping(ctx: AppContext<'_>) -> Result<(), AppError> {
     let ping_num = ctx.ping().await.as_millis();
 
     ctx.reply_ephemeral(format!(

@@ -4,7 +4,7 @@ use crate::util::modal::ModalInputTexts;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
 use crate::util::{ContextExtras as _, spottings_embed};
-use crate::{AppError, AppVars, Context};
+use crate::{AppError, AppVars, AppContext};
 use anyhow::{Context as _, bail};
 use entity::{spotting_message, spotting_victim};
 use itertools::Itertools as _;
@@ -85,7 +85,7 @@ async fn add_spottings_to_db(
 
 #[poise::command(context_menu_command = "Log Spotting", guild_only)]
 pub(crate) async fn log_message_spotting(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     message: serenity::all::Message,
 ) -> Result<(), AppError> {
     let spotted = get_members(&message, false);
@@ -134,7 +134,7 @@ pub(crate) async fn log_message_spotting(
     ]);
 
     let reply = CreateInteractionResponse::Modal(modal);
-    let Context::Application(ctx) = ctx else {
+    let AppContext::Application(ctx) = ctx else {
         bail!("unexpected context type")
     };
 
@@ -144,7 +144,7 @@ pub(crate) async fn log_message_spotting(
 }
 
 pub(crate) async fn confirm_message_spotting_modal(
-    ctx: &serenity::prelude::Context,
+    ctx: &serenity::all::Context,
     data: &'_ AppVars,
     ixn: &ModalInteraction,
 ) -> Result<(), AppError> {
@@ -238,7 +238,7 @@ pub(crate) async fn confirm_message_spotting_modal(
 /// Log a social or snipe
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub(crate) async fn post(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     #[description = "Link to message with proof"] message: serenity::all::Message,
     #[description = "Was this a social or a snipe?"] r#type: SpottingType,
     #[description = "The first victim"] victim1: User,
@@ -380,7 +380,7 @@ pub(crate) async fn post(
 
 /// Log past snipes
 #[poise::command(prefix_command, slash_command, guild_only)]
-pub(crate) async fn history(ctx: Context<'_>) -> Result<(), AppError> {
+pub(crate) async fn history(ctx: AppContext<'_>) -> Result<(), AppError> {
     let conn = &ctx.data().db;
 
     let got = spotting_message::Entity::find()

@@ -1,5 +1,5 @@
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
-use crate::{AppError, Context};
+use crate::{AppError, AppContext};
 use anyhow::{Context as _, anyhow};
 use entity::user_stat;
 use itertools::Itertools as _;
@@ -22,7 +22,7 @@ enum LeaderboardBy {
     SnipeRate,
 }
 
-async fn show_summary_leaderboard(ctx: Context<'_>) -> anyhow::Result<()> {
+async fn show_summary_leaderboard(ctx: AppContext<'_>) -> anyhow::Result<()> {
     let conn = &ctx.data().db;
 
     let top5_overall = user_stat::Entity::find()
@@ -104,7 +104,7 @@ struct SnipeRateQuery {
 /// Show leaderboards by various sniping statistics
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub(crate) async fn leaderboard(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     #[description = "Leaderboard type; default is \"Total snipes\'"] by: Option<LeaderboardBy>,
 ) -> Result<(), AppError> {
     let Some(by) = by else {

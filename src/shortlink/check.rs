@@ -2,12 +2,12 @@ use anyhow::{Context as _, bail};
 use reqwest::StatusCode;
 use urlencoding::encode;
 
-use crate::{AppError, Context, util::ContextExtras as _};
+use crate::{AppError, AppContext, util::ContextExtras as _};
 
 /// Returns where the shortlink redirects to
 #[poise::command(slash_command, hide_in_help, ephemeral)]
 pub(crate) async fn check(
-    ctx: Context<'_>,
+    ctx: AppContext<'_>,
     #[description = "the identifier of the shortlink, e.g. committee-apps"] identifier: String,
 ) -> Result<(), AppError> {
     let client = reqwest::Client::builder()
