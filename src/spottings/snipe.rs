@@ -83,7 +83,7 @@ async fn add_spottings_to_db(
     Ok(())
 }
 
-#[poise::command(context_menu_command = "Log Spotting")]
+#[poise::command(context_menu_command = "Log Spotting", guild_only)]
 pub(crate) async fn log_message_spotting(
     ctx: Context<'_>,
     message: serenity::all::Message,
