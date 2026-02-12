@@ -66,6 +66,13 @@ pub(crate) async fn log_attendance(
         bail!("unexpected context type")
     };
 
+    let data = ctx.data();
+    let is_matchy_channel = data.channels.matchy_channel_id == message.channel_id.get();
+    let default_event_name = match is_matchy_channel {
+        true => "Matchy Meetup",
+        false => "",
+    };
+
     let members: HashSet<String> = get_members(&message, true);
 
     // create inputs
@@ -76,7 +83,7 @@ pub(crate) async fn log_attendance(
     );
     let event_name_input = CreateActionRow::InputText(
         CreateInputText::new(InputTextStyle::Short, "Name of Event", "event_name")
-            .value("")
+            .value(default_event_name)
             .required(false),
     );
     let members_input = CreateActionRow::InputText(
