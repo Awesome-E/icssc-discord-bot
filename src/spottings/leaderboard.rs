@@ -1,5 +1,5 @@
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
-use crate::{AppError, AppContext};
+use crate::{AppContext, AppError};
 use anyhow::{Context as _, anyhow};
 use entity::user_stat;
 use itertools::Itertools as _;

@@ -4,7 +4,7 @@ use crate::util::modal::ModalInputTexts;
 use crate::util::paginate::{EmbedLinePaginator, PaginatorOptions};
 use crate::util::text::comma_join;
 use crate::util::{ContextExtras as _, spottings_embed};
-use crate::{AppError, AppVars, AppContext};
+use crate::{AppContext, AppError, AppVars};
 use anyhow::{Context as _, bail};
 use entity::{spotting_message, spotting_victim};
 use itertools::Itertools as _;

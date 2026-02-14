@@ -4,7 +4,7 @@ use crate::spottings::{
     snipe::history,
     snipe::post,
 };
-use crate::{AppError, AppContext};
+use crate::{AppContext, AppError};
 
 #[poise::command(
     prefix_command,

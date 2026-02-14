@@ -1,4 +1,4 @@
-use crate::{AppError, AppContext};
+use crate::{AppContext, AppError};
 use anyhow::Context as _;
 use entity::{matchy_meetup_pair, matchy_meetup_pair_member, matchy_meetup_round};
 use itertools::Itertools as _;

@@ -1,5 +1,5 @@
 use crate::util::ContextExtras as _;
-use crate::{AppError, AppContext};
+use crate::{AppContext, AppError};
 
 async fn check_db_ok(ctx: &AppContext<'_>) -> Result<(), AppError> {
     ctx.data().db.ping().await?;

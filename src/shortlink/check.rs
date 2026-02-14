@@ -2,7 +2,7 @@ use anyhow::{Context as _, bail};
 use reqwest::StatusCode;
 use urlencoding::encode;
 
-use crate::{AppError, AppContext, util::ContextExtras as _};
+use crate::{AppContext, AppError, util::ContextExtras as _};
 
 /// Returns where the shortlink redirects to
 #[poise::command(slash_command, hide_in_help, ephemeral)]

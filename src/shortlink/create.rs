@@ -1,4 +1,4 @@
-use crate::{AppError, AppContext, util::ContextExtras as _};
+use crate::{AppContext, AppError, util::ContextExtras as _};
 use anyhow::Context as _;
 use chrono::Utc;
 use regex::Regex;
@@ -51,7 +51,10 @@ async fn validate_identifier(ctx: &AppContext<'_>, identifier: &str) -> Result<b
     Ok(true)
 }
 
-async fn reply_invalid_destination_error(ctx: &AppContext<'_>, cause: &str) -> Result<(), AppError> {
+async fn reply_invalid_destination_error(
+    ctx: &AppContext<'_>,
+    cause: &str,
+) -> Result<(), AppError> {
     ctx.reply_ephemeral(format!("Invalid destination url: {cause}"))
         .await?;
     Ok(())

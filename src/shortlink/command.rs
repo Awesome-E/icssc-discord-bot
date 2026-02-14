@@ -1,7 +1,7 @@
 // subcommands: create, check
 
 use crate::{
-    AppError, AppContext,
+    AppContext, AppError,
     shortlink::{check::check, create::create},
 };
 
