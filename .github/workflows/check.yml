@@ -1,7 +1,6 @@
 on:
   push:
     branches: ["*"]
-  pull_request:
 
 name: Test, rustfmt, and Clippy (64 bit)
 
