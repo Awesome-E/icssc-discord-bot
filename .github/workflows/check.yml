@@ -5,7 +5,7 @@ on:
 name: Test, rustfmt, and Clippy (64 bit)
 
 jobs:
-  test-64bit:
+  test:
     name: Run tests
     runs-on: ${{ matrix.os }}
 
@@ -56,15 +56,11 @@ jobs:
   clippy:
     name: cargo clippy
     runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        rust:
-          - stable
     steps:
       - uses: actions/checkout@v4.2.2
       - uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
           components: clippy
       - uses: Swatinem/rust-cache@v2.7.5
       - name: clippy (all targets)
