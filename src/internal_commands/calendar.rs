@@ -1,5 +1,5 @@
 use crate::{
-    AppError, AppContext, util::ContextExtras as _, util::calendar::generate_add_calendar_link,
+    AppContext, AppError, util::ContextExtras as _, util::calendar::generate_add_calendar_link,
 };
 use anyhow::{Context as _, anyhow};
 

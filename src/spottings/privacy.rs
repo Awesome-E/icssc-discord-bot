@@ -1,5 +1,5 @@
 use crate::util::ContextExtras as _;
-use crate::{AppError, AppVars, AppContext};
+use crate::{AppContext, AppError, AppVars};
 use anyhow::{Context as _, bail, ensure};
 use entity::snipe_opt_out;
 use poise::ChoiceParameter;

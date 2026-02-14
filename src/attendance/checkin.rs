@@ -12,7 +12,7 @@ use serenity::{
 };
 
 use crate::{
-    AppError, AppVars, AppContext,
+    AppContext, AppError, AppVars,
     util::{
         ContextExtras as _,
         gdrive::TokenResponse,

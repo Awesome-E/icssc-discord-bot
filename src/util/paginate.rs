@@ -1,5 +1,5 @@
 use crate::util::spottings_embed;
-use crate::{AppError, AppContext};
+use crate::{AppContext, AppError};
 use poise::CreateReply;
 use serenity::all::{
     CreateActionRow, CreateButton, CreateEmbed, CreateEmbedFooter,

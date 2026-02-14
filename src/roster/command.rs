@@ -1,5 +1,5 @@
 use crate::{
-    AppError, AppContext,
+    AppContext, AppError,
     roster::desynced::{check_discord_roles, check_google_access},
 };
 

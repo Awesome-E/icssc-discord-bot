@@ -1,7 +1,7 @@
 // Log a Bits & Bytes Meetup using a context menu command
 
 use crate::{
-    AppError, AppVars, AppContext,
+    AppContext, AppError, AppVars,
     util::{
         gforms::submit_google_form,
         gsheets::{SheetsResponse, get_spreadsheet_range},
