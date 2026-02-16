@@ -1,16 +1,20 @@
 use anyhow::Context as _;
-use itertools::Itertools;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-use serenity::all::{CacheHttp, CreateMessage, Message};
 use entity::snipe_opt_out;
+use itertools::Itertools as _;
+use sea_orm::{ColumnTrait as _, EntityTrait as _, QueryFilter as _};
+use serenity::all::{CacheHttp as _, CreateMessage, Message};
 
 use crate::{AppError, AppVars};
 
-pub(crate) async fn check_message_snipe_victim(ctx: &serenity::all::Context, data: &AppVars, msg: &Message) -> Result<(), AppError> {
+pub(crate) async fn check_message_snipe_victim(
+    ctx: &serenity::all::Context,
+    data: &AppVars,
+    msg: &Message,
+) -> Result<(), AppError> {
     if msg.channel_id.get() != data.channels.spottings_channel_id {
         return Ok(());
     }
-    
+
     let user_ids = msg.mentions.iter().map(|user| user.id.get());
     if user_ids.len() == 0 {
         return Ok(());
@@ -28,15 +32,14 @@ pub(crate) async fn check_message_snipe_victim(ctx: &serenity::all::Context, dat
         return Ok(());
     }
 
-    let warning_msg = CreateMessage::new()
-        .content(format!(
-            "Heads up! In your [recent message]({}), you mentioned the following \
-            users who are opted out of snipes: {}\n\n \
-            If your message is a snipe, please remove the message. \
-            Otherwise, feel free to disregard this notice.",
-            msg.link(),
-            opted_out_ids.join(", ")
-        ));
+    let warning_msg = CreateMessage::new().content(format!(
+        "Heads up! In your [recent message]({}), you mentioned the following \
+        users who are opted out of snipes: {}\n\n \
+        If your message is a snipe, please remove the message. \
+        Otherwise, feel free to disregard this notice.",
+        msg.link(),
+        opted_out_ids.join(", ")
+    ));
 
     if let Err(why) = msg.author.direct_message(ctx.http(), warning_msg).await {
         dbg!(why);

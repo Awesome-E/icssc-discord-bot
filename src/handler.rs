@@ -9,7 +9,9 @@ use crate::spottings::socials_role::SocialsParticipation;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom as _;
 use serenity::all::{
-    ActivityData, ActivityType, CacheHttp as _, CreateInteractionResponse, CreateInteractionResponseMessage, EditInteractionResponse, EventHandler, Interaction, Message, OnlineStatus, Permissions, Ready
+    ActivityData, ActivityType, CacheHttp as _, CreateInteractionResponse,
+    CreateInteractionResponseMessage, EditInteractionResponse, EventHandler, Interaction, Message,
+    OnlineStatus, Permissions, Ready,
 };
 use serenity::async_trait;
 use std::time::Duration;
@@ -166,9 +168,9 @@ impl EventHandler for LaikaEventHandler {
         };
     }
 
-    async fn message(&self, ctx: serenity::all::Context, msg: Message) {
+    async fn message(&self, ctx: serenity::all::Context, new_message: Message) {
         // call all appropriate handlers for a message
         // parallelize if needed in the future
-        let _ = check_message_snipe_victim(&ctx, &self.data, &msg).await;
+        let _ = check_message_snipe_victim(&ctx, &self.data, &new_message).await;
     }
 }

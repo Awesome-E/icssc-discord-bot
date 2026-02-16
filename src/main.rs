@@ -22,7 +22,7 @@ use migration::{Migrator, MigratorTrait as _};
 use serenity::Client;
 use serenity::all::GatewayIntents;
 use std::env;
-use std::ops::{BitAnd as _, BitOr, Deref};
+use std::ops::{BitOr as _, Deref};
 use std::path::PathBuf;
 
 env_vars_struct!(
