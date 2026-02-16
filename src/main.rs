@@ -22,7 +22,7 @@ use migration::{Migrator, MigratorTrait as _};
 use serenity::Client;
 use serenity::all::GatewayIntents;
 use std::env;
-use std::ops::{BitAnd as _, Deref};
+use std::ops::{BitAnd as _, BitOr, Deref};
 use std::path::PathBuf;
 
 env_vars_struct!(
@@ -143,8 +143,8 @@ async fn main() {
     let mut client = Client::builder(
         &data.env.bot.discord_token,
         GatewayIntents::non_privileged()
-            .bitand(GatewayIntents::GUILD_MEMBERS)
-            .bitand(GatewayIntents::MESSAGE_CONTENT),
+            .bitor(GatewayIntents::GUILD_MEMBERS)
+            .bitor(GatewayIntents::MESSAGE_CONTENT),
     )
     .event_handler(handler::LaikaEventHandler { data })
     .framework(framework)

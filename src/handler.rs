@@ -2,15 +2,14 @@ use crate::AppVars;
 use crate::attendance::checkin::confirm_attendance_log_modal;
 use crate::bitsnbytes::meetup::confirm_bnb_meetup_modal;
 use crate::matchy::opt_in::MatchyMeetupOptIn;
+use crate::spottings::check_victim::check_message_snipe_victim;
 use crate::spottings::privacy::SnipesOptOut;
 use crate::spottings::snipe::confirm_message_spotting_modal;
 use crate::spottings::socials_role::SocialsParticipation;
 use crate::util::text::bot_invite_url;
 use rand::seq::IndexedRandom as _;
 use serenity::all::{
-    ActivityData, ActivityType, CacheHttp as _, CreateInteractionResponse,
-    CreateInteractionResponseMessage, EditInteractionResponse, EventHandler, Interaction,
-    OnlineStatus, Permissions, Ready,
+    ActivityData, ActivityType, CacheHttp as _, CreateInteractionResponse, CreateInteractionResponseMessage, EditInteractionResponse, EventHandler, Interaction, Message, OnlineStatus, Permissions, Ready
 };
 use serenity::async_trait;
 use std::time::Duration;
@@ -165,5 +164,11 @@ impl EventHandler for LaikaEventHandler {
             Interaction::Modal(ixn) => ixn.edit_response(http, edit_response).await,
             _ => return,
         };
+    }
+
+    async fn message(&self, ctx: serenity::all::Context, msg: Message) {
+        // call all appropriate handlers for a message
+        // parallelize if needed in the future
+        let _ = check_message_snipe_victim(&ctx, &self.data, &msg).await;
     }
 }
