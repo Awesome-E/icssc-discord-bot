@@ -2,7 +2,7 @@ use anyhow::Context as _;
 use entity::snipe_opt_out;
 use itertools::Itertools as _;
 use sea_orm::{ColumnTrait as _, EntityTrait as _, QueryFilter as _};
-use serenity::all::{CacheHttp as _, CreateMessage, Message};
+use serenity::all::{CacheHttp as _, CreateMessage, Mentionable as _, Message, UserId};
 
 use crate::{AppError, AppVars};
 
@@ -26,7 +26,7 @@ pub(crate) async fn check_message_snipe_victim(
         .await
         .context("failed to get opt outs")?
         .into_iter()
-        .map(|model| format!("<@{}>", model.id));
+        .map(|model| UserId::from(model.id as u64).mention());
 
     if opted_out_ids.len() == 0 {
         return Ok(());
