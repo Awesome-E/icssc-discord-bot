@@ -1,6 +1,6 @@
 # ICSSC Discord Bot
 
-![ICSSC Bot Banner](https://cdn.discordapp.com/banners/1413632282136154234/800e62e9f6339a923f2d52f398d646f9.png?size=1280)
+![ICSSC Bot Banner](./banner.png)
 
 A utility bot created for ICSSC's Discord server. *Massive thanks to the ICSSC Graphics Committee for being awesome and drawing up custom assets in line with ICSSC and UCI's graphical themes.*
 
@@ -111,4 +111,4 @@ If you need to check where a certain shortlink redirects to, use `/shortlink che
     - Revert the removed line in `entities/mod.rs` for the materialized view :P
 
 ## Todos
-- document setting up proper app permissions via discord settings.
+- `src/util/roster.rs`: create struct to handle caching Google Sheets responses
