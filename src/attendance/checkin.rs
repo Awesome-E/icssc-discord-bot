@@ -121,6 +121,8 @@ pub(crate) async fn confirm_attendance_log_modal(
     let attendees = inputs.get_required_value("participants")?;
     let event_name = inputs.get_value("event_name")?;
 
+    ixn.defer_ephemeral(ctx.http()).await?;
+
     let participant_ids = attendees.split('\n');
     let participants = future::join_all(participant_ids.clone().filter_map(|s| {
         let uid = UserId::from_str(s.trim()).ok()?;
@@ -142,12 +144,9 @@ pub(crate) async fn confirm_attendance_log_modal(
         bail!("user lookup failed");
     }
 
-    ixn.defer_ephemeral(ctx.http()).await?;
-
-    let event_name = event_name.as_deref();
     let mut response_lines = Vec::new();
     for member in members {
-        let success = check_in_with_email(data, &member.email, event_name)
+        let success = check_in_with_email(data, &member.email, event_name.as_deref())
             .await
             .is_ok();
         let emoji = match success {
