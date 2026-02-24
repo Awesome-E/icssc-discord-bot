@@ -10,6 +10,7 @@ mod m20250930_012439_calendar_events;
 mod m20251003_231509_calendar_indexes;
 mod m20251013_031245_message_on_delete_cascade;
 mod m20260112_055632_modernize_table_names;
+mod m20260223_234418_change_social_multiplier_mview;
 
 pub struct Migrator;
 
@@ -27,6 +28,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251003_231509_calendar_indexes::Migration),
             Box::new(m20251013_031245_message_on_delete_cascade::Migration),
             Box::new(m20260112_055632_modernize_table_names::Migration),
+            Box::new(m20260223_234418_change_social_multiplier_mview::Migration),
         ]
     }
 }

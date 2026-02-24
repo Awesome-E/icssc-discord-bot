@@ -5,7 +5,7 @@ use entity::user_stat;
 use itertools::Itertools as _;
 use migration::NullOrdering;
 use poise::{ChoiceParameter, CreateReply};
-use sea_orm::sea_query::Expr;
+use sea_orm::sea_query::{Expr, Func};
 use sea_orm::{EntityTrait as _, FromQueryResult, Order, QueryOrder as _, QuerySelect as _};
 use serenity::all::{CreateEmbed, Mentionable as _, UserId};
 use std::num::NonZeroUsize;
@@ -28,8 +28,8 @@ async fn show_summary_leaderboard(ctx: AppContext<'_>) -> anyhow::Result<()> {
     let top5_overall = user_stat::Entity::find()
         .order_by_desc(
             Expr::col(user_stat::Column::SnipesInitiated)
-                .add(Expr::col(user_stat::Column::SocialsInitiated))
-                .add(Expr::col(user_stat::Column::SocialsVictim)),
+                .add(Expr::col(user_stat::Column::SocialsInitiated).mul(2))
+                .add(Expr::col(user_stat::Column::SocialsVictim).mul(2)),
         )
         .limit(5)
         .all(conn)
@@ -38,7 +38,7 @@ async fn show_summary_leaderboard(ctx: AppContext<'_>) -> anyhow::Result<()> {
         .into_iter()
         .map(|row| {
             let social_ct = row.socials_initiated + row.socials_victim;
-            let total = row.snipes_initiated + social_ct;
+            let total = row.snipes_initiated + social_ct * 2;
             format!(
                 "1. <@{}>: {} points ({} snipes + {} socials)",
                 row.id, total, row.snipes_initiated, social_ct
@@ -170,10 +170,18 @@ pub(crate) async fn leaderboard(
             .column(user_stat::Column::Id)
             .column_as(
                 Expr::col(user_stat::Column::SnipesInitiated)
-                    .div(Expr::col(user_stat::Column::SnipesVictim)),
+                    .cast_as("double precision")
+                    .div(
+                        Func::cust("NULLIF")
+                            .arg(
+                                Expr::col(user_stat::Column::SnipesVictim)
+                                    .cast_as("double precision"),
+                            )
+                            .arg(0),
+                    ),
                 "snipe_rate",
             )
-            .order_by_with_nulls(Expr::col("snipe_rate"), Order::Desc, NullOrdering::Last)
+            .order_by_with_nulls(Expr::col("snipe_rate"), Order::Desc, NullOrdering::First)
             .order_by_desc(user_stat::Column::SnipesInitiated)
             .into_model::<SnipeRateQuery>()
             .all(&ctx.data().db)
@@ -187,7 +195,7 @@ pub(crate) async fn leaderboard(
                     i + 1,
                     UserId::from(mdl.id as u64).mention(),
                     mdl.snipe_rate
-                        .map_or(String::from("N/A"), |n| n.to_string())
+                        .map_or(String::from("\u{2013}"), |n| n.to_string())
                 )
                 .into_boxed_str()
             })
