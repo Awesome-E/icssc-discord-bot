@@ -175,7 +175,7 @@ pub(crate) async fn confirm_message_spotting_modal(
     if spotting_type == SpottingType::Snipe
         && let opted_out = opted_out_among(
             &data.db,
-            std::iter::once(ixn.user.id).chain(spotted_uids.iter().copied()),
+            std::iter::once(message.author.id).chain(spotted_uids.iter().copied()),
         )
         .await?
         .collect_vec()

@@ -5,7 +5,7 @@ use entity::user_stat;
 use itertools::Itertools as _;
 use migration::NullOrdering;
 use poise::{ChoiceParameter, CreateReply};
-use sea_orm::sea_query::Expr;
+use sea_orm::sea_query::{Expr, Func};
 use sea_orm::{EntityTrait as _, FromQueryResult, Order, QueryOrder as _, QuerySelect as _};
 use serenity::all::{CreateEmbed, Mentionable as _, UserId};
 use std::num::NonZeroUsize;
@@ -170,10 +170,18 @@ pub(crate) async fn leaderboard(
             .column(user_stat::Column::Id)
             .column_as(
                 Expr::col(user_stat::Column::SnipesInitiated)
-                    .div(Expr::col(user_stat::Column::SnipesVictim)),
+                    .cast_as("double precision")
+                    .div(
+                        Func::cust("NULLIF")
+                            .arg(
+                                Expr::col(user_stat::Column::SnipesVictim)
+                                    .cast_as("double precision"),
+                            )
+                            .arg(0),
+                    ),
                 "snipe_rate",
             )
-            .order_by_with_nulls(Expr::col("snipe_rate"), Order::Desc, NullOrdering::Last)
+            .order_by_with_nulls(Expr::col("snipe_rate"), Order::Desc, NullOrdering::First)
             .order_by_desc(user_stat::Column::SnipesInitiated)
             .into_model::<SnipeRateQuery>()
             .all(&ctx.data().db)
@@ -187,7 +195,7 @@ pub(crate) async fn leaderboard(
                     i + 1,
                     UserId::from(mdl.id as u64).mention(),
                     mdl.snipe_rate
-                        .map_or(String::from("N/A"), |n| n.to_string())
+                        .map_or(String::from("\u{2013}"), |n| n.to_string())
                 )
                 .into_boxed_str()
             })
