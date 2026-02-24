@@ -28,8 +28,8 @@ async fn show_summary_leaderboard(ctx: AppContext<'_>) -> anyhow::Result<()> {
     let top5_overall = user_stat::Entity::find()
         .order_by_desc(
             Expr::col(user_stat::Column::SnipesInitiated)
-                .add(Expr::col(user_stat::Column::SocialsInitiated))
-                .add(Expr::col(user_stat::Column::SocialsVictim)),
+                .add(Expr::col(user_stat::Column::SocialsInitiated).mul(2))
+                .add(Expr::col(user_stat::Column::SocialsVictim).mul(2)),
         )
         .limit(5)
         .all(conn)
@@ -38,7 +38,7 @@ async fn show_summary_leaderboard(ctx: AppContext<'_>) -> anyhow::Result<()> {
         .into_iter()
         .map(|row| {
             let social_ct = row.socials_initiated + row.socials_victim;
-            let total = row.snipes_initiated + social_ct;
+            let total = row.snipes_initiated + social_ct * 2;
             format!(
                 "1. <@{}>: {} points ({} snipes + {} socials)",
                 row.id, total, row.snipes_initiated, social_ct
