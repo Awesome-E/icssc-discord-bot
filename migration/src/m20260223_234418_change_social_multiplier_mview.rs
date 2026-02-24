@@ -48,6 +48,11 @@ FROM (SELECT DISTINCT author_id AS id
             )
             .await?;
 
+        manager
+            .get_connection()
+            .execute_unprepared("REFRESH MATERIALIZED VIEW user_stat;")
+            .await?;
+
         Ok(())
     }
 
@@ -93,6 +98,11 @@ FROM (SELECT DISTINCT author_id AS id
                     GROUP BY victim_id) snipes_victim ON u.id = snipes_victim.victim_id;"
         "#,
             )
+            .await?;
+
+        manager
+            .get_connection()
+            .execute_unprepared("REFRESH MATERIALIZED VIEW user_stat;")
             .await?;
 
         Ok(())
