@@ -4,11 +4,12 @@ use anyhow::{Context as _, anyhow};
 use entity::user_stat;
 use itertools::Itertools as _;
 use migration::NullOrdering;
+use pluralizer::pluralize;
 use poise::{ChoiceParameter, CreateReply};
 use sea_orm::sea_query::{Expr, Func};
 use sea_orm::{
-    ColumnTrait, Condition, EntityTrait as _, FromQueryResult, Order, QueryFilter, QueryOrder as _,
-    QuerySelect as _,
+    ColumnTrait as _, Condition, EntityTrait as _, FromQueryResult, Order, QueryFilter as _,
+    QueryOrder as _, QuerySelect as _,
 };
 use serenity::all::{CreateEmbed, Mentionable as _, UserId};
 use std::num::NonZeroUsize;
@@ -42,9 +43,11 @@ async fn show_summary_leaderboard(ctx: AppContext<'_>) -> anyhow::Result<()> {
         .map(|row| {
             let social_ct = row.socials_initiated + row.socials_victim;
             let total = row.snipes_initiated + social_ct * 2;
+            let snipes_text = pluralize("snipe", row.snipes_initiated as isize, true);
+            let socials_text = pluralize("social", social_ct as isize, true);
             format!(
-                "1. <@{}>: {} points ({} snipes + {} socials)",
-                row.id, total, row.snipes_initiated, social_ct
+                "1. <@{}>: {total} points ({snipes_text} + {socials_text})",
+                row.id
             )
         })
         .join("\n");
