@@ -6,7 +6,10 @@ use itertools::Itertools as _;
 use migration::NullOrdering;
 use poise::{ChoiceParameter, CreateReply};
 use sea_orm::sea_query::{Expr, Func};
-use sea_orm::{EntityTrait as _, FromQueryResult, Order, QueryOrder as _, QuerySelect as _};
+use sea_orm::{
+    ColumnTrait, Condition, EntityTrait as _, FromQueryResult, Order, QueryFilter, QueryOrder as _,
+    QuerySelect as _,
+};
 use serenity::all::{CreateEmbed, Mentionable as _, UserId};
 use std::num::NonZeroUsize;
 
@@ -180,6 +183,11 @@ pub(crate) async fn leaderboard(
                             .arg(0),
                     ),
                 "snipe_rate",
+            )
+            .filter(
+                Condition::any()
+                    .add(user_stat::Column::SnipesInitiated.ne(0))
+                    .add(user_stat::Column::SnipesVictim.ne(0)),
             )
             .order_by_with_nulls(Expr::col("snipe_rate"), Order::Desc, NullOrdering::First)
             .order_by_desc(user_stat::Column::SnipesInitiated)
