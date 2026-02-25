@@ -83,8 +83,8 @@ async fn show_summary_leaderboard(ctx: AppContext<'_>) -> anyhow::Result<()> {
             format!("This is the overall spottings leaderboard. **Snipes** are worth 1 point per person \
                 sniped, and **socials** are worth 1 point per person per photo, including yourself.\n\n\
                 **Top Overall Scores:**\n\n{top5_overall}\n\n\
-                {top_sniper}
-                {top_social}\n
+                {top_sniper}\n\
+                {top_social}\n\n\
                 -# To view a specific type of leaderboard, provide a value to the optional `by` \
                 parameter in `/spottings leaderboard by:type`")
         );
