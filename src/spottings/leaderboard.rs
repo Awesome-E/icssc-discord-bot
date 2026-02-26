@@ -87,7 +87,7 @@ async fn show_summary_leaderboard(ctx: AppContext<'_>) -> anyhow::Result<()> {
         .thumbnail("https://cdn.discordapp.com/avatars/1336510972403126292/8db135d66c041c0191e0ae8085b9baa6.webp?size=512")
         .description(
             format!("This is the overall spottings leaderboard. **Snipes** are worth 1 point per person \
-                sniped, and **socials** are worth 1 point per person per photo, including yourself.\n\n\
+                sniped, and **socials** are worth 2 points each.\n\n\
                 **Top Overall Scores:**\n\n{top5_overall}\n\n\
                 {top_sniper}\n\
                 {top_social}\n\n\
