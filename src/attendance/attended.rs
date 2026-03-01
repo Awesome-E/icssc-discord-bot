@@ -3,15 +3,13 @@ use chrono::{NaiveDate, NaiveDateTime, Utc};
 use itertools::Itertools as _;
 
 use crate::{
+    AppContext, AppError, AppVars,
     util::{
+        ContextExtras as _,
         gdrive::TokenResponse,
         gsheets::{get_gsheets_token, get_spreadsheet_range},
-        roster::get_user_from_discord
-
-        ,
-        ContextExtras as _,
-    }, AppContext, AppError,
-    AppVars,
+        roster::get_user_from_discord,
+    },
 };
 
 pub(crate) async fn get_events_attended_text(

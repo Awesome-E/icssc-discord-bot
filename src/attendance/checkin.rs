@@ -1,6 +1,6 @@
 use std::{collections::HashSet, str::FromStr as _};
 
-use anyhow::{bail, Context as _, Error};
+use anyhow::{Context as _, Error, bail};
 use itertools::Itertools as _;
 use serenity::{
     all::{
@@ -11,15 +11,15 @@ use serenity::{
 };
 
 use crate::{
+    AppContext, AppError, AppVars,
     util::{
+        ContextExtras as _,
         gdrive::TokenResponse,
         gsheets::get_gsheets_token,
         message::get_members,
         modal::ModalInputTexts,
         roster::{check_in_with_email, get_bulk_members_from_roster, get_user_from_discord},
-        ContextExtras as _,
-    }, AppContext, AppError,
-    AppVars,
+    },
 };
 
 /// Check into today's ICSSC event!

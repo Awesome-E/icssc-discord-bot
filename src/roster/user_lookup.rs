@@ -1,6 +1,8 @@
 use anyhow::bail;
 use poise::CreateReply;
-use serenity::all::{CreateEmbed, CreateEmbedAuthor, Member, Mentionable as _, User, futures::StreamExt as _};
+use serenity::all::{
+    CreateEmbed, CreateEmbedAuthor, Member, Mentionable as _, User, futures::StreamExt as _,
+};
 
 use crate::{
     AppContext, AppError, AppVars,
@@ -66,7 +68,7 @@ async fn lookup_result_embed(
         .contains_user(user.id)
         .await?;
     let joined_socials = SocialsParticipation::new(ctx, data)
-        .has_role(&guild_member)
+        .has_role(guild_member)
         .await?;
     let left_snipes = SnipesOptOut::new(ctx, data).contains_user(user.id).await?;
 
