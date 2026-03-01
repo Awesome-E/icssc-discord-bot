@@ -23,6 +23,12 @@ pub(crate) struct LaikaEventHandler {
 
 #[async_trait]
 impl EventHandler for LaikaEventHandler {
+    async fn message(&self, ctx: serenity::all::Context, new_message: Message) {
+        // call all appropriate handlers for a message
+        // parallelize if needed in the future
+        let _ = check_message_snipe_victim(&ctx, &self.data, &new_message).await;
+    }
+
     async fn ready(&self, ctx: serenity::all::Context, ready_info: Ready) {
         println!(
             "ok, connected as {} (UID {})",
@@ -166,11 +172,5 @@ impl EventHandler for LaikaEventHandler {
             Interaction::Modal(ixn) => ixn.edit_response(http, edit_response).await,
             _ => return,
         };
-    }
-
-    async fn message(&self, ctx: serenity::all::Context, new_message: Message) {
-        // call all appropriate handlers for a message
-        // parallelize if needed in the future
-        let _ = check_message_snipe_victim(&ctx, &self.data, &new_message).await;
     }
 }
