@@ -169,17 +169,17 @@ fn handle_framework_error(error: FrameworkError<'_, AppVars, AppError>) -> BoxFu
 
 fn get_bot_commands() -> Vec<Command<AppVars, AppError>> {
     vec![
-        attendance::checkin::attended(),
+        attendance::attended::attended(),
         attendance::checkin::checkin(),
         attendance::checkin::log_attendance(),
         bitsnbytes::meetup::log_bnb_meetup_message(),
         matchy::command::matchy(),
         meta::ping::ping(),
+        roster::user_lookup::user_lookup(),
+        roster::command::roster(),
         spottings::command::spottings(),
         spottings::snipe::log_message_spotting(),
         internal_commands::calendar::calendar_command(),
-        roster::user_lookup::user_lookup(),
-        roster::command::roster(),
         shortlink::command::shortlink(),
     ]
 }
