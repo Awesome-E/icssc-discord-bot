@@ -17,7 +17,7 @@ impl<'a> SocialsParticipation<'a> {
         Self { ctx, role_id }
     }
 
-    async fn has_role(&self, member: &Member) -> Result<bool, AppError> {
+    pub(crate) async fn has_role(&self, member: &Member) -> Result<bool, AppError> {
         Ok(member.roles.contains(&self.role_id))
     }
 

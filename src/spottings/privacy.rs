@@ -21,7 +21,7 @@ impl<'a> SnipesOptOut<'a> {
         Self { ctx, data }
     }
 
-    async fn exists(&self, user_id: UserId) -> Result<bool, DbErr> {
+    pub(crate) async fn contains_user(&self, user_id: UserId) -> Result<bool, DbErr> {
         Ok(snipe_opt_out::Entity::find_by_id(u64::from(user_id) as i64)
             .one(&self.data.db)
             .await?
@@ -44,7 +44,7 @@ impl<'a> SnipesOptOut<'a> {
             id: ActiveValue::Set(interaction.user.id.into()),
         };
 
-        let response = match self.exists(interaction.user.id).await {
+        let response = match self.contains_user(interaction.user.id).await {
             Err(_) => bail!("Unable to find you. Please contact ICSSC IVP :("),
             Ok(true) => bail!("You are already opted out."),
             Ok(false) => match snipe_opt_out::Entity::insert(opt_out_user)
@@ -78,7 +78,7 @@ impl<'a> SnipesOptOut<'a> {
     }
 
     pub(crate) async fn opt_in(&self, interaction: &ComponentInteraction) -> anyhow::Result<()> {
-        let response = match self.exists(interaction.user.id).await {
+        let response = match self.contains_user(interaction.user.id).await {
             Err(_) => bail!("Unable to find you. Please contact ICSSC IVP :("),
             Ok(false) => bail!("You are already opted in to snipes!"),
             Ok(true) => {
@@ -113,7 +113,7 @@ impl<'a> SnipesOptOut<'a> {
     }
 
     pub(crate) async fn check(&self, interaction: &ComponentInteraction) -> anyhow::Result<()> {
-        let response = match self.exists(interaction.user.id).await {
+        let response = match self.contains_user(interaction.user.id).await {
             Ok(true) => "You are currently opted out of snipes!",
             Ok(false) => "You are currently opted in to snipes!",
             Err(_) => bail!("I couldn't check that for you :("),

@@ -12,11 +12,11 @@ use crate::AppContext;
 use poise::{CreateReply, ReplyHandle};
 use serenity::all::{CreateEmbed, CreateEmbedAuthor, User};
 
-pub(crate) fn base_embed(ctx: AppContext<'_>) -> CreateEmbed {
+pub(crate) fn base_embed(ctx: &serenity::all::Context) -> CreateEmbed {
     CreateEmbed::default()
         .color(0xff87a6)
         .author(CreateEmbedAuthor::from(User::from(
-            ctx.serenity_context().cache.current_user().clone(),
+            ctx.cache.current_user().clone(),
         )))
 }
 

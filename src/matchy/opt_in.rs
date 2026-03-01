@@ -17,7 +17,7 @@ impl<'a> MatchyMeetupOptIn<'a> {
         Self { ctx, data }
     }
 
-    async fn exists(&self, user_id: UserId) -> Result<bool, DbErr> {
+    pub(crate) async fn contains_user(&self, user_id: UserId) -> Result<bool, DbErr> {
         Ok(
             matchy_meetup_opt_in::Entity::find_by_id(u64::from(user_id) as i64)
                 .one(&self.data.db)
@@ -32,7 +32,7 @@ impl<'a> MatchyMeetupOptIn<'a> {
             created_at: Default::default(),
         };
 
-        let response = match self.exists(interaction.user.id).await {
+        let response = match self.contains_user(interaction.user.id).await {
             Err(_) => bail!("Cannot read db"),
             Ok(true) => "You are already opted in.",
             Ok(false) => match matchy_meetup_opt_in::Entity::insert(participant)
@@ -60,7 +60,7 @@ impl<'a> MatchyMeetupOptIn<'a> {
     }
 
     pub(crate) async fn leave(&self, interaction: &ComponentInteraction) -> anyhow::Result<()> {
-        let response = match self.exists(interaction.user.id).await {
+        let response = match self.contains_user(interaction.user.id).await {
             Err(_) => bail!("Unable to read db"),
             Ok(false) => "You are not in Matchy Meetups!",
             Ok(true) => match matchy_meetup_opt_in::Entity::delete_by_id(u64::from(
@@ -89,7 +89,7 @@ impl<'a> MatchyMeetupOptIn<'a> {
     }
 
     pub(crate) async fn check(&self, interaction: &ComponentInteraction) -> anyhow::Result<()> {
-        let response = match self.exists(interaction.user.id).await {
+        let response = match self.contains_user(interaction.user.id).await {
             Ok(true) => "You are currently opted in to Matchy Meetups!",
             Ok(false) => "You are currently opted out of Matchy Meetups!",
             Err(_) => bail!("I couldn't check that for you :("),
