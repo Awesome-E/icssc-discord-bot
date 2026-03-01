@@ -11,7 +11,7 @@ pub(crate) async fn check_message_snipe_victim(
     data: &AppVars,
     msg: &Message,
 ) -> Result<(), AppError> {
-    if msg.channel_id.get() != data.channels.spottings_channel_id {
+    if msg.author.bot || msg.channel_id.get() != data.channels.spottings_channel_id {
         return Ok(());
     }
 
