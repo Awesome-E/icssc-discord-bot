@@ -1,4 +1,4 @@
-use sea_orm_migration::{prelude::*, schema::*};
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -54,19 +54,11 @@ impl MigrationTrait for Migration {
 #[derive(DeriveIden)]
 enum Message {
     Table,
-    GuildId,
-    ChannelId,
     MessageId,
-    AuthorId,
-    TimePosted,
 }
 
 #[derive(DeriveIden)]
 enum Snipe {
     Table,
     MessageId,
-    VictimId,
-    Latitude,
-    Longitude,
-    Notes,
 }

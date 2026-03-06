@@ -29,16 +29,16 @@ impl EventHandler for LaikaEventHandler {
         let _ = check_message_snipe_victim(&ctx, &self.data, &new_message).await;
     }
 
-    async fn ready(&self, ctx: serenity::all::Context, ready_info: Ready) {
+    async fn ready(&self, ctx: serenity::all::Context, data_about_bot: Ready) {
         println!(
             "ok, connected as {} (UID {})",
-            ready_info.user.tag(),
-            ready_info.user.id
+            data_about_bot.user.tag(),
+            data_about_bot.user.id
         );
-        println!("using discord API version {}", ready_info.version);
+        println!("using discord API version {}", data_about_bot.version);
         println!(
             "invite link: {}",
-            bot_invite_url(ready_info.user.id, Permissions::empty(), true)
+            bot_invite_url(data_about_bot.user.id, Permissions::empty(), true)
         );
 
         tokio::spawn(async move {
