@@ -1,8 +1,6 @@
 use anyhow::bail;
 use poise::CreateReply;
-use serenity::all::{
-    CreateEmbed, CreateEmbedAuthor, Member, Mentionable as _, User,
-};
+use serenity::all::{CreateEmbed, CreateEmbedAuthor, Member, Mentionable as _, User};
 
 use crate::{
     AppContext, AppError, AppVars,
