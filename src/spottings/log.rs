@@ -236,8 +236,8 @@ pub(crate) async fn history(ctx: AppContext<'_>) -> Result<(), AppError> {
     let conn = &ctx.data().db;
 
     let got = spotting_message::Entity::find()
-        .find_with_related(spotting_victim::Entity)
         .order_by_desc(spotting_message::Column::MessageId)
+        .find_with_related(spotting_victim::Entity)
         .all(conn)
         .await
         .context("log get recent snipes")?;
