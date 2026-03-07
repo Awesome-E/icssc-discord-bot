@@ -42,7 +42,7 @@ For the following channels, make sure the bot can view the channel and send mess
 - `#matchy-meetups`
 - `#icssc-spottings`
 - `#bits-and-bytes`
-- `#and bot-log`
+- `#bot-log`
 
 The bot should show at the bottom of the online member list for each of these channels.
 
