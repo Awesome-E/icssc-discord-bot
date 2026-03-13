@@ -16,6 +16,7 @@ use crate::setup::{
     ChannelVars, HttpVars, RoleVars, create_bot_framework_options, register_commands,
 };
 use crate::util::gdrive::GoogleServiceAccount;
+use crate::util::roster::Roster;
 use anyhow::Context as _;
 use clap::ValueHint;
 use env_vars_struct::env_vars_struct;
@@ -25,6 +26,7 @@ use serenity::all::GatewayIntents;
 use std::env;
 use std::ops::{BitOr as _, Deref};
 use std::path::PathBuf;
+use std::sync::Arc;
 use tokio::sync::RwLock;
 
 env_vars_struct!(
@@ -67,7 +69,8 @@ struct AppVarsInner {
     db: sea_orm::DatabaseConnection,
     channels: ChannelVars,
     roles: RoleVars,
-    google_service_account: RwLock<GoogleServiceAccount>,
+    google_service_account: Arc<RwLock<GoogleServiceAccount>>,
+    roster: RwLock<Roster>,
     http: HttpVars,
 }
 
@@ -93,13 +96,19 @@ impl AppVars {
             sea_orm::Database::connect(db_url).await.unwrap()
         };
 
+        let google_service_account = Arc::new(RwLock::new(GoogleServiceAccount::new(&env)));
+
         Self {
             inner: std::sync::Arc::new(AppVarsInner {
                 db: connection,
                 channels: ChannelVars::new(&env),
                 http: HttpVars::new(&env),
                 roles: RoleVars::new(&env),
-                google_service_account: RwLock::new(GoogleServiceAccount::new(&env)),
+                roster: RwLock::new(Roster::new(
+                    &env.roster_spreadsheet,
+                    google_service_account.clone(),
+                )),
+                google_service_account,
                 env,
             }),
         }

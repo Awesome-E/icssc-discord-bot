@@ -7,10 +7,7 @@ use crate::{
     attendance::attended::get_events_attended_text,
     matchy::opt_in::MatchyMeetupOptIn,
     spottings::{privacy::SnipesOptOut, socials_role::SocialsParticipation},
-    util::{
-        ContextExtras as _, base_embed,
-        roster::{RosterSheetRow, get_user_from_discord},
-    },
+    util::{ContextExtras as _, base_embed, roster::RosterSheetRow},
 };
 
 #[poise::command(context_menu_command = "Lookup Member", guild_only)]
@@ -19,7 +16,8 @@ pub(crate) async fn user_lookup(ctx: AppContext<'_>, user: User) -> Result<(), A
         bail!("command not executed in guild");
     };
 
-    let row = get_user_from_discord(ctx.data(), user.name).await?;
+    let mut roster = ctx.data().roster.write().await;
+    let row = roster.get_user_from_discord(&user.name, true).await?;
     let Some(row) = row else {
         ctx.reply_ephemeral("User is not an internal member")
             .await?;
@@ -91,7 +89,8 @@ pub(crate) async fn lookup_discord(ctx: AppContext<'_>, user: User) -> Result<()
         bail!("command not executed in guild");
     };
 
-    let row = get_user_from_discord(ctx.data(), user.name.clone()).await?;
+    let mut roster = ctx.data().roster.write().await;
+    let row = roster.get_user_from_discord(&user.name, true).await?;
     let Some(row) = row else {
         ctx.reply_ephemeral("User is not an internal member")
             .await?;

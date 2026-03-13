@@ -5,7 +5,7 @@ use crate::{
     util::{
         ContextExtras as _,
         gdrive::{DriveFilePermissionRole, get_gdrive_permissions},
-        roster::{RosterSheetRow, get_bulk_members_from_roster},
+        roster::RosterSheetRow,
     },
 };
 use anyhow::Context as _;
@@ -17,11 +17,11 @@ use serenity::{all::Mentionable as _, futures::StreamExt as _};
 pub(crate) async fn check_discord_roles(ctx: AppContext<'_>) -> Result<(), AppError> {
     ctx.defer_ephemeral().await?;
 
-    let roster = get_bulk_members_from_roster(ctx.data(), &[]).await?;
+    let roster = ctx.data().roster.write().await.fetch(0).await?.clone();
     let roster_lookup = roster
         .iter()
-        .map(|row| (&row.discord, row))
-        .collect::<HashMap<&String, &RosterSheetRow>>();
+        .map(|row| (&*row.discord, row))
+        .collect::<HashMap<&str, &RosterSheetRow>>();
 
     let guild = ctx.guild_id().context("get guild id")?;
     let role_map = guild.roles(ctx.http()).await?;
@@ -38,7 +38,7 @@ pub(crate) async fn check_discord_roles(ctx: AppContext<'_>) -> Result<(), AppEr
         && desynced.len() < 10
     {
         let guild_member = guild_member?;
-        let roster_committees = match roster_lookup.get(&guild_member.user.name) {
+        let roster_committees = match roster_lookup.get(&*guild_member.user.name) {
             Some(roster_member) => &roster_member.committees,
             None => &vec![],
         };
@@ -94,7 +94,7 @@ pub(crate) async fn check_google_access(ctx: AppContext<'_>) -> Result<(), AppEr
     ctx.defer_ephemeral().await?;
     let data = ctx.data();
 
-    let roster = get_bulk_members_from_roster(data, &[]).await?;
+    let roster = ctx.data().roster.write().await.fetch(0).await?.clone();
     let roster_lookup = roster
         .iter()
         .map(|row| (&*row.email, row))

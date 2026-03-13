@@ -4,7 +4,7 @@ use itertools::Itertools as _;
 
 use crate::{
     AppContext, AppError, AppVars,
-    util::{ContextExtras as _, gsheets::get_spreadsheet_range, roster::get_user_from_discord},
+    util::{ContextExtras as _, gsheets::get_spreadsheet_range},
 };
 
 pub(crate) async fn get_events_attended_text(
@@ -13,7 +13,7 @@ pub(crate) async fn get_events_attended_text(
 ) -> Result<Vec<String>, AppError> {
     let sheet_id = &data.env.attendance_sheet.id;
     let range = &data.env.attendance_sheet.ranges.checkin;
-    let resp = get_spreadsheet_range(data, sheet_id, range).await?;
+    let resp = get_spreadsheet_range(data.google_service_account.clone(), sheet_id, range).await?;
 
     let events = resp
         .values
@@ -64,7 +64,8 @@ pub(crate) async fn attended(ctx: AppContext<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
 
     let username = &ctx.author().name;
-    let Ok(Some(user)) = get_user_from_discord(ctx.data(), username.clone()).await else {
+    let mut roster = ctx.data().roster.write().await;
+    let Ok(Some(user)) = roster.get_user_from_discord(username, true).await else {
         ctx.reply_ephemeral(
             "\
 Cannot find a matching internal member. Double check that your \

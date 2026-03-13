@@ -13,10 +13,8 @@ use serenity::{
 use crate::{
     AppContext, AppError, AppVars,
     util::{
-        ContextExtras as _,
-        message::get_members,
-        modal::ModalInputTexts,
-        roster::{check_in_with_email, get_bulk_members_from_roster, get_user_from_discord},
+        ContextExtras as _, message::get_members, modal::ModalInputTexts,
+        roster::check_in_with_email,
     },
 };
 
@@ -38,7 +36,8 @@ pub(crate) async fn checkin(ctx: AppContext<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
 
     let username = &ctx.author().name;
-    let Ok(Some(user)) = get_user_from_discord(ctx.data(), username.clone()).await else {
+    let mut roster = ctx.data().roster.write().await;
+    let Ok(Some(user)) = roster.get_user_from_discord(username, false).await else {
         ctx.reply_ephemeral(
             "\
 Cannot find a matching internal member. Double check that your \
@@ -136,11 +135,16 @@ pub(crate) async fn confirm_attendance_log_modal(
     .context("Some user IDs not found")?;
 
     let usernames = participants
-        .into_iter()
-        .map(|member| member.user.name)
+        .iter()
+        .map(|member| member.user.name.as_str())
         .collect_vec();
 
-    let members = get_bulk_members_from_roster(data, &usernames).await?;
+    let members = data
+        .roster
+        .write()
+        .await
+        .get_users_from_discord(&usernames, true)
+        .await?;
     let is_missing = members.len() != usernames.len();
     if is_missing {
         bail!("user lookup failed");
