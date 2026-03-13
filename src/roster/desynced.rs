@@ -4,7 +4,7 @@ use crate::{
     AppContext, AppError,
     util::{
         ContextExtras as _,
-        gdrive::{DriveFilePermissionRole, get_file_permissions},
+        gdrive::{DriveFilePermissionRole, get_gdrive_permissions},
         roster::{RosterSheetRow, get_bulk_members_from_roster},
     },
 };
@@ -100,7 +100,7 @@ pub(crate) async fn check_google_access(ctx: AppContext<'_>) -> Result<(), AppEr
         .map(|row| (&*row.email, row))
         .collect::<HashMap<&str, &RosterSheetRow>>();
 
-    let drive_permissions = get_file_permissions(data)
+    let drive_permissions = get_gdrive_permissions(data)
         .await
         .context("Failed to fetch permissions; ensure service account has access")?;
 

@@ -151,7 +151,7 @@ async fn get_permissions_page(
     Ok(resp)
 }
 
-pub(crate) async fn get_file_permissions(
+pub(crate) async fn get_gdrive_permissions(
     data: &AppVars,
 ) -> Result<Vec<DriveFilePermission>, AppError> {
     let access_token = data
