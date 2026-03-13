@@ -1,9 +1,10 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{ops::Add, time::{SystemTime, UNIX_EPOCH}};
 
+use chrono::{DateTime, Duration, Utc};
 use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::{Deserialize, Serialize};
 
-use crate::{AppError, AppVars};
+use crate::{AppError, AppVars, Vars, VarsServiceAccountKey};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -15,53 +16,77 @@ struct Claims {
     exp: u64,
 }
 
-#[derive(Debug, Deserialize)]
-pub(crate) struct TokenResponse {
-    pub(crate) access_token: String,
+#[derive(Debug, Deserialize, Clone)]
+struct TokenResponse {
+    access_token: String,
     // Can also read token_type: String and expires_in: u64
+    expires_in: i64
 }
 
-pub(crate) async fn get_google_oauth_token(
-    data: &AppVars,
-    scope: &str,
-) -> Result<TokenResponse, AppError> {
-    let key = &data.env.service_account_key;
+pub(crate) struct GoogleServiceAccount {
+    account_key: VarsServiceAccountKey,
+    last_response: Option<TokenResponse>,
+    last_scope: String,
+    expires: DateTime<Utc>,
+}
 
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
-    let now = now.as_secs();
+impl GoogleServiceAccount {
+    pub(crate) fn new(env: &Vars) -> GoogleServiceAccount {
+        GoogleServiceAccount {
+            account_key: env.service_account_key.clone(),
+            last_response: None,
+            expires: Utc::now(),
+            last_scope: String::from(""),
+        }
+    }
 
-    let claims = Claims {
-        iss: key.email.clone(),
-        sub: key.email.clone(),
-        scope: scope.to_owned(),
-        aud: "https://oauth2.googleapis.com/token".to_owned(),
-        exp: now + 3600,
-        iat: now,
-    };
+    pub(crate) async fn get_access_token(&mut self, scope: &str) -> Result<String, AppError> {
+        let key = &self.account_key;
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards");
+        let now = now.as_secs();
 
-    let mut header = Header::new(jsonwebtoken::Algorithm::RS256);
-    header.kid = Some(key.id.clone());
+        if self.expires > Utc::now() && scope == self.last_scope && let Some(resp) = &self.last_response {
+            return Ok(resp.access_token.clone());
+        }
 
-    let token = encode(
-        &header,
-        &claims,
-        &EncodingKey::from_rsa_pem(key.pem.as_bytes())?,
-    )?;
+        let claims = Claims {
+            iss: key.email.clone(),
+            sub: key.email.clone(),
+            scope: scope.to_owned(),
+            aud: "https://oauth2.googleapis.com/token".to_owned(),
+            exp: now + 3600,
+            iat: now,
+        };
 
-    let token_resp = reqwest::Client::new()
-        .post("https://oauth2.googleapis.com/token")
-        .form(&[
-            ("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
-            ("assertion", &token),
-        ])
-        .send()
-        .await?
-        .json::<TokenResponse>()
-        .await?;
+        let mut header = Header::new(jsonwebtoken::Algorithm::RS256);
+        header.kid = Some(key.id.clone());
 
-    Ok(token_resp)
+        let token = encode(
+            &header,
+            &claims,
+            &EncodingKey::from_rsa_pem(key.pem.as_bytes())?,
+        )?;
+
+        let token_resp = reqwest::Client::new()
+            .post("https://oauth2.googleapis.com/token")
+            .form(&[
+                ("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
+                ("assertion", &token),
+            ])
+            .send()
+            .await?
+            .json::<TokenResponse>()
+            .await?;
+
+        let access_token = token_resp.access_token.clone();
+        self.expires = Utc::now().add(Duration::seconds(token_resp.expires_in));        
+        self.last_response = Some(token_resp);
+        self.last_scope = scope.to_owned();
+
+        Ok(access_token)
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -123,17 +148,18 @@ async fn get_permissions_page(
 pub(crate) async fn get_file_permissions(
     data: &AppVars,
 ) -> Result<Vec<DriveFilePermission>, AppError> {
-    let token_resp = get_google_oauth_token(
-        data,
-        "https://www.googleapis.com/auth/drive.metadata.readonly",
-    )
-    .await?;
+    let access_token = data
+        .google_service_account
+        .write()
+        .await
+        .get_access_token("https://www.googleapis.com/auth/drive.metadata.readonly")
+        .await?;
 
     let mut next_page_token = None;
     let mut permissions = vec![];
 
     loop {
-        let resp = get_permissions_page(data, &token_resp.access_token, next_page_token.as_deref())
+        let resp = get_permissions_page(data, &access_token, next_page_token.as_deref())
             .await?;
 
         permissions.extend(resp.permissions);

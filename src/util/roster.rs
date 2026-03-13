@@ -8,7 +8,7 @@ use crate::{
     AppError, AppVars,
     util::{
         gforms::submit_google_form,
-        gsheets::{SheetsResponse, get_gsheets_token, get_spreadsheet_range},
+        gsheets::{SheetsResponse, get_spreadsheet_range},
     },
 };
 
@@ -33,21 +33,13 @@ fn parse_committees_string(committees_text: &str) -> Vec<String> {
         .collect_vec()
 }
 
-async fn get_roster_rows(
-    data: &AppVars,
-    access_token: Option<&str>,
-) -> Result<SheetsResponse, AppError> {
+async fn get_roster_rows(data: &AppVars) -> Result<SheetsResponse, AppError> {
     let spreadsheet = &data.env.roster_spreadsheet;
-    let access_token = match access_token {
-        Some(tok) => tok,
-        None => &get_gsheets_token(data).await?.access_token,
-    };
 
     let resp = get_spreadsheet_range(
         data,
         &spreadsheet.id,
         &spreadsheet.range,
-        Some(access_token),
     )
     .await?;
 
@@ -56,10 +48,9 @@ async fn get_roster_rows(
 
 pub(crate) async fn get_user_from_discord(
     data: &AppVars,
-    access_token: Option<&str>,
     username: String,
 ) -> Result<Option<RosterSheetRow>, AppError> {
-    let resp = get_roster_rows(data, access_token).await?;
+    let resp = get_roster_rows(data).await?;
 
     let user = resp
         .values
@@ -84,7 +75,7 @@ pub(crate) async fn get_bulk_members_from_roster(
     usernames: &[String],
 ) -> Result<Vec<RosterSheetRow>, AppError> {
     let usernames: HashSet<&String> = usernames.iter().collect();
-    let resp = get_roster_rows(data, None).await?;
+    let resp = get_roster_rows(data).await?;
 
     let rows = resp
         .values

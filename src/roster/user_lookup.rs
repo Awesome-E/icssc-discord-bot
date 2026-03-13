@@ -3,14 +3,14 @@ use poise::CreateReply;
 use serenity::all::{CreateEmbed, CreateEmbedAuthor, Member, Mentionable as _, User};
 
 use crate::{
-    AppContext, AppError, AppVars,
-    attendance::attended::get_events_attended_text,
-    matchy::opt_in::MatchyMeetupOptIn,
-    spottings::{privacy::SnipesOptOut, socials_role::SocialsParticipation},
+    attendance::attended::get_events_attended_text, matchy::opt_in::MatchyMeetupOptIn, spottings::{privacy::SnipesOptOut, socials_role::SocialsParticipation},
     util::{
-        ContextExtras as _, base_embed,
-        roster::{RosterSheetRow, get_user_from_discord},
+        base_embed, roster::{get_user_from_discord, RosterSheetRow},
+        ContextExtras as _,
     },
+    AppContext,
+    AppError,
+    AppVars,
 };
 
 #[poise::command(context_menu_command = "Lookup Member", guild_only)]
@@ -19,7 +19,7 @@ pub(crate) async fn user_lookup(ctx: AppContext<'_>, user: User) -> Result<(), A
         bail!("command not executed in guild");
     };
 
-    let row = get_user_from_discord(ctx.data(), None, user.name).await?;
+    let row = get_user_from_discord(ctx.data(), user.name).await?;
     let Some(row) = row else {
         ctx.reply_ephemeral("User is not an internal member")
             .await?;
@@ -57,7 +57,7 @@ async fn lookup_result_embed(
     let RosterSheetRow { name, email, .. } = roster_row;
 
     let user_lines = format!("Discord: {}\nEmail: {email}", user.mention());
-    let events_lines = get_events_attended_text(data, None, &email).await?;
+    let events_lines = get_events_attended_text(data, &email).await?;
     let events_header = match events_lines.len() {
         0 => "No events attended :(".to_owned(),
         ct => format!("## Events Attended ({ct})"),
@@ -91,7 +91,7 @@ pub(crate) async fn lookup_discord(ctx: AppContext<'_>, user: User) -> Result<()
         bail!("command not executed in guild");
     };
 
-    let row = get_user_from_discord(ctx.data(), None, user.name.clone()).await?;
+    let row = get_user_from_discord(ctx.data(), user.name.clone()).await?;
     let Some(row) = row else {
         ctx.reply_ephemeral("User is not an internal member")
             .await?;

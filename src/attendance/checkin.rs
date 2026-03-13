@@ -14,8 +14,6 @@ use crate::{
     AppContext, AppError, AppVars,
     util::{
         ContextExtras as _,
-        gdrive::TokenResponse,
-        gsheets::get_gsheets_token,
         message::get_members,
         modal::ModalInputTexts,
         roster::{check_in_with_email, get_bulk_members_from_roster, get_user_from_discord},
@@ -25,16 +23,22 @@ use crate::{
 /// Check into today's ICSSC event!
 #[poise::command(slash_command, hide_in_help)]
 pub(crate) async fn checkin(ctx: AppContext<'_>) -> Result<(), Error> {
-    let Ok(TokenResponse { access_token }) = get_gsheets_token(ctx.data()).await else {
-        ctx.reply_ephemeral("Unable to find who you are :(").await?;
-        return Ok(());
+    let Ok(_) = ctx.data()
+        .google_service_account
+        .write()
+        .await.
+        get_access_token("https://www.googleapis.com/auth/spreadsheets.readonly")
+        .await
+    else {
+          ctx.reply_ephemeral("Unable to find who you are :(").await?;
+          return Ok(());
     };
 
     ctx.defer_ephemeral().await?;
 
     let username = &ctx.author().name;
     let Ok(Some(user)) =
-        get_user_from_discord(ctx.data(), Some(&access_token), username.clone()).await
+        get_user_from_discord(ctx.data(), username.clone()).await
     else {
         ctx.reply_ephemeral(
             "\

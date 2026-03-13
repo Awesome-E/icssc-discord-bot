@@ -15,12 +15,14 @@ mod util;
 use crate::setup::{
     ChannelVars, HttpVars, RoleVars, create_bot_framework_options, register_commands,
 };
+use crate::util::gdrive::GoogleServiceAccount;
 use anyhow::Context as _;
 use clap::ValueHint;
 use env_vars_struct::env_vars_struct;
 use migration::{Migrator, MigratorTrait as _};
 use serenity::Client;
 use serenity::all::GatewayIntents;
+use tokio::sync::RwLock;
 use std::env;
 use std::ops::{BitOr as _, Deref};
 use std::path::PathBuf;
@@ -65,6 +67,7 @@ struct AppVarsInner {
     db: sea_orm::DatabaseConnection,
     channels: ChannelVars,
     roles: RoleVars,
+    google_service_account: RwLock<GoogleServiceAccount>,
     http: HttpVars,
 }
 
@@ -96,6 +99,7 @@ impl AppVars {
                 channels: ChannelVars::new(&env),
                 http: HttpVars::new(&env),
                 roles: RoleVars::new(&env),
+                google_service_account: RwLock::new(GoogleServiceAccount::new(&env)),
                 env,
             }),
         }

@@ -45,7 +45,7 @@ async fn get_overview_range(data: &AppVars) -> anyhow::Result<SheetsResponse> {
     let sheet_id = &data.env.bnb_sheet.id;
     let range = &data.env.bnb_sheet.lookup_range;
 
-    let resp = get_spreadsheet_range(data, sheet_id, range, None).await?;
+    let resp = get_spreadsheet_range(data, sheet_id, range).await?;
 
     Ok(resp)
 }

@@ -6,20 +6,18 @@ use crate::{
     AppContext, AppError, AppVars,
     util::{
         ContextExtras as _,
-        gdrive::TokenResponse,
-        gsheets::{get_gsheets_token, get_spreadsheet_range},
+        gsheets::get_spreadsheet_range,
         roster::get_user_from_discord,
     },
 };
 
 pub(crate) async fn get_events_attended_text(
     data: &AppVars,
-    access_token: Option<&str>,
     email: &String,
 ) -> Result<Vec<String>, AppError> {
     let sheet_id = &data.env.attendance_sheet.id;
     let range = &data.env.attendance_sheet.ranges.checkin;
-    let resp = get_spreadsheet_range(data, sheet_id, range, access_token).await?;
+    let resp = get_spreadsheet_range(data, sheet_id, range).await?;
 
     let events = resp
         .values
@@ -55,16 +53,21 @@ pub(crate) async fn get_events_attended_text(
 /// See what ICSSC events you have checked in for!
 #[poise::command(slash_command, hide_in_help)]
 pub(crate) async fn attended(ctx: AppContext<'_>) -> Result<(), Error> {
-    let Ok(TokenResponse { access_token }) = get_gsheets_token(ctx.data()).await else {
-        ctx.reply_ephemeral("Unable to find who you are :(").await?;
-        return Ok(());
+    let Ok(_) = ctx.data()
+        .google_service_account
+        .write()
+        .await.
+        get_access_token("https://www.googleapis.com/auth/spreadsheets.readonly")
+        .await
+    else {
+          ctx.reply_ephemeral("Unable to find who you are :(").await?;
+          return Ok(());
     };
 
     ctx.defer_ephemeral().await?;
 
     let username = &ctx.author().name;
-    let Ok(Some(user)) =
-        get_user_from_discord(ctx.data(), Some(&access_token), username.clone()).await
+    let Ok(Some(user)) = get_user_from_discord(ctx.data(), username.clone()).await
     else {
         ctx.reply_ephemeral(
             "\
@@ -75,7 +78,7 @@ Discord username on the internal roster is correct.",
         return Ok(());
     };
 
-    let events = get_events_attended_text(ctx.data(), Some(&access_token), &user.email).await?;
+    let events = get_events_attended_text(ctx.data(), &user.email).await?;
 
     ctx.reply_ephemeral(format!("Events you attended:\n{}", events.join("\n")))
         .await?;
