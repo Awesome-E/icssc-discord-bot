@@ -1,34 +1,25 @@
-use serde::Deserialize;
+use std::sync::Arc;
 
-use crate::{
-    AppError, AppVars,
-    util::gdrive::{TokenResponse, get_google_oauth_token},
-};
+use serde::Deserialize;
+use tokio::sync::RwLock;
+
+use crate::util::gdrive::GoogleServiceAccount;
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct SheetsResponse {
     pub(crate) values: Vec<Vec<String>>,
 }
 
-pub(crate) async fn get_gsheets_token(data: &AppVars) -> Result<TokenResponse, AppError> {
-    let resp = get_google_oauth_token(
-        data,
-        "https://www.googleapis.com/auth/spreadsheets.readonly",
-    )
-    .await?;
-    Ok(resp)
-}
-
 pub(crate) async fn get_spreadsheet_range(
-    data: &AppVars,
+    service_account: Arc<RwLock<GoogleServiceAccount>>,
     sheet_id: &str,
     range: &str,
-    access_token: Option<&str>,
 ) -> anyhow::Result<SheetsResponse> {
-    let access_token = match access_token {
-        Some(tok) => tok,
-        None => &get_gsheets_token(data).await?.access_token,
-    };
+    let access_token = service_account
+        .write()
+        .await
+        .get_access_token("https://www.googleapis.com/auth/spreadsheets.readonly")
+        .await?;
 
     let resp = reqwest::Client::new()
         .get(format!(
