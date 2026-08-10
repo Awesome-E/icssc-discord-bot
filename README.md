@@ -99,9 +99,8 @@ If you need to check where a certain shortlink redirects to, use `/shortlink che
 ### Setup
 
 1. Clone the repo
-2. `cargo install`
-3. Set environment variables based on `.env.example`
-4. `cargo run`
+2. Set environment variables based on `.env.example`
+3. `cargo run`
 
 ### Creating Database Migrations
 
@@ -109,6 +108,11 @@ If you need to check where a certain shortlink redirects to, use `/shortlink che
 - `sea-orm-cli migrate up`
 - `sea-orm-cli generate entity -o entity/src/entities`
     - Revert the removed line in `entities/mod.rs` for the materialized view :P
+
+### Application Requirements
+
+The official bot application is in a Discord Developer Team. If you created your own application to test your code:
+- Under Bot settings, "Server Members Intent" and "Message Content Intent" must be enabled
 
 ## Todos
 - consider additional helper methods for Roster struct
